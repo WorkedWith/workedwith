@@ -53,6 +53,36 @@ export interface ClientProfile {
   created_at: string
 }
 
+export type OrganisationAccountType = 'client' | 'trade' | 'both'
+export type OrganisationMemberRole = 'owner' | 'admin' | 'member'
+
+export interface Organisation {
+  id: string
+  company_name: string
+  companies_house_number: string
+  companies_house_verified: boolean
+  companies_house_verified_at: string | null
+  company_status: string | null
+  registered_postcode: string | null
+  account_type: OrganisationAccountType
+  primary_contact_user_id: string | null
+  average_rating: number
+  total_reviews: number
+  payment_speed_score: number
+  scope_change_score: number
+  red_flag_count: number
+  created_at: string
+}
+
+export interface OrganisationMember {
+  id: string
+  organisation_id: string | null
+  user_id: string | null
+  role: OrganisationMemberRole | null
+  invited_by: string | null
+  joined_at: string
+}
+
 export type DeactivatedIdentityType = 'phone' | 'email' | 'licence_number'
 
 export interface DeactivatedIdentity {
@@ -95,6 +125,18 @@ export interface Database {
         Row: WithIndex<DeactivatedIdentity>
         Insert: Omit<DeactivatedIdentity, 'id' | 'deactivated_at'> & Partial<Pick<DeactivatedIdentity, 'id' | 'deactivated_at'>>
         Update: Partial<DeactivatedIdentity>
+        Relationships: []
+      }
+      organisations: {
+        Row: WithIndex<Organisation>
+        Insert: Omit<Organisation, 'id' | 'created_at' | 'companies_house_verified' | 'average_rating' | 'total_reviews' | 'payment_speed_score' | 'scope_change_score' | 'red_flag_count' | 'account_type'> & Partial<Pick<Organisation, 'id' | 'created_at' | 'companies_house_verified' | 'average_rating' | 'total_reviews' | 'payment_speed_score' | 'scope_change_score' | 'red_flag_count' | 'account_type'>>
+        Update: Partial<Organisation>
+        Relationships: []
+      }
+      organisation_members: {
+        Row: WithIndex<OrganisationMember>
+        Insert: Omit<OrganisationMember, 'id' | 'joined_at'> & Partial<Pick<OrganisationMember, 'id' | 'joined_at'>>
+        Update: Partial<OrganisationMember>
         Relationships: []
       }
     }
