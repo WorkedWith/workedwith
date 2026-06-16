@@ -53,24 +53,53 @@ export interface ClientProfile {
   created_at: string
 }
 
+export type DeactivatedIdentityType = 'phone' | 'email' | 'licence_number'
+
+export interface DeactivatedIdentity {
+  id: string
+  identity_hash: string
+  identity_type: DeactivatedIdentityType
+  deactivated_at: string
+  deactivated_by: string | null
+  reason: string | null
+}
+
+// Satisfying Supabase's GenericTable.Row constraint requires Record<string, unknown>.
+// TypeScript interfaces don't extend Record<string, unknown> in conditional type checks
+// (no implicit index signature), so we intersect each Row with Record<string, unknown>
+// while keeping specific property types accessible.
+type WithIndex<T> = T & Record<string, unknown>
+
 export interface Database {
   public: {
     Tables: {
       users: {
-        Row: User
+        Row: WithIndex<User>
         Insert: Omit<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated' | 'subscription_tier' | 'subscription_status'> & Partial<Pick<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated' | 'subscription_tier' | 'subscription_status'>>
         Update: Partial<User>
+        Relationships: []
       }
       trade_profiles: {
-        Row: TradeProfile
+        Row: WithIndex<TradeProfile>
         Insert: Omit<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews'> & Partial<Pick<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews'>>
         Update: Partial<TradeProfile>
+        Relationships: []
       }
       client_profiles: {
-        Row: ClientProfile
+        Row: WithIndex<ClientProfile>
         Insert: Omit<ClientProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_speed_score' | 'scope_change_score' | 'communication_score' | 'red_flag_count'> & Partial<Pick<ClientProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_speed_score' | 'scope_change_score' | 'communication_score' | 'red_flag_count'>>
         Update: Partial<ClientProfile>
+        Relationships: []
+      }
+      deactivated_identities: {
+        Row: WithIndex<DeactivatedIdentity>
+        Insert: Omit<DeactivatedIdentity, 'id' | 'deactivated_at'> & Partial<Pick<DeactivatedIdentity, 'id' | 'deactivated_at'>>
+        Update: Partial<DeactivatedIdentity>
+        Relationships: []
       }
     }
+    // GenericSchema requires Views and Functions (non-optional)
+    Views: { [_ in never]: never }
+    Functions: { [_ in never]: never }
   }
 }
