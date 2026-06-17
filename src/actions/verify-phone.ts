@@ -136,7 +136,7 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
   // Redirect destination differs by user type — both point to /dashboard for now;
   // extend this switch when type-specific dashboards are built
   const redirectTo =
-    current?.user_type === 'tradesperson'
+    current?.user_type === 'trade'
       ? '/dashboard'
       : '/dashboard'
 

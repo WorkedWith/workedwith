@@ -20,7 +20,7 @@ export async function checkUsername(username: string): Promise<UsernameCheckResu
   const { data } = await admin
     .from('trade_profiles')
     .select('*')
-    .eq('username', username)
+    .eq('public_slug', username)
     .maybeSingle()
 
   if (data) {

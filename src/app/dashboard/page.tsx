@@ -41,7 +41,7 @@ export default async function DashboardPage() {
           Welcome back, {full_name.split(' ')[0]}
         </h1>
         <p className="mt-1 text-sm text-gray-500 capitalize">
-          {user_type === 'tradesperson' ? 'Tradesperson' : 'Client'} account
+          {user_type === 'trade' ? 'Tradesperson' : 'Client'} account
         </p>
 
         {/* Placeholder content — full dashboards built in a later module */}

@@ -1,9 +1,12 @@
-export type UserType = 'tradesperson' | 'client' | 'both'
+// ── Scalar types ──────────────────────────────────────────────
+
+export type UserType = 'trade' | 'client_individual' | 'client_business' | 'both'
 export type ClientType = 'individual' | 'business'
 export type VerificationTier = 'unverified' | 'phone_verified' | 'fully_verified'
 export type IdVerificationStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected'
 export type SubscriptionTier = 'free' | 'pro' | 'team'
-export type SubscriptionStatus = 'active' | 'inactive' | 'trialling'
+
+// ── Row interfaces ────────────────────────────────────────────
 
 export interface User {
   id: string
@@ -21,8 +24,6 @@ export interface User {
   id_reviewed_by: string | null
   previously_deactivated: boolean
   created_at: string
-  subscription_tier: SubscriptionTier
-  subscription_status: SubscriptionStatus
   stripe_customer_id: string | null
   organisation_id: string | null
 }
@@ -30,13 +31,20 @@ export interface User {
 export interface TradeProfile {
   id: string
   user_id: string
-  trade_type: string
+  trade_types: string[]
   company_name: string | null
   postcode: string
-  username: string
+  public_slug: string
   bio: string | null
   average_rating: number
   total_reviews: number
+  years_experience: number | null
+  radius_miles: number
+  is_searchable: boolean
+  subscription_tier: SubscriptionTier
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+  total_jobs: number
   created_at: string
 }
 
@@ -44,12 +52,18 @@ export interface ClientProfile {
   id: string
   user_id: string
   postcode: string
+  display_name: string | null
+  client_type: ClientType | null
+  company_name: string | null
+  companies_house_number: string | null
   average_rating: number
   total_reviews: number
-  payment_speed_score: number
-  scope_change_score: number
+  payment_reliability_score: number
+  scope_clarity_score: number
   communication_score: number
   red_flag_count: number
+  is_searchable: boolean
+  total_jobs: number
   created_at: string
 }
 
@@ -66,6 +80,7 @@ export interface Organisation {
   registered_postcode: string | null
   account_type: OrganisationAccountType
   primary_contact_user_id: string | null
+  owner_id: string | null
   average_rating: number
   total_reviews: number
   payment_speed_score: number
@@ -83,6 +98,20 @@ export interface OrganisationMember {
   joined_at: string
 }
 
+export type OrganisationInviteRole = 'admin' | 'member'
+
+export interface OrganisationInvite {
+  id: string
+  organisation_id: string
+  email: string
+  role: OrganisationInviteRole
+  invited_by: string
+  invite_token: string
+  created_at: string
+  accepted_at: string | null
+  expires_at: string
+}
+
 export type DeactivatedIdentityType = 'phone' | 'email' | 'licence_number'
 
 export interface DeactivatedIdentity {
@@ -94,10 +123,134 @@ export interface DeactivatedIdentity {
   reason: string | null
 }
 
-// Satisfying Supabase's GenericTable.Row constraint requires Record<string, unknown>.
-// TypeScript interfaces don't extend Record<string, unknown> in conditional type checks
-// (no implicit index signature), so we intersect each Row with Record<string, unknown>
-// while keeping specific property types accessible.
+// ── v2.1 additions ────────────────────────────────────────────
+
+export type JobStatus =
+  | 'pending_confirmation'
+  | 'active'
+  | 'completed'
+  | 'disputed'
+  | 'cancelled'
+
+export type JobInitiatedBy = 'trade' | 'client'
+
+export interface Job {
+  id: string
+  trade_profile_id: string
+  client_profile_id: string | null
+  initiated_by: JobInitiatedBy | null
+  job_type: string
+  description: string | null
+  location: string | null
+  postcode: string | null
+  started_at: string | null
+  completed_at: string | null
+  status: JobStatus
+  is_backdated: boolean
+  backdated_period: string | null
+  confirmed_at: string | null
+  confirmation_token: string | null
+  confirmation_expires_at: string | null
+  agreed_payment_terms_days: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ReviewWindow {
+  id: string
+  job_id: string
+  trade_review_submitted: boolean
+  client_review_submitted: boolean
+  window_opened_at: string
+  window_closes_at: string | null
+  reminder_7_sent_at: string | null
+  reminder_14_sent_at: string | null
+  both_submitted_at: string | null
+}
+
+export type ReviewerType = 'trade' | 'client'
+export type RedFlagReason =
+  | 'aggressive_behaviour'
+  | 'refused_access'
+  | 'non_payment'
+  | 'false_dispute'
+  | 'unsafe_site'
+  | 'other'
+
+export interface Review {
+  id: string
+  job_id: string
+  reviewer_id: string
+  reviewee_id: string
+  reviewer_type: ReviewerType | null
+  reviewee_type: ReviewerType | null
+  overall_rating: number | null
+  payment_score: number | null
+  scope_clarity_score: number | null
+  site_access_score: number | null
+  red_flag: boolean
+  red_flag_reason: RedFlagReason | null
+  quality_score: number | null
+  reliability_score: number | null
+  value_score: number | null
+  communication_score: number | null
+  would_work_again: boolean | null
+  written_review: string | null
+  agreed_payment_terms_days: number | null
+  is_backdated: boolean
+  submitted_at: string
+  is_visible: boolean
+  response_text: string | null
+  response_submitted_at: string | null
+  created_at: string
+}
+
+export type JobInviteStatus = 'pending' | 'accepted' | 'declined' | 'expired'
+
+export interface JobInvite {
+  id: string
+  job_id: string
+  inviter_id: string
+  invitee_email: string | null
+  invitee_phone: string | null
+  invite_token: string | null
+  status: JobInviteStatus
+  sent_at: string
+  expires_at: string
+  responded_at: string | null
+}
+
+export type NotificationType =
+  | 'new_review'
+  | 'review_response'
+  | 'dispute_raised'
+  | 'dispute_evidence_due'
+  | 'dispute_resolved'
+  | 'invite_accepted'
+  | 'job_confirmed'
+  | 'review_window_opened'
+  | 'review_reminder'
+  | 'reviews_published'
+  | 'id_verified'
+  | 'id_rejected'
+  | 'subscription_updated'
+  | 'red_flag_received'
+
+export interface Notification {
+  id: string
+  user_id: string | null
+  type: NotificationType | null
+  title: string | null
+  body: string | null
+  link: string | null
+  is_read: boolean
+  created_at: string
+}
+
+// ── Supabase Database type ────────────────────────────────────
+// TypeScript interfaces don't satisfy Record<string, unknown> in conditional
+// type checks (no implicit index signature). WithIndex<T> adds one while
+// keeping all named properties accessible at their specific types.
 type WithIndex<T> = T & Record<string, unknown>
 
 export interface Database {
@@ -105,19 +258,19 @@ export interface Database {
     Tables: {
       users: {
         Row: WithIndex<User>
-        Insert: Omit<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated' | 'subscription_tier' | 'subscription_status'> & Partial<Pick<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated' | 'subscription_tier' | 'subscription_status'>>
+        Insert: Omit<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated'> & Partial<Pick<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated'>>
         Update: Partial<User>
         Relationships: []
       }
       trade_profiles: {
         Row: WithIndex<TradeProfile>
-        Insert: Omit<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews'> & Partial<Pick<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews'>>
+        Insert: Omit<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'radius_miles' | 'total_jobs' | 'subscription_tier' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'radius_miles' | 'total_jobs' | 'subscription_tier' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
         Update: Partial<TradeProfile>
         Relationships: []
       }
       client_profiles: {
         Row: WithIndex<ClientProfile>
-        Insert: Omit<ClientProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_speed_score' | 'scope_change_score' | 'communication_score' | 'red_flag_count'> & Partial<Pick<ClientProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_speed_score' | 'scope_change_score' | 'communication_score' | 'red_flag_count'>>
+        Insert: Omit<ClientProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'> & Partial<Pick<ClientProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'>>
         Update: Partial<ClientProfile>
         Relationships: []
       }
@@ -129,7 +282,7 @@ export interface Database {
       }
       organisations: {
         Row: WithIndex<Organisation>
-        Insert: Omit<Organisation, 'id' | 'created_at' | 'companies_house_verified' | 'average_rating' | 'total_reviews' | 'payment_speed_score' | 'scope_change_score' | 'red_flag_count' | 'account_type'> & Partial<Pick<Organisation, 'id' | 'created_at' | 'companies_house_verified' | 'average_rating' | 'total_reviews' | 'payment_speed_score' | 'scope_change_score' | 'red_flag_count' | 'account_type'>>
+        Insert: Omit<Organisation, 'id' | 'created_at' | 'companies_house_verified' | 'average_rating' | 'total_reviews' | 'payment_speed_score' | 'scope_change_score' | 'red_flag_count' | 'account_type' | 'owner_id'> & Partial<Pick<Organisation, 'id' | 'created_at' | 'companies_house_verified' | 'average_rating' | 'total_reviews' | 'payment_speed_score' | 'scope_change_score' | 'red_flag_count' | 'account_type' | 'owner_id'>>
         Update: Partial<Organisation>
         Relationships: []
       }
@@ -137,6 +290,42 @@ export interface Database {
         Row: WithIndex<OrganisationMember>
         Insert: Omit<OrganisationMember, 'id' | 'joined_at'> & Partial<Pick<OrganisationMember, 'id' | 'joined_at'>>
         Update: Partial<OrganisationMember>
+        Relationships: []
+      }
+      organisation_invites: {
+        Row: WithIndex<OrganisationInvite>
+        Insert: Omit<OrganisationInvite, 'id' | 'created_at' | 'invite_token' | 'accepted_at' | 'expires_at'> & Partial<Pick<OrganisationInvite, 'id' | 'created_at' | 'invite_token' | 'accepted_at' | 'expires_at'>>
+        Update: Partial<OrganisationInvite>
+        Relationships: []
+      }
+      jobs: {
+        Row: WithIndex<Job>
+        Insert: Omit<Job, 'id' | 'created_at' | 'updated_at' | 'status' | 'is_backdated' | 'confirmation_token' | 'confirmation_expires_at'> & Partial<Pick<Job, 'id' | 'created_at' | 'updated_at' | 'status' | 'is_backdated' | 'confirmation_token' | 'confirmation_expires_at'>>
+        Update: Partial<Job>
+        Relationships: []
+      }
+      review_windows: {
+        Row: WithIndex<ReviewWindow>
+        Insert: Omit<ReviewWindow, 'id' | 'trade_review_submitted' | 'client_review_submitted' | 'window_opened_at'> & Partial<Pick<ReviewWindow, 'id' | 'trade_review_submitted' | 'client_review_submitted' | 'window_opened_at'>>
+        Update: Partial<ReviewWindow>
+        Relationships: []
+      }
+      reviews: {
+        Row: WithIndex<Review>
+        Insert: Omit<Review, 'id' | 'created_at' | 'submitted_at' | 'is_visible' | 'red_flag'> & Partial<Pick<Review, 'id' | 'created_at' | 'submitted_at' | 'is_visible' | 'red_flag'>>
+        Update: Partial<Review>
+        Relationships: []
+      }
+      job_invites: {
+        Row: WithIndex<JobInvite>
+        Insert: Omit<JobInvite, 'id' | 'sent_at' | 'expires_at' | 'status' | 'invite_token'> & Partial<Pick<JobInvite, 'id' | 'sent_at' | 'expires_at' | 'status' | 'invite_token'>>
+        Update: Partial<JobInvite>
+        Relationships: []
+      }
+      notifications: {
+        Row: WithIndex<Notification>
+        Insert: Omit<Notification, 'id' | 'created_at' | 'is_read'> & Partial<Pick<Notification, 'id' | 'created_at' | 'is_read'>>
+        Update: Partial<Notification>
         Relationships: []
       }
     }

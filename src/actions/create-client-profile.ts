@@ -62,7 +62,7 @@ export async function createClientProfile(
 
   const { error: updateError } = await admin
     .from('users')
-    .update({ user_type: 'client', client_type: 'individual' })
+    .update({ user_type: 'client_individual', client_type: 'individual' })
     .eq('id', user.id)
 
   if (updateError) {

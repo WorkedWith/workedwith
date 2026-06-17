@@ -286,7 +286,7 @@ export async function verifyCompany(
   await admin
     .from('users')
     .update({
-      user_type: 'client',
+      user_type: 'client_business',
       client_type: 'business',
       organisation_id: newOrg.id,
     })

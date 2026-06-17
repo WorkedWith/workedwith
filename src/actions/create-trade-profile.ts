@@ -87,7 +87,7 @@ export async function createTradeProfile(
   const { data: existingUsername } = await admin
     .from('trade_profiles')
     .select('*')
-    .eq('username', username)
+    .eq('public_slug', username)
     .maybeSingle()
 
   if (existingUsername) {
@@ -96,10 +96,10 @@ export async function createTradeProfile(
 
   const { error: insertError } = await admin.from('trade_profiles').insert({
     user_id: user.id,
-    trade_type,
+    trade_types: [trade_type],
     company_name: company_name || null,
     postcode,
-    username,
+    public_slug: username,
     bio: bio || null,
   })
 
@@ -112,7 +112,7 @@ export async function createTradeProfile(
 
   const { error: updateError } = await admin
     .from('users')
-    .update({ user_type: 'tradesperson' })
+    .update({ user_type: 'trade' })
     .eq('id', user.id)
 
   if (updateError) {
