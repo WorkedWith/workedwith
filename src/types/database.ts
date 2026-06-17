@@ -248,6 +248,20 @@ export interface Notification {
   created_at: string
 }
 
+// ── Search audit ─────────────────────────────────────────────
+
+export type SearchAuditResult = 'match_found' | 'no_match' | 'rate_limited'
+
+export interface SearchAuditLog {
+  id: string
+  searcher_id: string | null
+  search_type: string | null
+  identifier_hash: string | null
+  result: SearchAuditResult | null
+  searched_at: string
+  ip_address: string | null
+}
+
 // ── Supabase Database type ────────────────────────────────────
 // TypeScript interfaces don't satisfy Record<string, unknown> in conditional
 // type checks (no implicit index signature). WithIndex<T> adds one while
@@ -332,6 +346,13 @@ export interface Database {
         // All columns are nullable or have DB defaults
         Insert: Partial<Notification>
         Update: Partial<Notification>
+        Relationships: []
+      }
+      search_audit_log: {
+        Row: WithIndex<SearchAuditLog>
+        // All columns nullable or have DB defaults
+        Insert: Partial<SearchAuditLog>
+        Update: Partial<SearchAuditLog>
         Relationships: []
       }
     }
