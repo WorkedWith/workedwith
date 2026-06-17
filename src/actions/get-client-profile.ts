@@ -4,6 +4,7 @@ import { createHash } from 'crypto'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getUserTier, isPaidTier } from '@/lib/stripe/get-tier'
 import type { VerificationTier } from '@/types/database'
 
 // ── Types ─────────────────────────────────────────────────────
@@ -70,15 +71,8 @@ export async function getClientProfile(identifier: string): Promise<ClientProfil
     return { status: 'unauthorized' }
   }
 
-  // Determine subscription tier
-  const { data: tradeProfile } = await admin
-    .from('trade_profiles')
-    .select('*')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  const tier = tradeProfile?.subscription_tier ?? 'free'
-  const isPro = tier === 'pro' || tier === 'team'
+  const tier = await getUserTier(user.id)
+  const isPro = isPaidTier(tier)
 
   // IP address for audit log (synchronous in Next.js 14)
   const h = headers()
