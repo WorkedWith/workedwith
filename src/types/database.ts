@@ -200,9 +200,51 @@ export interface Review {
   is_backdated: boolean
   submitted_at: string
   is_visible: boolean
+  dispute_status: DisputeStatus
   response_text: string | null
   response_submitted_at: string | null
   created_at: string
+}
+
+// ── Disputes ──────────────────────────────────────────────────
+
+export type DisputeReason =
+  | 'job_did_not_happen'
+  | 'factually_incorrect'
+  | 'defamatory'
+  | 'wrong_person'
+  | 'other'
+
+export type AdminDecision =
+  | 'pending'
+  | 'review_kept'
+  | 'review_removed'
+  | 'review_amended'
+
+export type DisputeStatus =
+  | 'none'
+  | 'open'
+  | 'resolved_kept'
+  | 'resolved_removed'
+  | 'resolved_amended'
+
+export interface Dispute {
+  id: string
+  review_id: string
+  raised_by: string
+  reason: DisputeReason
+  details: string
+  raised_at: string
+  evidence_deadline: string
+  respondent_id: string
+  respondent_evidence: string | null
+  respondent_submitted_at: string | null
+  admin_decision: AdminDecision
+  admin_decision_at: string | null
+  admin_decision_by: string | null
+  admin_notes: string | null
+  decision_deadline: string
+  notified_at: string | null
 }
 
 export type JobInviteStatus = 'pending' | 'accepted' | 'declined' | 'expired'
@@ -353,6 +395,13 @@ export interface Database {
         // All columns nullable or have DB defaults
         Insert: Partial<SearchAuditLog>
         Update: Partial<SearchAuditLog>
+        Relationships: []
+      }
+      disputes: {
+        Row: WithIndex<Dispute>
+        // review_id, raised_by, reason, details, respondent_id are NOT NULL without defaults
+        Insert: { review_id: string; raised_by: string; reason: DisputeReason; details: string; respondent_id: string } & Partial<Omit<Dispute, 'review_id' | 'raised_by' | 'reason' | 'details' | 'respondent_id'>>
+        Update: Partial<Dispute>
         Relationships: []
       }
     }

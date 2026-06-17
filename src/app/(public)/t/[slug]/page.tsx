@@ -233,6 +233,7 @@ export default async function TradeProfilePage({ params }: Props) {
                   const wha = review.would_work_again as boolean | null
                   const submittedAt = review.submitted_at as string
                   const isBackdated = review.is_backdated as boolean
+                  const disputeStatus = review.dispute_status as string | null | undefined
 
                   return (
                     <article
@@ -262,6 +263,11 @@ export default async function TradeProfilePage({ params }: Props) {
                         {isBackdated && (
                           <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
                             Verified past job
+                          </span>
+                        )}
+                        {disputeStatus === 'open' && (
+                          <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+                            Under dispute
                           </span>
                         )}
                       </div>
