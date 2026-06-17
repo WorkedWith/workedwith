@@ -15,7 +15,7 @@ export async function completeJob(formData: FormData): Promise<void> {
   const admin = createAdminClient()
 
   const { data: job } = await admin.from('jobs').select('*').eq('id', jobId).single()
-  if (!job) redirect('/dashboard')
+  if (!job || !job.trade_profile_id) redirect('/dashboard')
 
   // Verify caller owns the trade profile for this job
   const { data: tradeProfile } = await admin

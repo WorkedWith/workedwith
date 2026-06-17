@@ -7,7 +7,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // ── Types ─────────────────────────────────────────────────────
 
 export type ConfirmJobResult =
-  | { success: true; tradePersonName: string }
+  | { success: true; tradePersonName: string; isBackdated: boolean; jobId: string }
   | {
       success: false
       error: string
@@ -21,7 +21,7 @@ export type ConfirmJobResult =
         | 'server_error'
     }
 
-// ── Email template ────────────────────────────────────────────
+// ── Email templates ───────────────────────────────────────────
 
 function emailShell(body: string): string {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/></head>
@@ -61,6 +61,19 @@ function jobConfirmedHtml(p: { clientName: string; jobType: string; postcode: st
   `)
 }
 
+function reviewRequestHtml(p: { otherPartyName: string; jobType: string; backdatedPeriod: string; jobUrl: string }): string {
+  return emailShell(`
+    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">Leave your review now</h1>
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
+      Your past <strong>${p.jobType}</strong> job in <strong>${p.backdatedPeriod}</strong> with <strong>${p.otherPartyName}</strong> has been confirmed on WorkedWith.
+    </p>
+    <p style="margin:0 0 16px;font-size:14px;color:#6B7280;line-height:1.6;">
+      You now both have 30 days to leave your reviews. Reviews are published together once both sides are submitted.
+    </p>
+    ${cta('Leave your review', p.jobUrl)}
+  `)
+}
+
 // ── Action ────────────────────────────────────────────────────
 
 export async function confirmJob(token: string): Promise<ConfirmJobResult> {
@@ -70,7 +83,6 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
 
   const admin = createAdminClient()
 
-  // Look up the invite
   const { data: invite } = await admin
     .from('job_invites')
     .select('*')
@@ -86,10 +98,9 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
   }
 
   if (new Date(invite.expires_at) < new Date()) {
-    return { success: false, error: 'This invitation has expired. Please ask the tradesperson to send a new invite.', code: 'expired' }
+    return { success: false, error: 'This invitation has expired. Please ask the other party to send a new invite.', code: 'expired' }
   }
 
-  // Require authenticated, phone-verified user
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -103,36 +114,101 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
     return { success: false, error: 'Phone verification is required before confirming a job.', code: 'unverified' }
   }
 
-  // Confirming user needs a client profile
-  const { data: clientProfile } = await admin
-    .from('client_profiles')
-    .select('*')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  if (!clientProfile) {
-    return {
-      success: false,
-      error: 'You need a client profile to confirm a job. Please complete your client onboarding first.',
-      code: 'no_profile',
-    }
-  }
-
-  // Fetch the job
   const { data: job } = await admin.from('jobs').select('*').eq('id', invite.job_id).single()
   if (!job) {
     return { success: false, error: 'Job not found.', code: 'invalid' }
   }
 
-  const now = new Date().toISOString()
+  // Determine direction: client-initiated = tradesperson is confirming
+  const isClientInitiated = job.initiated_by === 'client'
 
-  // Confirm — set job active, link client profile, mark invite accepted
+  // Track both parties for post-confirm notifications
+  let tradeProfileId = job.trade_profile_id
+  let clientProfileId = job.client_profile_id
+  let tradeName = 'the tradesperson'
+  let tradeUserId: string | null = null
+  let tradeEmail: string | null = null
+  let clientName = 'the client'
+  let clientUserId: string | null = null
+  let clientEmail: string | null = null
+
+  if (isClientInitiated) {
+    const { data: tradeProfile } = await admin
+      .from('trade_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (!tradeProfile) {
+      return {
+        success: false,
+        error: 'You need a trade profile to confirm this job. Please complete your trade onboarding first.',
+        code: 'no_profile',
+      }
+    }
+
+    tradeProfileId = tradeProfile.id
+    tradeName = tradeProfile.company_name ?? userData.full_name
+    tradeUserId = user.id
+    tradeEmail = userData.email
+
+    if (job.client_profile_id) {
+      const { data: cp } = await admin.from('client_profiles').select('*').eq('id', job.client_profile_id).single()
+      if (cp?.user_id) {
+        const { data: cu } = await admin.from('users').select('*').eq('id', cp.user_id).single()
+        if (cu) {
+          clientUserId = cu.id
+          clientEmail = cu.email
+          clientName = cp.display_name ?? cu.full_name
+        }
+      }
+    }
+  } else {
+    const { data: clientProfile } = await admin
+      .from('client_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (!clientProfile) {
+      return {
+        success: false,
+        error: 'You need a client profile to confirm a job. Please complete your client onboarding first.',
+        code: 'no_profile',
+      }
+    }
+
+    clientProfileId = clientProfile.id
+    clientName = userData.full_name
+    clientUserId = user.id
+    clientEmail = userData.email
+
+    if (job.trade_profile_id) {
+      const { data: tp } = await admin.from('trade_profiles').select('*').eq('id', job.trade_profile_id).single()
+      if (tp?.user_id) {
+        const { data: tu } = await admin.from('users').select('*').eq('id', tp.user_id).single()
+        if (tu) {
+          tradeUserId = tu.id
+          tradeEmail = tu.email
+          tradeName = tp.company_name ?? tu.full_name
+        }
+      }
+    }
+  }
+
+  const nowDate = new Date()
+  const now = nowDate.toISOString()
+  const today = now.split('T')[0]
+  const newStatus = job.is_backdated ? 'completed' : 'active'
+
   const [{ error: jobErr }] = await Promise.all([
     admin.from('jobs').update({
-      status: 'active',
+      status: newStatus,
       confirmed_at: now,
-      client_profile_id: clientProfile.id,
       updated_at: now,
+      trade_profile_id: tradeProfileId,
+      client_profile_id: clientProfileId,
+      ...(job.is_backdated ? { completed_at: today } : {}),
     }).eq('id', job.id),
     admin.from('job_invites').update({
       status: 'accepted',
@@ -144,47 +220,98 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
     return { success: false, error: 'Failed to confirm the job. Please try again.', code: 'server_error' }
   }
 
-  // Fetch trade profile + owner for notification + email
-  const { data: tradeProfile } = await admin
-    .from('trade_profiles')
-    .select('*')
-    .eq('id', job.trade_profile_id)
-    .single()
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  const jobUrl = `https://workedwith.co.uk/jobs/${job.id}`
 
-  const { data: tradeUser } = tradeProfile
-    ? await admin.from('users').select('*').eq('id', tradeProfile.user_id).single()
-    : { data: null }
+  if (job.is_backdated) {
+    const windowCloses = new Date(nowDate.getTime() + 30 * 24 * 60 * 60 * 1000)
 
-  const tradeName = tradeProfile?.company_name ?? tradeUser?.full_name ?? 'the tradesperson'
-  const clientName = userData.full_name
+    await admin.from('review_windows').insert({
+      job_id: job.id,
+      window_opened_at: now,
+      window_closes_at: windowCloses.toISOString(),
+    })
 
-  if (tradeUser) {
-    const jobUrl = `https://workedwith.co.uk/jobs/${job.id}`
-    const resend = new Resend(process.env.RESEND_API_KEY)
+    const reviewPromises: PromiseLike<unknown>[] = []
 
-    await Promise.all([
-      // In-app notification
-      admin.from('notifications').insert({
-        user_id: tradeUser.id,
-        type: 'job_confirmed',
-        title: 'Job confirmed',
-        body: `${clientName} has confirmed your ${job.job_type} job.`,
-        link: `/jobs/${job.id}`,
-      }),
-      // Email to tradesperson
-      resend.emails.send({
-        from: 'WorkedWith <hello@workedwith.co.uk>',
-        to: tradeUser.email,
-        subject: `${clientName} has confirmed your job on WorkedWith`,
-        html: jobConfirmedHtml({
-          clientName,
-          jobType: job.job_type,
-          postcode: job.postcode ?? '',
-          jobUrl,
+    if (tradeUserId) {
+      reviewPromises.push(
+        admin.from('notifications').insert({
+          user_id: tradeUserId,
+          type: 'review_window_opened',
+          title: 'Past job confirmed — leave your review',
+          body: `Your ${job.job_type} job in ${job.backdated_period ?? 'the past'} with ${clientName} has been confirmed.`,
+          link: `/jobs/${job.id}`,
+        })
+      )
+    }
+    if (tradeEmail) {
+      reviewPromises.push(
+        resend.emails.send({
+          from: 'WorkedWith <hello@workedwith.co.uk>',
+          to: tradeEmail,
+          subject: `${clientName} confirmed your past job — leave your reviews now`,
+          html: reviewRequestHtml({
+            otherPartyName: clientName,
+            jobType: job.job_type,
+            backdatedPeriod: job.backdated_period ?? '',
+            jobUrl,
+          }),
+        })
+      )
+    }
+
+    if (clientUserId) {
+      reviewPromises.push(
+        admin.from('notifications').insert({
+          user_id: clientUserId,
+          type: 'review_window_opened',
+          title: 'Past job confirmed — leave your review',
+          body: `Your ${job.job_type} job in ${job.backdated_period ?? 'the past'} with ${tradeName} has been confirmed.`,
+          link: `/jobs/${job.id}`,
+        })
+      )
+    }
+    if (clientEmail) {
+      reviewPromises.push(
+        resend.emails.send({
+          from: 'WorkedWith <hello@workedwith.co.uk>',
+          to: clientEmail,
+          subject: `${tradeName} confirmed your past job — leave your reviews now`,
+          html: reviewRequestHtml({
+            otherPartyName: tradeName,
+            jobType: job.job_type,
+            backdatedPeriod: job.backdated_period ?? '',
+            jobUrl,
+          }),
+        })
+      )
+    }
+
+    await Promise.all(reviewPromises)
+  } else {
+    // Live job: notify trade that client has confirmed
+    if (tradeUserId) {
+      await Promise.all([
+        admin.from('notifications').insert({
+          user_id: tradeUserId,
+          type: 'job_confirmed',
+          title: 'Job confirmed',
+          body: `${clientName} has confirmed your ${job.job_type} job.`,
+          link: `/jobs/${job.id}`,
         }),
-      }),
-    ])
+        ...(tradeEmail
+          ? [resend.emails.send({
+              from: 'WorkedWith <hello@workedwith.co.uk>',
+              to: tradeEmail,
+              subject: `${clientName} has confirmed your job on WorkedWith`,
+              html: jobConfirmedHtml({ clientName, jobType: job.job_type, postcode: job.postcode ?? '', jobUrl }),
+            })]
+          : []),
+      ])
+    }
   }
 
-  return { success: true, tradePersonName: tradeName }
+  const otherPartyName = isClientInitiated ? clientName : tradeName
+  return { success: true, tradePersonName: otherPartyName, isBackdated: job.is_backdated, jobId: job.id }
 }

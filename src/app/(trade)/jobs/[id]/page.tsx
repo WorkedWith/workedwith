@@ -41,7 +41,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   const admin = createAdminClient()
 
   const { data: job } = await admin.from('jobs').select('*').eq('id', id).single()
-  if (!job) redirect('/dashboard')
+  if (!job || !job.trade_profile_id) redirect('/dashboard')
 
   // Verify this user owns the trade profile
   const { data: tradeProfile } = await admin

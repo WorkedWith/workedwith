@@ -136,7 +136,7 @@ export type JobInitiatedBy = 'trade' | 'client'
 
 export interface Job {
   id: string
-  trade_profile_id: string
+  trade_profile_id: string | null
   client_profile_id: string | null
   initiated_by: JobInitiatedBy | null
   job_type: string
@@ -301,8 +301,8 @@ export interface Database {
       }
       jobs: {
         Row: WithIndex<Job>
-        // Only trade_profile_id and job_type are NOT NULL without defaults; everything else is nullable or has a DB default
-        Insert: { trade_profile_id: string; job_type: string } & Partial<Omit<Job, 'trade_profile_id' | 'job_type'>>
+        // job_type is the only NOT NULL column without a default; trade_profile_id is nullable for client-initiated backdated jobs
+        Insert: { job_type: string } & Partial<Omit<Job, 'job_type'>>
         Update: Partial<Job>
         Relationships: []
       }

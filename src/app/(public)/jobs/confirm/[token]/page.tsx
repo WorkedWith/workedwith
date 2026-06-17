@@ -46,7 +46,11 @@ function ErrorCard({ title, message, action }: {
   )
 }
 
-function SuccessCard({ tradePersonName }: { tradePersonName: string }) {
+function SuccessCard({ tradePersonName, isBackdated, jobId }: {
+  tradePersonName: string
+  isBackdated: boolean
+  jobId: string
+}) {
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 text-center">
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
@@ -54,15 +58,19 @@ function SuccessCard({ tradePersonName }: { tradePersonName: string }) {
           <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
         </svg>
       </div>
-      <h2 className="text-xl font-semibold text-brand-navy">Job confirmed</h2>
+      <h2 className="text-xl font-semibold text-brand-navy">
+        {isBackdated ? 'Past job confirmed' : 'Job confirmed'}
+      </h2>
       <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-        You&apos;ll be asked to review <span className="font-medium text-brand-navy">{tradePersonName}</span> once the job is complete.
+        {isBackdated
+          ? <>Check your email — you can both leave reviews for your job with <span className="font-medium text-brand-navy">{tradePersonName}</span> now.</>
+          : <>You&apos;ll be asked to review <span className="font-medium text-brand-navy">{tradePersonName}</span> once the job is complete.</>}
       </p>
       <a
-        href="/dashboard"
+        href={isBackdated ? `/jobs/${jobId}` : '/dashboard'}
         className="mt-6 inline-block w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy hover:opacity-90 transition-opacity"
       >
-        Go to dashboard
+        {isBackdated ? 'View job and leave reviews' : 'Go to dashboard'}
       </a>
     </div>
   )
@@ -72,7 +80,7 @@ const errorTitles: Record<string, string> = {
   invalid:           'Invalid invitation',
   expired:           'Invitation expired',
   already_confirmed: 'Already confirmed',
-  no_profile:        'Client profile needed',
+  no_profile:        'Profile needed',
   auth_required:     'Sign in required',
   unverified:        'Verification required',
   server_error:      'Something went wrong',
@@ -143,7 +151,11 @@ export default async function ConfirmJobPage({ params }: { params: { token: stri
   if (result.success) {
     return (
       <Shell>
-        <SuccessCard tradePersonName={result.tradePersonName} />
+        <SuccessCard
+          tradePersonName={result.tradePersonName}
+          isBackdated={result.isBackdated}
+          jobId={result.jobId}
+        />
       </Shell>
     )
   }
