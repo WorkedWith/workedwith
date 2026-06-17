@@ -235,6 +235,7 @@ export type NotificationType =
   | 'id_rejected'
   | 'subscription_updated'
   | 'red_flag_received'
+  | 'job_invite'
 
 export interface Notification {
   id: string
@@ -300,31 +301,36 @@ export interface Database {
       }
       jobs: {
         Row: WithIndex<Job>
-        Insert: Omit<Job, 'id' | 'created_at' | 'updated_at' | 'status' | 'is_backdated' | 'confirmation_token' | 'confirmation_expires_at'> & Partial<Pick<Job, 'id' | 'created_at' | 'updated_at' | 'status' | 'is_backdated' | 'confirmation_token' | 'confirmation_expires_at'>>
+        // Only trade_profile_id and job_type are NOT NULL without defaults; everything else is nullable or has a DB default
+        Insert: { trade_profile_id: string; job_type: string } & Partial<Omit<Job, 'trade_profile_id' | 'job_type'>>
         Update: Partial<Job>
         Relationships: []
       }
       review_windows: {
         Row: WithIndex<ReviewWindow>
-        Insert: Omit<ReviewWindow, 'id' | 'trade_review_submitted' | 'client_review_submitted' | 'window_opened_at'> & Partial<Pick<ReviewWindow, 'id' | 'trade_review_submitted' | 'client_review_submitted' | 'window_opened_at'>>
+        // job_id is the only NOT NULL column without a default
+        Insert: { job_id: string } & Partial<Omit<ReviewWindow, 'job_id'>>
         Update: Partial<ReviewWindow>
         Relationships: []
       }
       reviews: {
         Row: WithIndex<Review>
-        Insert: Omit<Review, 'id' | 'created_at' | 'submitted_at' | 'is_visible' | 'red_flag'> & Partial<Pick<Review, 'id' | 'created_at' | 'submitted_at' | 'is_visible' | 'red_flag'>>
+        // job_id, reviewer_id, reviewee_id are NOT NULL without defaults
+        Insert: { job_id: string; reviewer_id: string; reviewee_id: string } & Partial<Omit<Review, 'job_id' | 'reviewer_id' | 'reviewee_id'>>
         Update: Partial<Review>
         Relationships: []
       }
       job_invites: {
         Row: WithIndex<JobInvite>
-        Insert: Omit<JobInvite, 'id' | 'sent_at' | 'expires_at' | 'status' | 'invite_token'> & Partial<Pick<JobInvite, 'id' | 'sent_at' | 'expires_at' | 'status' | 'invite_token'>>
+        // job_id and inviter_id are NOT NULL without defaults
+        Insert: { job_id: string; inviter_id: string } & Partial<Omit<JobInvite, 'job_id' | 'inviter_id'>>
         Update: Partial<JobInvite>
         Relationships: []
       }
       notifications: {
         Row: WithIndex<Notification>
-        Insert: Omit<Notification, 'id' | 'created_at' | 'is_read'> & Partial<Pick<Notification, 'id' | 'created_at' | 'is_read'>>
+        // All columns are nullable or have DB defaults
+        Insert: Partial<Notification>
         Update: Partial<Notification>
         Relationships: []
       }
