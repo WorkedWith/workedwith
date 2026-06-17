@@ -176,6 +176,18 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             </p>
           </form>
         )}
+
+        {/* Leave review CTA */}
+        {status === 'completed' && reviewWindow && !reviewWindow.trade_review_submitted &&
+          reviewWindow.window_closes_at && new Date(reviewWindow.window_closes_at) > new Date() && (
+          <a
+            href={`/jobs/${job.id}/review`}
+            className="block w-full text-center rounded-xl bg-brand-amber px-6 py-4 text-base font-semibold text-brand-navy
+              hover:opacity-90 transition-opacity"
+          >
+            Leave your review
+          </a>
+        )}
       </div>
     </main>
   )
