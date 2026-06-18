@@ -15,6 +15,14 @@ export default async function LogJobPage() {
 
   if (!userData || userData.verification_tier === 'unverified') redirect('/verify/phone')
 
+  const { data: tradeProfile } = await admin
+    .from('trade_profiles')
+    .select('total_jobs')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const isFirstJob = (tradeProfile?.total_jobs ?? 0) === 0
+
   return (
     <main className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -24,7 +32,9 @@ export default async function LogJobPage() {
           </span>
           <h1 className="mt-4 text-2xl sm:text-3xl font-bold text-white">Log a job</h1>
           <p className="mt-2 text-sm text-white/60">
-            Invite your client to confirm the job — both parties can leave verified reviews once it&apos;s done.
+            {isFirstJob
+              ? 'Log your first job to start building your WorkedWith profile. Your client confirms it — then mutual reviews unlock once the job is done.'
+              : 'Invite your client to confirm the job — both parties can leave verified reviews once it\'s done.'}
           </p>
         </div>
         <LogJobForm />
