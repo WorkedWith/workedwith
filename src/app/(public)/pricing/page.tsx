@@ -58,7 +58,7 @@ export default function PricingPage() {
             <a href="/sign-in" className="min-h-[44px] flex items-center px-4 text-sm font-medium text-gray-600 hover:text-brand-navy transition-colors">
               Sign in
             </a>
-            <a href="/join/trade" className="min-h-[44px] flex items-center rounded-lg bg-brand-amber px-4 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors">
+            <a href="/join" className="min-h-[44px] flex items-center rounded-lg bg-brand-amber px-4 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors">
               Join free
             </a>
           </div>
@@ -95,7 +95,7 @@ export default function PricingPage() {
             </ul>
 
             <a
-              href="/join/trade"
+              href="/join"
               className="mt-8 flex min-h-[48px] items-center justify-center rounded-xl border-2 border-brand-navy px-6 text-sm font-semibold text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
             >
               Join free
@@ -111,7 +111,7 @@ export default function PricingPage() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-white/40">Pro</p>
               <div className="mt-3 flex items-end gap-1">
-                <span className="text-5xl font-bold text-white">£19</span>
+                <span className="text-5xl font-bold text-white">£9.99</span>
                 <span className="mb-1.5 text-sm text-white/50">per month</span>
               </div>
               <p className="mt-2 text-sm text-white/60">For tradespeople who want the full picture.</p>

@@ -127,7 +127,7 @@ export default async function SubscriptionPage() {
             />
             <TierCard
               name="Pro"
-              price="£19"
+              price="£9.99"
               period="per month"
               description="Full client lookup, searchable profile, and review responses."
               highlight={currentTier === 'pro'}
