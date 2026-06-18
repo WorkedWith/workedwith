@@ -27,7 +27,26 @@ export default function SignInPage() {
         return
       }
 
-      window.location.href = '/dashboard'
+      // Determine redirect based on user_type
+      const { data: { user: authedUser } } = await supabase.auth.getUser()
+      if (authedUser) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('user_type')
+          .eq('id', authedUser.id)
+          .maybeSingle()
+
+        const userType = userData?.user_type ?? null
+        if (userType === 'client_business') {
+          window.location.href = '/org/dashboard'
+        } else if (userType === null) {
+          window.location.href = '/join'
+        } else {
+          window.location.href = '/dashboard'
+        }
+      } else {
+        window.location.href = '/dashboard'
+      }
     })
   }
 

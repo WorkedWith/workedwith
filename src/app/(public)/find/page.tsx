@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { FindForm } from './find-form'
 import { searchTradespeople } from '@/actions/search-tradespeople'
 import type { TradesearchResult } from '@/actions/search-tradespeople'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Find a Tradesperson — WorkedWith',
@@ -17,6 +18,10 @@ export default async function FindPage({ searchParams }: PageProps) {
 
   const hasSearch = Boolean(trade && postcode)
   const radiusNum = Math.max(5, Math.min(50, parseInt(radius ?? '10', 10) || 10))
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const isAuthenticated = !!user
 
   let searchResult: Awaited<ReturnType<typeof searchTradespeople>> | null = null
   if (hasSearch) {
@@ -82,8 +87,8 @@ export default async function FindPage({ searchParams }: PageProps) {
           </div>
         )}
 
-        {/* Results list */}
-        {hasSearch && searchResult?.success && searchResult.results.length > 0 && (
+        {/* Results list (authenticated) */}
+        {hasSearch && searchResult?.success && searchResult.results.length > 0 && isAuthenticated && (
           <div className="space-y-4">
             <p className="text-sm text-gray-400">
               {searchResult.results.length} result{searchResult.results.length !== 1 ? 's' : ''} near {postcode?.toUpperCase()}
@@ -91,6 +96,29 @@ export default async function FindPage({ searchParams }: PageProps) {
             {searchResult.results.map(result => (
               <ResultCard key={result.id} result={result} />
             ))}
+          </div>
+        )}
+
+        {/* Auth gate — results found but user not signed in */}
+        {hasSearch && searchResult?.success && searchResult.results.length > 0 && !isAuthenticated && (
+          <div className="rounded-2xl border border-brand-amber/30 bg-amber-50 p-10 text-center">
+            <p className="text-3xl mb-4" aria-hidden>🔍</p>
+            <p className="text-lg font-bold text-brand-navy">
+              {searchResult.results.length} tradesperson{searchResult.results.length !== 1 ? 's' : ''} found near {postcode?.toUpperCase()}
+            </p>
+            <p className="mt-2 text-sm text-gray-500">
+              Create a free account to view tradespeople, their reviews, and contact details.
+            </p>
+            <a
+              href="/join/client/individual"
+              className="mt-6 inline-flex min-h-[48px] items-center rounded-xl bg-brand-amber px-6 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
+            >
+              Join free as a client
+            </a>
+            <p className="mt-4 text-xs text-gray-400">
+              Already have an account?{' '}
+              <a href="/sign-in" className="text-brand-amber hover:underline font-medium">Sign in</a>
+            </p>
           </div>
         )}
       </div>

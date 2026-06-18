@@ -1,5 +1,6 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -91,6 +92,10 @@ function newUserHtml(p: EmailParams): string {
 // ── Action ────────────────────────────────────────────────────
 
 export async function logJob(input: LogJobInput): Promise<LogJobResult> {
+  const h = await headers()
+  const logged_from_ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? h.get('x-real-ip') ?? null
+  const logged_from_user_agent = h.get('user-agent') ?? null
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'You must be signed in.' }
@@ -159,6 +164,8 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
       agreed_payment_terms_days: (agreed_payment_terms_days !== null && !isNaN(agreed_payment_terms_days))
         ? agreed_payment_terms_days
         : null,
+      logged_from_ip,
+      logged_from_user_agent,
     })
     .select('*')
     .single()

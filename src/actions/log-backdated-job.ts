@@ -1,5 +1,6 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -100,6 +101,10 @@ function newUserBackdatedHtml(p: BackdatedEmailParams): string {
 // ── Action ────────────────────────────────────────────────────
 
 export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogBackdatedJobResult> {
+  const h = await headers()
+  const logged_from_ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? h.get('x-real-ip') ?? null
+  const logged_from_user_agent = h.get('user-agent') ?? null
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'You must be signed in.' }
@@ -192,6 +197,8 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
       backdated_period,
       status: 'pending_confirmation',
       confirmation_expires_at: expiresAt.toISOString(),
+      logged_from_ip,
+      logged_from_user_agent,
     })
     .select('*')
     .single()

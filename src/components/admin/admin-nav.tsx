@@ -8,6 +8,7 @@ const links = [
   { href: '/admin/verification', label: 'Verification', icon: BadgeCheckIcon },
   { href: '/admin/disputes', label: 'Disputes', icon: ScaleIcon },
   { href: '/admin/flags', label: 'Flagged Reviews', icon: FlagIcon },
+  { href: '/admin/integrity', label: 'Integrity', icon: ShieldIcon },
   { href: '/admin/users', label: 'Users', icon: UsersIcon },
   { href: '/admin/search-audit', label: 'Search Audit', icon: SearchIcon },
 ]
@@ -106,6 +107,14 @@ export function AdminNav() {
 }
 
 // ── Icons ────────────────────────────────────────────────────
+
+function ShieldIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M9.661 2.237a.531.531 0 0 1 .678 0 11.947 11.947 0 0 0 7.078 2.749.75.75 0 0 1 .232.58 13.368 13.368 0 0 1-5.83 10.973.531.531 0 0 1-.618 0 13.368 13.368 0 0 1-5.83-10.973.75.75 0 0 1 .233-.581 11.947 11.947 0 0 0 7.057-2.748Zm4.261 4.16a.75.75 0 0 0-1.06-1.06l-3.094 3.093-1.422-1.422a.75.75 0 1 0-1.06 1.06l1.953 1.953a.75.75 0 0 0 1.06 0l3.623-3.623Z" clipRule="evenodd" />
+    </svg>
+  )
+}
 
 function GridIcon({ className }: { className?: string }) {
   return (

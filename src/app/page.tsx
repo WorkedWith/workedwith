@@ -1,4 +1,5 @@
 import { TRADE_TYPES } from '@/lib/trade-types'
+import { LandingNav } from '@/components/landing-nav'
 
 export const metadata = {
   title: "WorkedWith — Know who you're working with",
@@ -8,47 +9,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* ── Nav ─────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-100 px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <a href="/" className="text-xl font-bold tracking-tight text-brand-navy">
-            Worked<span className="text-brand-amber">With</span>
-          </a>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <a
-              href="/find"
-              className="hidden sm:flex min-h-[44px] items-center px-3 text-sm font-medium text-gray-600 hover:text-brand-navy transition-colors"
-            >
-              Find a tradesperson
-            </a>
-            <a
-              href="/sign-in"
-              className="min-h-[44px] flex items-center px-3 text-sm font-medium text-gray-600 hover:text-brand-navy transition-colors"
-            >
-              Sign in
-            </a>
-            {/* Desktop: two targeted CTAs */}
-            <a
-              href="/join/trade"
-              className="hidden sm:flex min-h-[44px] items-center px-3 text-sm font-medium text-brand-amber hover:underline transition-colors whitespace-nowrap"
-            >
-              I&apos;m a tradesperson
-            </a>
-            <a
-              href="/join/client"
-              className="hidden sm:flex min-h-[44px] items-center rounded-lg bg-brand-amber px-4 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors whitespace-nowrap"
-            >
-              I&apos;m a client
-            </a>
-            {/* Mobile: single button → intermediate page */}
-            <a
-              href="/join"
-              className="sm:hidden min-h-[44px] flex items-center rounded-lg bg-brand-amber px-4 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
-            >
-              Join free
-            </a>
-          </div>
-        </div>
-      </nav>
+      <LandingNav />
 
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative bg-brand-navy overflow-hidden px-4 py-28 sm:py-36 lg:py-44 sm:px-6">
@@ -143,7 +104,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ─────────────────────────────────────── */}
-      <section className="bg-gray-50 px-4 py-24 sm:py-32 sm:px-6">
+      <section id="how-it-works" className="bg-gray-50 px-4 py-24 sm:py-32 sm:px-6">
         <div className="mx-auto max-w-5xl">
           <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-brand-amber">
             How it works

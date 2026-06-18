@@ -153,8 +153,32 @@ export interface Job {
   confirmation_token: string | null
   confirmation_expires_at: string | null
   agreed_payment_terms_days: number | null
+  logged_from_ip: string | null
+  logged_from_user_agent: string | null
+  confirmed_from_ip: string | null
+  confirmed_from_user_agent: string | null
   created_at: string
   updated_at: string
+}
+
+export type IntegrityFlagType =
+  | 'same_ip_both_parties'
+  | 'same_device_both_parties'
+  | 'velocity_spike'
+  | 'postcode_distance_anomaly'
+  | 'new_accounts_both_parties'
+
+export type IntegrityFlagOutcome = 'pending' | 'dismissed' | 'actioned'
+
+export interface ReviewIntegrityFlag {
+  id: string
+  job_id: string | null
+  flag_type: IntegrityFlagType
+  details: string | null
+  flagged_at: string
+  reviewed_by: string | null
+  reviewed_at: string | null
+  outcome: IntegrityFlagOutcome
 }
 
 export interface ReviewWindow {
@@ -375,8 +399,14 @@ export interface Database {
       jobs: {
         Row: WithIndex<Job>
         // job_type is the only NOT NULL column without a default; trade_profile_id is nullable for client-initiated backdated jobs
-        Insert: { job_type: string } & Partial<Omit<Job, 'job_type'>>
+        Insert: { job_type: string } & Partial<Omit<Job, 'job_type' | 'id' | 'created_at' | 'updated_at'>>
         Update: Partial<Job>
+        Relationships: []
+      }
+      review_integrity_flags: {
+        Row: WithIndex<ReviewIntegrityFlag>
+        Insert: Partial<ReviewIntegrityFlag>
+        Update: Partial<ReviewIntegrityFlag>
         Relationships: []
       }
       review_windows: {
