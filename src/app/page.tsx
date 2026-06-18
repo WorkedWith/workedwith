@@ -165,7 +165,7 @@ export default function LandingPage() {
             <StepCard
               number="03"
               title="Leave mutual reviews"
-              body="Each party submits their review privately. Neither can see the other's until both have submitted. No retaliation. No gaming."
+              body="Each party submits their review privately. Neither can see what the other has written. Both reviews go live at the same time. Honest. Fair."
             />
           </div>
         </div>
@@ -238,8 +238,8 @@ export default function LandingPage() {
             />
             <TrustCard
               icon={<EyeIcon />}
-              title="Neither review visible until both submitted"
-              body="Neither review is visible until both parties have submitted."
+              title="Blind reviews"
+              body="Neither party can see the other's review until both are published. No retaliation. No gaming."
             />
             <TrustCard
               icon={<HandshakeIcon />}
@@ -268,6 +268,7 @@ export default function LandingPage() {
             <nav className="flex flex-wrap gap-x-6 gap-y-2">
               <a href="/find" className="text-sm text-white/50 hover:text-white transition-colors">Find a tradesperson</a>
               <a href="/pricing" className="text-sm text-white/50 hover:text-white transition-colors">Pricing</a>
+              <a href="/faq" className="text-sm text-white/50 hover:text-white transition-colors">FAQ</a>
               <a href="/join/trade" className="text-sm text-white/50 hover:text-white transition-colors">Join as Trade</a>
               <a href="/join/client" className="text-sm text-white/50 hover:text-white transition-colors">Join as Client</a>
               <a href="/sign-in" className="text-sm text-white/50 hover:text-white transition-colors">Sign in</a>

@@ -164,6 +164,7 @@ export interface ReviewWindow {
   client_review_submitted: boolean
   window_opened_at: string
   window_closes_at: string | null
+  blind_window_closes_at: string
   reminder_7_sent_at: string | null
   reminder_14_sent_at: string | null
   both_submitted_at: string | null
@@ -380,9 +381,9 @@ export interface Database {
       }
       review_windows: {
         Row: WithIndex<ReviewWindow>
-        // job_id is the only NOT NULL column without a default
-        Insert: { job_id: string } & Partial<Omit<ReviewWindow, 'job_id'>>
-        Update: Partial<ReviewWindow>
+        // job_id is NOT NULL without a default; blind_window_closes_at is GENERATED ALWAYS (cannot be set)
+        Insert: { job_id: string } & Partial<Omit<ReviewWindow, 'job_id' | 'blind_window_closes_at'>>
+        Update: Partial<Omit<ReviewWindow, 'blind_window_closes_at'>>
         Relationships: []
       }
       reviews: {
