@@ -77,44 +77,40 @@ export default function LandingPage() {
 
           {/* Quick search shortcut */}
           <div className="mt-14 border-t border-white/10 pt-10">
-            <p className="mb-4 text-sm font-medium text-white/50 uppercase tracking-widest">
+            <p className="mb-5 text-xs font-semibold uppercase tracking-widest text-white text-center">
               Or find a tradesperson now
             </p>
-            <form method="GET" action="/find" className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end sm:justify-center">
-              <div className="flex flex-col gap-1 text-left">
-                <label htmlFor="hero-trade" className="text-xs font-medium text-white/40">Trade type</label>
+            <div className="mx-auto max-w-2xl rounded-2xl bg-white/10 backdrop-blur-sm p-5 shadow-xl ring-1 ring-white/20">
+              <form method="GET" action="/find" className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <select
                   id="hero-trade"
                   name="trade"
                   required
-                  className="min-h-[44px] rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white focus:border-brand-amber focus:outline-none w-full sm:w-48"
+                  className="min-h-[48px] flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
                 >
-                  <option value="" disabled selected>Select a trade</option>
+                  <option value="" disabled selected>Select a trade type</option>
                   {TRADE_TYPES.map(t => (
-                    <option key={t} value={t} className="text-gray-900 bg-white">{t}</option>
+                    <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
-              </div>
-              <div className="flex flex-col gap-1 text-left">
-                <label htmlFor="hero-postcode" className="text-xs font-medium text-white/40">Postcode</label>
                 <input
                   id="hero-postcode"
                   name="postcode"
                   type="text"
                   required
-                  placeholder="e.g. SW1A 1AA"
+                  placeholder="Postcode"
                   autoComplete="postal-code"
-                  className="min-h-[44px] rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-brand-amber focus:outline-none uppercase w-full sm:w-36"
+                  className="min-h-[48px] sm:w-36 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-brand-navy placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber uppercase"
                 />
-              </div>
-              <input type="hidden" name="radius" value="10" />
-              <button
-                type="submit"
-                className="min-h-[44px] rounded-xl bg-white/15 border border-white/20 px-6 text-sm font-semibold text-white hover:bg-white/25 transition-colors"
-              >
-                Search
-              </button>
-            </form>
+                <input type="hidden" name="radius" value="10" />
+                <button
+                  type="submit"
+                  className="min-h-[48px] rounded-xl bg-brand-amber px-8 text-sm font-bold text-brand-navy hover:bg-amber-400 transition-colors"
+                >
+                  Search
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </section>

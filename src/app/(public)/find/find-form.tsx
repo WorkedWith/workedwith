@@ -30,63 +30,49 @@ export function FindForm({ defaultTrade = '', defaultPostcode = '', defaultRadiu
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div>
-          <label htmlFor="trade" className="block text-sm font-medium text-gray-700 mb-1.5">
-            Trade type
-          </label>
-          <select
-            id="trade"
-            name="trade"
-            required
-            defaultValue={defaultTrade}
-            className="w-full min-h-[44px] rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
-          >
-            <option value="" disabled>Select a trade</option>
-            {TRADE_TYPES.map(t => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <label htmlFor="trade" className="sr-only">Trade type</label>
+      <select
+        id="trade"
+        name="trade"
+        required
+        defaultValue={defaultTrade}
+        className="min-h-[48px] flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+      >
+        <option value="" disabled>Select a trade type</option>
+        {TRADE_TYPES.map(t => (
+          <option key={t} value={t}>{t}</option>
+        ))}
+      </select>
 
-        <div>
-          <label htmlFor="postcode" className="block text-sm font-medium text-gray-700 mb-1.5">
-            Your postcode
-          </label>
-          <input
-            id="postcode"
-            name="postcode"
-            type="text"
-            required
-            defaultValue={defaultPostcode}
-            placeholder="e.g. SW1A 1AA"
-            autoComplete="postal-code"
-            className="w-full min-h-[44px] rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber uppercase"
-          />
-        </div>
+      <label htmlFor="postcode" className="sr-only">Your postcode</label>
+      <input
+        id="postcode"
+        name="postcode"
+        type="text"
+        required
+        defaultValue={defaultPostcode}
+        placeholder="Postcode"
+        autoComplete="postal-code"
+        className="min-h-[48px] sm:w-36 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-brand-navy placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber uppercase"
+      />
 
-        <div>
-          <label htmlFor="radius" className="block text-sm font-medium text-gray-700 mb-1.5">
-            Within
-          </label>
-          <select
-            id="radius"
-            name="radius"
-            defaultValue={defaultRadius}
-            className="w-full min-h-[44px] rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
-          >
-            {RADII.map(r => (
-              <option key={r} value={r}>{r} miles</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <label htmlFor="radius" className="sr-only">Search radius</label>
+      <select
+        id="radius"
+        name="radius"
+        defaultValue={defaultRadius}
+        className="min-h-[48px] sm:w-32 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+      >
+        {RADII.map(r => (
+          <option key={r} value={r}>{r} miles</option>
+        ))}
+      </select>
 
       <button
         type="submit"
         disabled={isPending}
-        className="w-full sm:w-auto min-h-[48px] rounded-xl bg-brand-navy px-8 text-sm font-semibold text-white hover:bg-brand-navy/90 disabled:opacity-50 transition-colors"
+        className="min-h-[48px] rounded-xl bg-brand-amber px-8 text-sm font-bold text-brand-navy hover:bg-amber-400 disabled:opacity-50 transition-colors"
       >
         {isPending ? 'Searching…' : 'Search'}
       </button>
