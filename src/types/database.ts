@@ -411,9 +411,9 @@ export interface Database {
       }
       review_windows: {
         Row: WithIndex<ReviewWindow>
-        // job_id is NOT NULL without a default; blind_window_closes_at is GENERATED ALWAYS (cannot be set)
-        Insert: { job_id: string } & Partial<Omit<ReviewWindow, 'job_id' | 'blind_window_closes_at'>>
-        Update: Partial<Omit<ReviewWindow, 'blind_window_closes_at'>>
+        // job_id is NOT NULL without a default
+        Insert: { job_id: string } & Partial<Omit<ReviewWindow, 'job_id' | 'id'>>
+        Update: Partial<ReviewWindow>
         Relationships: []
       }
       reviews: {

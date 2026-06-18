@@ -367,11 +367,13 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
 
   if (job.is_backdated) {
     const windowCloses = new Date(nowDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+    const blindWindowCloses = new Date(nowDate.getTime() + 7 * 24 * 60 * 60 * 1000)
 
     await admin.from('review_windows').insert({
       job_id: job.id,
       window_opened_at: now,
       window_closes_at: windowCloses.toISOString(),
+      blind_window_closes_at: blindWindowCloses.toISOString(),
     })
 
     const reviewPromises: PromiseLike<unknown>[] = []

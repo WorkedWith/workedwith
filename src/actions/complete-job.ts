@@ -29,6 +29,7 @@ export async function completeJob(formData: FormData): Promise<void> {
 
   const now = new Date()
   const windowCloses = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+  const blindWindowCloses = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
   await admin.from('jobs').update({
     status: 'completed',
@@ -38,7 +39,9 @@ export async function completeJob(formData: FormData): Promise<void> {
 
   await admin.from('review_windows').insert({
     job_id: jobId,
+    window_opened_at: now.toISOString(),
     window_closes_at: windowCloses.toISOString(),
+    blind_window_closes_at: blindWindowCloses.toISOString(),
   })
 
   redirect(`/jobs/${jobId}`)
