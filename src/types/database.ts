@@ -26,6 +26,7 @@ export interface User {
   created_at: string
   stripe_customer_id: string | null
   organisation_id: string | null
+  is_admin: boolean
 }
 
 export interface TradeProfile {
@@ -304,6 +305,21 @@ export interface SearchAuditLog {
   ip_address: string | null
 }
 
+// ── Verification documents ────────────────────────────────────
+
+export type VerificationOutcome = 'pending' | 'approved' | 'rejected'
+
+export interface VerificationDocument {
+  id: string
+  user_id: string
+  storage_path: string
+  outcome: VerificationOutcome
+  submitted_at: string
+  reviewed_at: string | null
+  reviewed_by: string | null
+  rejection_reason: string | null
+}
+
 // ── Supabase Database type ────────────────────────────────────
 // TypeScript interfaces don't satisfy Record<string, unknown> in conditional
 // type checks (no implicit index signature). WithIndex<T> adds one while
@@ -315,7 +331,7 @@ export interface Database {
     Tables: {
       users: {
         Row: WithIndex<User>
-        Insert: Omit<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated'> & Partial<Pick<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated'>>
+        Insert: Omit<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated' | 'is_admin'> & Partial<Pick<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated' | 'is_admin'>>
         Update: Partial<User>
         Relationships: []
       }
@@ -402,6 +418,12 @@ export interface Database {
         // review_id, raised_by, reason, details, respondent_id are NOT NULL without defaults
         Insert: { review_id: string; raised_by: string; reason: DisputeReason; details: string; respondent_id: string } & Partial<Omit<Dispute, 'review_id' | 'raised_by' | 'reason' | 'details' | 'respondent_id'>>
         Update: Partial<Dispute>
+        Relationships: []
+      }
+      verification_documents: {
+        Row: WithIndex<VerificationDocument>
+        Insert: { user_id: string; storage_path: string } & Partial<Omit<VerificationDocument, 'user_id' | 'storage_path'>>
+        Update: Partial<VerificationDocument>
         Relationships: []
       }
     }
