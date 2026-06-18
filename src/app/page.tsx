@@ -1,3 +1,5 @@
+import { TRADE_TYPES } from '@/lib/trade-types'
+
 export const metadata = {
   title: "WorkedWith — Know who you're working with",
 }
@@ -12,6 +14,12 @@ export default function LandingPage() {
             Worked<span className="text-brand-amber">With</span>
           </a>
           <div className="flex items-center gap-3">
+            <a
+              href="/find"
+              className="hidden sm:flex min-h-[44px] items-center px-4 text-sm font-medium text-gray-600 hover:text-brand-navy transition-colors"
+            >
+              Find a tradesperson
+            </a>
             <a
               href="/sign-in"
               className="min-h-[44px] flex items-center px-4 text-sm font-medium text-gray-600 hover:text-brand-navy transition-colors"
@@ -50,7 +58,7 @@ export default function LandingPage() {
           </h1>
           <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-white/70 text-balance">
             Tradespeople review clients. Clients review tradespeople. Both reputations
-            are on the line — so everyone shows up properly.
+            are on the line. So everyone shows up properly.
           </p>
           <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <a
@@ -65,6 +73,48 @@ export default function LandingPage() {
             >
               Join as a Client
             </a>
+          </div>
+
+          {/* Quick search shortcut */}
+          <div className="mt-14 border-t border-white/10 pt-10">
+            <p className="mb-4 text-sm font-medium text-white/50 uppercase tracking-widest">
+              Or find a tradesperson now
+            </p>
+            <form method="GET" action="/find" className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end sm:justify-center">
+              <div className="flex flex-col gap-1 text-left">
+                <label htmlFor="hero-trade" className="text-xs font-medium text-white/40">Trade type</label>
+                <select
+                  id="hero-trade"
+                  name="trade"
+                  required
+                  className="min-h-[44px] rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white focus:border-brand-amber focus:outline-none w-full sm:w-48"
+                >
+                  <option value="" disabled selected>Select a trade</option>
+                  {TRADE_TYPES.map(t => (
+                    <option key={t} value={t} className="text-gray-900 bg-white">{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1 text-left">
+                <label htmlFor="hero-postcode" className="text-xs font-medium text-white/40">Postcode</label>
+                <input
+                  id="hero-postcode"
+                  name="postcode"
+                  type="text"
+                  required
+                  placeholder="e.g. SW1A 1AA"
+                  autoComplete="postal-code"
+                  className="min-h-[44px] rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-brand-amber focus:outline-none uppercase w-full sm:w-36"
+                />
+              </div>
+              <input type="hidden" name="radius" value="10" />
+              <button
+                type="submit"
+                className="min-h-[44px] rounded-xl bg-white/15 border border-white/20 px-6 text-sm font-semibold text-white hover:bg-white/25 transition-colors"
+              >
+                Search
+              </button>
+            </form>
           </div>
         </div>
       </section>
@@ -116,7 +166,7 @@ export default function LandingPage() {
               <h3 className="mt-3 text-2xl font-bold">Stop working blind.</h3>
               <ul className="mt-6 space-y-4">
                 <BulletPoint text="See a client's rating and payment history before you quote" />
-                <BulletPoint text="Build a verified work record you own — not locked to someone else's platform" />
+                <BulletPoint text="Build a verified work record you own. Not locked to someone else's platform." />
                 <BulletPoint text="Flag bad clients so other trades know what they're walking into" />
               </ul>
               <a
@@ -136,9 +186,9 @@ export default function LandingPage() {
                 Find tradespeople you can trust.
               </h3>
               <ul className="mt-6 space-y-4">
-                <BulletPoint text="Every review is verified — no fake five-stars, no anonymous complaints" dark />
-                <BulletPoint text="Tradespeople can see how you treat people — so the good ones want to work with you" dark />
-                <BulletPoint text="Both parties confirm the job before reviews are possible — no he said she said" dark />
+                <BulletPoint text="Every review is verified. No fake five-stars, no anonymous complaints." dark />
+                <BulletPoint text="Tradespeople can see how you treat people. The good ones want to work with you." dark />
+                <BulletPoint text="Both parties confirm the job before reviews are possible. No he said she said." dark />
               </ul>
               <a
                 href="/join/client"
@@ -193,6 +243,7 @@ export default function LandingPage() {
               <p className="mt-1 text-sm text-white/40">Know who you&apos;re working with.</p>
             </div>
             <nav className="flex flex-wrap gap-x-6 gap-y-2">
+              <a href="/find" className="text-sm text-white/50 hover:text-white transition-colors">Find a tradesperson</a>
               <a href="/pricing" className="text-sm text-white/50 hover:text-white transition-colors">Pricing</a>
               <a href="/join/trade" className="text-sm text-white/50 hover:text-white transition-colors">Join as Trade</a>
               <a href="/join/client" className="text-sm text-white/50 hover:text-white transition-colors">Join as Client</a>

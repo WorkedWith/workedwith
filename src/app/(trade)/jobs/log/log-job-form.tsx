@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { TRADE_TYPES } from '@/actions/create-trade-profile'
+import { TRADE_TYPES } from '@/lib/trade-types'
 import { logJob, type LogJobInput } from '@/actions/log-job'
 
 type FieldErrors = Partial<Record<keyof LogJobInput, string>>

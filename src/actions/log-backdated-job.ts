@@ -3,7 +3,7 @@
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { TRADE_TYPES } from './create-trade-profile'
+import { TRADE_TYPES } from '@/lib/trade-types'
 import type { JobInitiatedBy } from '@/types/database'
 
 // ── Types ─────────────────────────────────────────────────────

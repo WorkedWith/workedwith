@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { TRADE_TYPES, createTradeProfile, type CreateTradeProfileInput } from '@/actions/create-trade-profile'
+import { TRADE_TYPES } from '@/lib/trade-types'
+import { createTradeProfile, type CreateTradeProfileInput } from '@/actions/create-trade-profile'
 import { checkUsername } from '@/actions/check-username'
 
 type Step = 1 | 2

@@ -2,22 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { TRADE_TYPES } from '@/lib/trade-types'
 
-export const TRADE_TYPES = [
-  'Electrician',
-  'Plumber',
-  'Builder',
-  'Decorator',
-  'Joiner',
-  'Roofer',
-  'Gas Engineer',
-  'Plasterer',
-  'Tiler',
-  'Landscaper',
-  'Other',
-] as const
-
-export type TradeType = (typeof TRADE_TYPES)[number]
 
 export type CreateTradeProfileInput = {
   trade_type: string

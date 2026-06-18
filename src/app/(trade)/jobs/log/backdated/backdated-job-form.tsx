@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { TRADE_TYPES } from '@/actions/create-trade-profile'
+import { TRADE_TYPES } from '@/lib/trade-types'
 import { logBackdatedJob } from '@/actions/log-backdated-job'
 import type { JobInitiatedBy } from '@/types/database'
 
