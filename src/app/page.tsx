@@ -80,15 +80,19 @@ export default function LandingPage() {
             <p className="mb-5 text-xs font-semibold uppercase tracking-widest text-white text-center">
               Or find a tradesperson now
             </p>
-            <div className="mx-auto max-w-2xl rounded-2xl bg-white/10 backdrop-blur-sm p-5 shadow-xl ring-1 ring-white/20">
-              <form method="GET" action="/find" className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mx-auto max-w-3xl w-full rounded-2xl bg-white/10 backdrop-blur-sm p-5 shadow-xl ring-1 ring-white/20">
+              <form
+                method="GET"
+                action="/find"
+                className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1.5fr_1fr_auto] sm:items-center"
+              >
                 <select
                   id="hero-trade"
                   name="trade"
                   required
-                  className="min-h-[48px] flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+                  className="h-12 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
                 >
-                  <option value="" disabled selected>Select a trade type</option>
+                  <option value="" disabled>Select a trade type</option>
                   {TRADE_TYPES.map(t => (
                     <option key={t} value={t}>{t}</option>
                   ))}
@@ -100,12 +104,21 @@ export default function LandingPage() {
                   required
                   placeholder="Postcode"
                   autoComplete="postal-code"
-                  className="min-h-[48px] sm:w-36 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-brand-navy placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber uppercase"
+                  className="h-12 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-brand-navy placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber uppercase"
                 />
-                <input type="hidden" name="radius" value="10" />
+                <select
+                  name="radius"
+                  defaultValue="10"
+                  className="h-12 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+                >
+                  <option value="5">5 miles</option>
+                  <option value="10">10 miles</option>
+                  <option value="25">25 miles</option>
+                  <option value="50">50 miles</option>
+                </select>
                 <button
                   type="submit"
-                  className="min-h-[48px] rounded-xl bg-brand-amber px-8 text-sm font-bold text-brand-navy hover:bg-amber-400 transition-colors"
+                  className="h-12 w-full rounded-lg bg-brand-amber px-6 text-sm font-bold text-brand-navy whitespace-nowrap hover:bg-amber-400 transition-colors"
                 >
                   Search
                 </button>

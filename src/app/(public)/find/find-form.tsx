@@ -30,14 +30,17 @@ export function FindForm({ defaultTrade = '', defaultPostcode = '', defaultRadiu
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <form
+      onSubmit={handleSubmit}
+      className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1.5fr_1fr_auto] sm:items-center"
+    >
       <label htmlFor="trade" className="sr-only">Trade type</label>
       <select
         id="trade"
         name="trade"
         required
         defaultValue={defaultTrade}
-        className="min-h-[48px] flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+        className="h-12 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
       >
         <option value="" disabled>Select a trade type</option>
         {TRADE_TYPES.map(t => (
@@ -54,7 +57,7 @@ export function FindForm({ defaultTrade = '', defaultPostcode = '', defaultRadiu
         defaultValue={defaultPostcode}
         placeholder="Postcode"
         autoComplete="postal-code"
-        className="min-h-[48px] sm:w-36 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-brand-navy placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber uppercase"
+        className="h-12 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-brand-navy placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber uppercase"
       />
 
       <label htmlFor="radius" className="sr-only">Search radius</label>
@@ -62,7 +65,7 @@ export function FindForm({ defaultTrade = '', defaultPostcode = '', defaultRadiu
         id="radius"
         name="radius"
         defaultValue={defaultRadius}
-        className="min-h-[48px] sm:w-32 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+        className="h-12 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
       >
         {RADII.map(r => (
           <option key={r} value={r}>{r} miles</option>
@@ -72,7 +75,7 @@ export function FindForm({ defaultTrade = '', defaultPostcode = '', defaultRadiu
       <button
         type="submit"
         disabled={isPending}
-        className="min-h-[48px] rounded-xl bg-brand-amber px-8 text-sm font-bold text-brand-navy hover:bg-amber-400 disabled:opacity-50 transition-colors"
+        className="h-12 w-full rounded-lg bg-brand-amber px-6 text-sm font-bold text-brand-navy whitespace-nowrap hover:bg-amber-400 disabled:opacity-50 transition-colors"
       >
         {isPending ? 'Searching…' : 'Search'}
       </button>
