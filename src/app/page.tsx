@@ -46,12 +46,11 @@ export default function LandingPage() {
 
         <div className="relative mx-auto max-w-3xl text-center">
           <h1 className="text-5xl font-bold leading-[1.08] tracking-tight text-white sm:text-6xl lg:text-7xl text-balance">
-            Know who you&apos;re working with.
+            Reviews that work both ways.
           </h1>
           <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-white/70 text-balance">
-            The only platform where both the tradesperson and the client have a
-            reputation to protect. Mutual reviews. Verified identities. Real
-            accountability.
+            Tradespeople review clients. Clients review tradespeople. Both reputations
+            are on the line — so everyone shows up properly.
           </p>
           <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <a
@@ -83,17 +82,17 @@ export default function LandingPage() {
             <StepCard
               number="01"
               title="Log your job"
-              body="The tradesperson logs the job and invites the client to confirm it. Both parties know a review is coming before work begins."
+              body="The tradesperson logs the job and invites the client to confirm. Both parties know a review is coming before a single tool is picked up."
             />
             <StepCard
               number="02"
               title="Complete the work"
-              body="Jobs are completed with a verified work history that belongs to both parties — not a platform that can delete it."
+              body="Complete the work knowing your reputation is being built in real time. No surprises. No ambiguity."
             />
             <StepCard
               number="03"
               title="Leave mutual reviews"
-              body="Neither review is visible until both have been submitted. Honest. Fair. No gaming the system."
+              body="Each party submits their review privately. Neither can see the other's until both have submitted. No retaliation. No gaming."
             />
           </div>
         </div>
@@ -114,11 +113,11 @@ export default function LandingPage() {
               <p className="text-xs font-semibold uppercase tracking-widest text-white/40">
                 For Tradespeople
               </p>
-              <h3 className="mt-3 text-2xl font-bold">Your reputation, protected.</h3>
+              <h3 className="mt-3 text-2xl font-bold">Stop working blind.</h3>
               <ul className="mt-6 space-y-4">
-                <BulletPoint text="Vet clients before you commit — see their rating and review history" />
-                <BulletPoint text="Build a verified work history you own, not a platform that can take it away" />
-                <BulletPoint text="Warn trusted colleagues about problematic clients with red flags" />
+                <BulletPoint text="See a client's rating and payment history before you quote" />
+                <BulletPoint text="Build a verified work record you own — not locked to someone else's platform" />
+                <BulletPoint text="Flag bad clients so other trades know what they're walking into" />
               </ul>
               <a
                 href="/join/trade"
@@ -134,12 +133,12 @@ export default function LandingPage() {
                 For Clients
               </p>
               <h3 className="mt-3 text-2xl font-bold text-brand-navy">
-                Hire with confidence.
+                Find tradespeople you can trust.
               </h3>
               <ul className="mt-6 space-y-4">
-                <BulletPoint text="Find tradespeople with verified mutual reviews — not just curated five-stars" dark />
-                <BulletPoint text="Know your reputation matters too — tradespeople can see how you treat people" dark />
-                <BulletPoint text="Reduce disputes — both sides confirm the job before reviews are possible" dark />
+                <BulletPoint text="Every review is verified — no fake five-stars, no anonymous complaints" dark />
+                <BulletPoint text="Tradespeople can see how you treat people — so the good ones want to work with you" dark />
+                <BulletPoint text="Both parties confirm the job before reviews are possible — no he said she said" dark />
               </ul>
               <a
                 href="/join/client"
@@ -166,12 +165,12 @@ export default function LandingPage() {
             />
             <TrustCard
               icon={<EyeIcon />}
-              title="Blind submission"
+              title="Neither review visible until both submitted"
               body="Neither review is visible until both parties have submitted."
             />
             <TrustCard
               icon={<HandshakeIcon />}
-              title="Pre-commitment"
+              title="Both parties confirm the job first"
               body="Both parties confirm the job before reviews are possible. No ambiguity."
             />
             <TrustCard
