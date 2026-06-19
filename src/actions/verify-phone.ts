@@ -18,11 +18,23 @@ export type VerifyOTPResult =
 
 // ── Helpers ──────────────────────────────────────────────────
 
-function normalizeUKMobile(raw: string): string | null {
-  const cleaned = raw.replace(/[\s\-().]/g, '')
-  if (/^\+447\d{9}$/.test(cleaned)) return cleaned
-  if (/^07\d{9}$/.test(cleaned)) return '+44' + cleaned.slice(1)
-  return null
+function normaliseUKPhone(phone: string): string {
+  // Strip all spaces, dashes, brackets
+  const stripped = phone.replace(/[\s\-\(\)]/g, '')
+
+  // Already in E.164 format
+  if (stripped.startsWith('+44')) return stripped
+
+  // Starts with 0044
+  if (stripped.startsWith('0044')) return '+44' + stripped.slice(4)
+
+  // Starts with 07, 08, 01, 02 etc (UK local format)
+  if (stripped.startsWith('0')) return '+44' + stripped.slice(1)
+
+  // Starts with 7 (missing leading zero)
+  if (stripped.startsWith('7')) return '+44' + stripped
+
+  return stripped
 }
 
 function sha256(value: string): string {
@@ -46,10 +58,8 @@ export async function sendOTP(phone: string): Promise<SendOTPResult> {
   console.log('TWILIO_AUTH_TOKEN exists:', !!process.env.TWILIO_AUTH_TOKEN)
   console.log('TWILIO_VERIFY_SERVICE_SID exists:', !!process.env.TWILIO_VERIFY_SERVICE_SID)
 
-  const normalized = normalizeUKMobile(phone)
-  if (!normalized) {
-    return { success: false, error: 'Please enter a valid UK mobile number (e.g. 07700 900000).' }
-  }
+  const normalized = normaliseUKPhone(phone)
+  console.log('Normalised phone:', normalized)
 
   // Check deactivated identities — return a generic error to avoid info leakage
   const admin = createAdminClient()
@@ -79,10 +89,7 @@ export async function sendOTP(phone: string): Promise<SendOTPResult> {
 }
 
 export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPResult> {
-  const normalized = normalizeUKMobile(phone)
-  if (!normalized) {
-    return { success: false, error: 'Invalid phone number.' }
-  }
+  const normalized = normaliseUKPhone(phone)
 
   if (!/^\d{6}$/.test(code.trim())) {
     return { success: false, error: 'Please enter the 6-digit code.' }
