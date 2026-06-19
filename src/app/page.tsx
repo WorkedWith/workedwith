@@ -5,6 +5,21 @@ export const metadata = {
   title: "WorkedWith — Know who you're working with",
 }
 
+const SOCIAL_PROOF_TRADES = [
+  'Electricians', 'Plumbers', 'Builders', 'Joiners', 'Plasterers',
+  'Decorators', 'Roofers', 'Tilers', 'Landscapers', 'Gas Engineers',
+  'Carpenters', 'Bricklayers',
+]
+
+const COMPARISON_ROWS: { feature: string; ww: boolean; ca: boolean; gr: boolean }[] = [
+  { feature: 'Verified tradesperson reviews', ww: true,  ca: true,  gr: false },
+  { feature: 'Client reviews of tradespeople', ww: true,  ca: false, gr: false },
+  { feature: 'Both parties verified',          ww: true,  ca: false, gr: false },
+  { feature: 'Blind review submission',        ww: true,  ca: false, gr: false },
+  { feature: 'Pre-confirmed jobs',             ww: true,  ca: false, gr: false },
+  { feature: 'Client reputation profile',      ww: true,  ca: false, gr: false },
+]
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
@@ -12,8 +27,8 @@ export default function LandingPage() {
       <LandingNav />
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <section className="relative bg-brand-navy overflow-hidden px-4 py-28 sm:py-36 lg:py-44 sm:px-6">
-        {/* Dot-grid SVG overlay */}
+      <section className="relative bg-brand-navy overflow-hidden px-4 pt-28 pb-16 sm:pt-36 sm:pb-20 lg:pt-44 lg:pb-20 sm:px-6">
+        {/* Dot-grid SVG overlay — 15% opacity */}
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 h-full w-full"
@@ -21,7 +36,7 @@ export default function LandingPage() {
         >
           <defs>
             <pattern id="dot-grid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-              <circle cx="1" cy="1" r="1" fill="white" fillOpacity="0.06" />
+              <circle cx="1" cy="1" r="1" fill="white" fillOpacity="0.15" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#dot-grid)" />
@@ -29,7 +44,10 @@ export default function LandingPage() {
 
         <div className="relative mx-auto max-w-3xl text-center">
           <h1 className="text-5xl font-bold leading-[1.08] tracking-tight text-white sm:text-6xl lg:text-7xl text-balance">
-            Reviews that work both ways.
+            Reviews that work{' '}
+            <span style={{ textDecoration: 'underline', textDecorationColor: '#F59E0B', textUnderlineOffset: '6px' }}>
+              both ways
+            </span>.
           </h1>
           <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-white/70 text-balance">
             Tradespeople review clients. Clients review tradespeople. Both reputations
@@ -103,6 +121,25 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Trade type social proof bar ───────────────────────── */}
+      <section className="bg-gray-50 border-b border-gray-100 px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <p className="mb-5 text-center text-xs font-semibold uppercase tracking-widest text-gray-400">
+            Tradespeople on WorkedWith include
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {SOCIAL_PROOF_TRADES.map(trade => (
+              <span
+                key={trade}
+                className="rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium text-gray-600 shadow-sm"
+              >
+                {trade}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── How it works ─────────────────────────────────────── */}
       <section id="how-it-works" className="bg-gray-50 px-4 py-24 sm:py-32 sm:px-6">
         <div className="mx-auto max-w-5xl">
@@ -115,16 +152,19 @@ export default function LandingPage() {
           <div className="mt-14 grid gap-6 sm:grid-cols-3">
             <StepCard
               number="01"
+              icon={<ClipboardIcon />}
               title="Log your job"
               body="The tradesperson logs the job and invites the client to confirm. Both parties know a review is coming before a single tool is picked up."
             />
             <StepCard
               number="02"
+              icon={<WrenchIcon />}
               title="Complete the work"
               body="Complete the work knowing your reputation is being built in real time. No surprises. No ambiguity."
             />
             <StepCard
               number="03"
+              icon={<StarIcon />}
               title="Leave mutual reviews"
               body="Each party submits their review privately. Neither can see what the other has written. Both reviews go live at the same time. Honest. Fair."
             />
@@ -185,6 +225,49 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Competitor comparison ─────────────────────────────── */}
+      <section className="bg-white px-4 py-24 sm:py-32 sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-center text-3xl font-bold text-brand-navy sm:text-4xl">
+            How WorkedWith compares
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-base text-gray-500">
+            Most platforms only protect one side. WorkedWith is the only platform where both parties have a reputation to protect.
+          </p>
+
+          <div className="mt-12 overflow-x-auto rounded-xl shadow-sm border border-gray-200">
+            <table className="w-full min-w-[540px] border-collapse text-sm">
+              <thead>
+                <tr>
+                  <th className="bg-gray-50 px-6 py-4 text-left font-semibold text-gray-600 w-1/2">
+                    Feature
+                  </th>
+                  <th className="bg-brand-amber px-6 py-4 text-center font-bold text-brand-navy">
+                    WorkedWith
+                  </th>
+                  <th className="bg-gray-50 px-6 py-4 text-center font-semibold text-gray-500">
+                    Checkatrade
+                  </th>
+                  <th className="bg-gray-50 px-6 py-4 text-center font-semibold text-gray-500">
+                    Google Reviews
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARISON_ROWS.map((row, i) => (
+                  <tr key={row.feature} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="px-6 py-4 text-gray-700 font-medium">{row.feature}</td>
+                    <td className="px-6 py-4 text-center text-lg">{row.ww ? '✅' : '❌'}</td>
+                    <td className="px-6 py-4 text-center text-lg">{row.ca ? '✅' : '❌'}</td>
+                    <td className="px-6 py-4 text-center text-lg">{row.gr ? '✅' : '❌'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       {/* ── Trust signals ────────────────────────────────────── */}
       <section className="px-4 py-24 sm:py-32 sm:px-6" style={{ backgroundColor: '#F3F4F6' }}>
         <div className="mx-auto max-w-5xl">
@@ -224,7 +307,7 @@ export default function LandingPage() {
               <p className="text-xl font-bold text-white">
                 Worked<span className="text-brand-amber">With</span>
               </p>
-              <p className="mt-1 text-sm text-white/40">Know who you&apos;re working with.</p>
+              <p className="mt-1 text-sm font-medium text-white/50">Know who you&apos;re working with.</p>
             </div>
             <nav className="flex flex-wrap gap-x-6 gap-y-2">
               <a href="/find" className="text-sm text-white/50 hover:text-white transition-colors">Find a tradesperson</a>
@@ -246,7 +329,7 @@ export default function LandingPage() {
 
 // ── Sub-components ────────────────────────────────────────────
 
-function StepCard({ number, title, body }: { number: string; title: string; body: string }) {
+function StepCard({ number, icon, title, body }: { number: string; icon: React.ReactNode; title: string; body: string }) {
   return (
     <div
       className="relative rounded-2xl bg-white border border-gray-200 border-l-[3px] p-8 shadow-sm hover:shadow-lg transition-shadow duration-200"
@@ -255,7 +338,8 @@ function StepCard({ number, title, body }: { number: string; title: string; body
       <span className="block text-7xl font-black leading-none select-none" style={{ color: 'rgba(245,158,11,0.18)' }}>
         {number}
       </span>
-      <h3 className="mt-4 text-lg font-semibold text-brand-navy">{title}</h3>
+      <div className="mt-4 text-brand-amber">{icon}</div>
+      <h3 className="mt-3 text-lg font-semibold text-brand-navy">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-gray-500">{body}</p>
     </div>
   )
@@ -290,7 +374,35 @@ function TrustCard({
   )
 }
 
-// ── Icons ─────────────────────────────────────────────────────
+// ── Step icons ────────────────────────────────────────────────
+
+function ClipboardIcon() {
+  return (
+    <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-2" />
+      <rect x="9" y="1" width="6" height="4" rx="1" />
+      <path d="M9 12h6M9 16h4" />
+    </svg>
+  )
+}
+
+function WrenchIcon() {
+  return (
+    <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    </svg>
+  )
+}
+
+function StarIcon() {
+  return (
+    <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  )
+}
+
+// ── Trust card icons ──────────────────────────────────────────
 
 function ShieldIcon() {
   return (
