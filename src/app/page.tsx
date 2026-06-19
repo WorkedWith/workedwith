@@ -141,7 +141,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ─────────────────────────────────────── */}
-      <section id="how-it-works" className="bg-gray-50 px-4 py-24 sm:py-32 sm:px-6">
+      <section id="how-it-works" className="bg-gray-50 px-4 pt-20 pb-16 sm:pb-20 sm:px-6">
         <div className="mx-auto max-w-5xl">
           <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-brand-amber">
             How it works
@@ -173,7 +173,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Two-sided value ───────────────────────────────────── */}
-      <section className="px-4 py-24 sm:py-32 sm:px-6">
+      <section className="px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-5xl">
           <h2 className="text-center text-3xl font-bold text-brand-navy sm:text-4xl">
             Built for both sides
@@ -226,7 +226,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Competitor comparison ─────────────────────────────── */}
-      <section className="bg-white px-4 py-24 sm:py-32 sm:px-6">
+      <section className="bg-white px-4 py-16 sm:py-20 sm:px-6">
         <div className="mx-auto max-w-4xl">
           <h2 className="text-center text-3xl font-bold text-brand-navy sm:text-4xl">
             How WorkedWith compares
@@ -269,7 +269,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Trust signals ────────────────────────────────────── */}
-      <section className="px-4 py-24 sm:py-32 sm:px-6" style={{ backgroundColor: '#F3F4F6' }}>
+      <section className="px-4 py-20 sm:py-24 sm:px-6" style={{ backgroundColor: '#F3F4F6' }}>
         <div className="mx-auto max-w-5xl">
           <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-brand-amber mb-12">
             Why WorkedWith
@@ -364,11 +364,11 @@ function TrustCard({
   body: string
 }) {
   return (
-    <div className="rounded-2xl bg-white border border-gray-200 p-6 shadow-sm">
-      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-navy/5">
+    <div className="rounded-2xl bg-gray-50 border border-gray-200 border-t-2 border-t-brand-amber p-8 shadow-sm">
+      <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-brand-navy/5">
         {icon}
       </div>
-      <p className="font-semibold text-brand-navy">{title}</p>
+      <p className="font-bold text-base text-brand-navy">{title}</p>
       <p className="mt-2 text-sm leading-relaxed text-gray-500">{body}</p>
     </div>
   )
@@ -406,7 +406,7 @@ function StarIcon() {
 
 function ShieldIcon() {
   return (
-    <svg className="h-5 w-5 text-brand-navy" viewBox="0 0 20 20" fill="currentColor">
+    <svg className="h-7 w-7 text-brand-navy" viewBox="0 0 20 20" fill="currentColor">
       <path fillRule="evenodd" d="M9.661 2.237a.531.531 0 0 1 .678 0 11.947 11.947 0 0 0 7.078 2.749.75.75 0 0 1 .232.58 13.368 13.368 0 0 1-5.83 10.973.531.531 0 0 1-.618 0 13.368 13.368 0 0 1-5.83-10.973.75.75 0 0 1 .233-.581 11.947 11.947 0 0 0 7.057-2.748Zm4.261 4.16a.75.75 0 0 0-1.06-1.06l-3.094 3.093-1.422-1.422a.75.75 0 1 0-1.06 1.06l1.953 1.953a.75.75 0 0 0 1.06 0l3.623-3.623Z" clipRule="evenodd" />
     </svg>
   )
@@ -414,7 +414,7 @@ function ShieldIcon() {
 
 function EyeIcon() {
   return (
-    <svg className="h-5 w-5 text-brand-navy" viewBox="0 0 20 20" fill="currentColor">
+    <svg className="h-7 w-7 text-brand-navy" viewBox="0 0 20 20" fill="currentColor">
       <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
       <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clipRule="evenodd" />
     </svg>
@@ -423,7 +423,7 @@ function EyeIcon() {
 
 function HandshakeIcon() {
   return (
-    <svg className="h-5 w-5 text-brand-navy" viewBox="0 0 20 20" fill="currentColor">
+    <svg className="h-7 w-7 text-brand-navy" viewBox="0 0 20 20" fill="currentColor">
       <path d="M10 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
       <path fillRule="evenodd" d="M4.172 4.172a4 4 0 0 1 5.656 0L10 4.343l.172-.171a4 4 0 1 1 5.656 5.656L10 16.657l-5.828-5.829a4 4 0 0 1 0-5.656Zm1.414 1.414a2 2 0 0 0 0 2.828l4.414 4.414 4.414-4.414a2 2 0 1 0-2.828-2.828L10 6.757l-1.586-1.585a2 2 0 0 0-2.828 0Z" clipRule="evenodd" />
     </svg>
@@ -432,7 +432,7 @@ function HandshakeIcon() {
 
 function FlagIcon() {
   return (
-    <svg className="h-5 w-5 text-brand-navy" viewBox="0 0 20 20" fill="currentColor">
+    <svg className="h-7 w-7 text-brand-navy" viewBox="0 0 20 20" fill="currentColor">
       <path d="M3.5 2.75a.75.75 0 0 0-1.5 0v14.5a.75.75 0 0 0 1.5 0v-4.392l1.657-.348a6.449 6.449 0 0 1 4.271.572 7.948 7.948 0 0 0 5.965.524l2.078-.64A.75.75 0 0 0 18 12.25v-8.5a.75.75 0 0 0-.904-.734l-2.38.501a7.25 7.25 0 0 1-4.186-.363l-.502-.2a8.75 8.75 0 0 0-5.053-.439L3.5 3.16V2.75Z" />
     </svg>
   )
