@@ -29,7 +29,7 @@ export default function JoinClientIndividualPage() {
         email: email.trim(),
         password,
         options: {
-          data: { full_name: fullName.trim() },
+          data: { full_name: fullName.trim(), user_type: 'client_individual' },
           emailRedirectTo: `${window.location.origin}/verify/phone`,
         },
       })

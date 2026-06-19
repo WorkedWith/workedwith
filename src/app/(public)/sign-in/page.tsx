@@ -39,10 +39,11 @@ export default function SignInPage() {
         const userType = userData?.user_type ?? null
         if (userType === 'client_business') {
           window.location.href = '/org/dashboard'
-        } else if (userType === null) {
-          window.location.href = '/join'
-        } else {
+        } else if (userType === 'trade' || userType === 'both' || userType === 'client_individual') {
           window.location.href = '/dashboard'
+        } else {
+          // user_type is null — account exists but onboarding incomplete
+          window.location.href = '/verify/phone'
         }
       } else {
         window.location.href = '/dashboard'
