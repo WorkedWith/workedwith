@@ -39,7 +39,7 @@ export default function JoinClientIndividualPage() {
         return
       }
 
-      window.location.href = '/verify/phone'
+      window.location.href = '/check-email'
     })
   }
 

@@ -41,6 +41,11 @@ const VERIFY_SID = () => process.env.TWILIO_VERIFY_SERVICE_SID!
 // ── Actions ──────────────────────────────────────────────────
 
 export async function sendOTP(phone: string): Promise<SendOTPResult> {
+  console.log('sendOTP called with phone:', phone)
+  console.log('TWILIO_ACCOUNT_SID exists:', !!process.env.TWILIO_ACCOUNT_SID)
+  console.log('TWILIO_AUTH_TOKEN exists:', !!process.env.TWILIO_AUTH_TOKEN)
+  console.log('TWILIO_VERIFY_SERVICE_SID exists:', !!process.env.TWILIO_VERIFY_SERVICE_SID)
+
   const normalized = normalizeUKMobile(phone)
   if (!normalized) {
     return { success: false, error: 'Please enter a valid UK mobile number (e.g. 07700 900000).' }
@@ -60,13 +65,16 @@ export async function sendOTP(phone: string): Promise<SendOTPResult> {
   }
 
   try {
-    await twilioClient()
-      .verify.v2.services(VERIFY_SID())
+    const client = twilioClient()
+    const verification = await client.verify.v2
+      .services(process.env.TWILIO_VERIFY_SERVICE_SID!)
       .verifications.create({ to: normalized, channel: 'sms' })
-
+    console.log('Twilio response:', verification.status)
     return { success: true }
-  } catch {
-    return { success: false, error: 'Failed to send verification code. Please try again.' }
+  } catch (error) {
+    console.error('Twilio error full:', JSON.stringify(error, null, 2))
+    const e = error as { code?: number; message?: string; status?: number }
+    return { success: false, error: `SMS failed to send. Error code: ${e.code ?? 'unknown'}` }
   }
 }
 
