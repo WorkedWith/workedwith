@@ -2,6 +2,7 @@
 
 import twilio from 'twilio'
 import { createHash } from 'crypto'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { VerificationTier } from '@/types/database'
@@ -108,8 +109,6 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
     return { success: false, error: 'Verification failed. Please try again.' }
   }
 
-  console.log('Twilio verification successful')
-
   // Get the authenticated user
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -117,15 +116,12 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
     return { success: false, error: 'You must be signed in to verify your phone number.' }
   }
 
-  console.log('Attempting to update user:', user.id)
-  console.log('Phone to save:', normalized)
-
   const admin = createAdminClient()
 
   // Guard against the phone already belonging to another account
   const { data: conflict } = await admin
     .from('users')
-    .select('*')
+    .select('id')
     .eq('phone', normalized)
     .neq('id', user.id)
     .maybeSingle()
@@ -134,49 +130,39 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
     return { success: false, error: 'This number is already linked to another account. Please contact support.' }
   }
 
-  // Check if the user row exists before attempting the update
-  const { data: existingUser, error: fetchError } = await supabase
-    .from('users')
-    .select('id, phone, verification_tier')
-    .eq('id', user.id)
-    .single()
-
-  console.log('Existing user row:', JSON.stringify(existingUser, null, 2))
-  console.log('Fetch error:', JSON.stringify(fetchError, null, 2))
-
-  // Fetch current tier so we never downgrade a fully_verified user
+  // Fetch current row so we never downgrade a fully_verified user
   const { data: current } = await admin
     .from('users')
-    .select('*')
+    .select('verification_tier')
     .eq('id', user.id)
     .single()
 
   const newTier: VerificationTier =
     current?.verification_tier === 'fully_verified' ? 'fully_verified' : 'phone_verified'
 
-  const { data, error } = await supabase
+  const { error: updateError } = await admin
     .from('users')
-    .update({
-      phone: normalized,
-      phone_verified: true,
-      verification_tier: 'phone_verified',
-    })
+    .update({ phone: normalized, phone_verified: true, verification_tier: newTier })
     .eq('id', user.id)
 
-  console.log('Update result data:', data)
-  console.log('Update result error:', JSON.stringify(error, null, 2))
+  if (updateError) {
+    return { success: false, error: 'Failed to save your phone number. Please try again.' }
+  }
 
-  if (error) throw error
+  // Redirect based on user_type
+  const { data: userData } = await admin
+    .from('users')
+    .select('user_type')
+    .eq('id', user.id)
+    .single()
 
-  // Keep newTier reference to satisfy the linter (used in non-debug path)
-  void newTier
+  const userType = userData?.user_type
 
-  // Redirect destination differs by user type — both point to /dashboard for now;
-  // extend this switch when type-specific dashboards are built
-  const redirectTo =
-    current?.user_type === 'trade'
-      ? '/dashboard'
-      : '/dashboard'
-
-  return { success: true, redirectTo }
+  if (userType === 'trade') {
+    redirect('/onboarding/trade')
+  } else if (userType === 'client_business') {
+    redirect('/onboarding/business')
+  } else {
+    redirect('/onboarding/individual')
+  }
 }
