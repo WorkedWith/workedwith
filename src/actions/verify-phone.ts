@@ -130,24 +130,25 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
     return { success: false, error: 'This number is already linked to another account. Please contact support.' }
   }
 
-  // Fetch current row so we never downgrade a fully_verified user
+  // Fetch current row to avoid downgrading a fully_verified user
   const { data: current } = await admin
     .from('users')
     .select('verification_tier')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   const newTier: VerificationTier =
     current?.verification_tier === 'fully_verified' ? 'fully_verified' : 'phone_verified'
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upsertPayload: any = { id: user.id, phone: normalized, phone_verified: true, verification_tier: newTier }
   const { data: updateData, error: updateError } = await admin
     .from('users')
-    .update({ phone: normalized, phone_verified: true, verification_tier: newTier })
-    .eq('id', user.id)
+    .upsert(upsertPayload, { onConflict: 'id' })
     .select()
 
-  console.log('Admin update data:', JSON.stringify(updateData, null, 2))
-  console.log('Admin update error:', JSON.stringify(updateError, null, 2))
+  console.log('Upsert data:', JSON.stringify(updateData, null, 2))
+  console.log('Upsert error:', JSON.stringify(updateError, null, 2))
 
   if (updateError) {
     return { success: false, error: 'Failed to save your phone number. Please try again.' }

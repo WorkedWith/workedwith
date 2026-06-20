@@ -1,0 +1,22 @@
+grant all privileges on public.client_profiles to service_role;
+grant all privileges on public.trade_profiles to service_role;
+grant all privileges on public.jobs to service_role;
+grant all privileges on public.reviews to service_role;
+grant all privileges on public.review_windows to service_role;
+grant all privileges on public.job_invites to service_role;
+grant all privileges on public.notifications to service_role;
+grant all privileges on public.organisations to service_role;
+grant all privileges on public.organisation_members to service_role;
+grant all privileges on public.disputes to service_role;
+grant all privileges on public.search_audit_log to service_role;
+grant all privileges on public.deactivated_identities to service_role;
+grant all privileges on public.verification_documents to service_role;
+grant all privileges on public.review_integrity_flags to service_role;
+
+grant select, insert, update on public.client_profiles to authenticated;
+grant select, insert, update on public.trade_profiles to authenticated;
+grant select, insert, update on public.jobs to authenticated;
+grant select, insert, update on public.reviews to authenticated;
+grant select, insert, update on public.review_windows to authenticated;
+grant select, insert, update on public.job_invites to authenticated;
+grant select, insert, update on public.notifications to authenticated;

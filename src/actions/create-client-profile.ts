@@ -51,10 +51,21 @@ export async function createClientProfile(
   // Update full_name in case the user changed it here
   await admin.from('users').update({ full_name }).eq('id', user.id)
 
-  const { error: insertError } = await admin.from('client_profiles').insert({
-    user_id: user.id,
-    postcode,
-  })
+  console.log('Creating client profile for user:', user.id)
+  console.log('Input data:', JSON.stringify(input, null, 2))
+
+  const { data, error: insertError } = await admin
+    .from('client_profiles')
+    .insert({
+      user_id: user.id,
+      postcode,
+      display_name: full_name,
+      client_type: 'individual',
+    })
+    .select()
+
+  console.log('Insert data:', JSON.stringify(data, null, 2))
+  console.log('Insert error:', JSON.stringify(insertError, null, 2))
 
   if (insertError) {
     return { success: false, error: 'Failed to create your profile. Please try again.' }
