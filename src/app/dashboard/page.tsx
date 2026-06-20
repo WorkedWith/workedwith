@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { NotificationBell } from '@/components/notifications/notification-bell'
+import { UserMenu } from '@/components/user-menu'
+import { TRADE_TYPES } from '@/lib/trade-types'
 import type { User, Notification } from '@/types/database'
 
 export const metadata = { title: 'Dashboard — WorkedWith' }
@@ -65,14 +68,15 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <header className="bg-brand-navy px-4 py-4 sm:px-6">
+      <header className="sticky top-0 z-40 bg-brand-navy px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <span className="text-xl font-bold tracking-tight text-white">
+          <a href="/dashboard" className="text-xl font-bold tracking-tight text-white">
             Worked<span className="text-brand-amber">With</span>
-          </span>
-          <a href="/notifications" className="text-sm text-white/60 hover:text-white transition-colors">
-            Notifications
           </a>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <UserMenu />
+          </div>
         </div>
       </header>
 
@@ -163,12 +167,14 @@ export default async function DashboardPage() {
                 href={isTrade ? '/onboarding/trade' : '/onboarding/individual'}
                 description="Add your details so clients or tradespeople can find you."
               />
-              <OnboardingItem
-                done={false}
-                label="Log your first job"
-                href="/jobs/log"
-                description="Invite your client to confirm a current or upcoming job."
-              />
+              {isTrade && (
+                <OnboardingItem
+                  done={false}
+                  label="Log your first job"
+                  href="/jobs/log"
+                  description="Invite your client to confirm a current or upcoming job."
+                />
+              )}
               <OnboardingItem
                 done={false}
                 label="Add a past job"
@@ -201,6 +207,53 @@ export default async function DashboardPage() {
             )}
           </div>
         </section>
+
+        {/* Tradesperson search — clients only */}
+        {!isTrade && (
+          <section>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Find a tradesperson</p>
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <form
+                method="GET"
+                action="/find"
+                className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1.5fr_1fr_auto] sm:items-center"
+              >
+                <select
+                  name="trade"
+                  required
+                  className="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+                >
+                  <option value="" disabled>Select a trade type</option>
+                  {TRADE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <input
+                  name="postcode"
+                  type="text"
+                  required
+                  placeholder="Postcode"
+                  autoComplete="postal-code"
+                  className="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm uppercase placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+                />
+                <select
+                  name="radius"
+                  defaultValue="10"
+                  className="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+                >
+                  <option value="5">5 miles</option>
+                  <option value="10">10 miles</option>
+                  <option value="25">25 miles</option>
+                  <option value="50">50 miles</option>
+                </select>
+                <button
+                  type="submit"
+                  className="h-11 w-full rounded-lg bg-brand-amber px-4 text-sm font-bold text-brand-navy whitespace-nowrap hover:bg-amber-400 transition-colors"
+                >
+                  Search
+                </button>
+              </form>
+            </div>
+          </section>
+        )}
 
         {/* Recent activity */}
         {notifications.length > 0 && (

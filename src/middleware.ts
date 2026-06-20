@@ -4,10 +4,24 @@ import { createClient } from '@supabase/supabase-js'
 import { updateSession } from '@/lib/supabase/middleware'
 import { type Database } from '@/types/database'
 
+const AUTH_PROTECTED = ['/profile', '/settings']
+
 export async function middleware(request: NextRequest) {
   const sessionResponse = await updateSession(request)
+  const { pathname } = request.nextUrl
 
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+  // Protect /profile and /settings — redirect to /sign-in if no session
+  if (AUTH_PROTECTED.some(p => pathname === p || pathname.startsWith(p + '/'))) {
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} } }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.redirect(new URL('/sign-in', request.url))
+  }
+
+  if (pathname.startsWith('/admin')) {
     // Read-only auth check — setAll is a no-op since updateSession already handled cookie refresh
     const supabase = createServerClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
