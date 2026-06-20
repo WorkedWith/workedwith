@@ -202,16 +202,19 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
   }
 
   const tradeName = tradeProfile.company_name ?? userData.full_name
-  const confirmUrl = `https://workedwith.co.uk/jobs/confirm/${invite.invite_token ?? ''}`
-  const emailParams: EmailParams = { tradeName, jobType: job_type, postcode, startedAt: started_at, confirmUrl }
+  const inviteToken = invite.invite_token ?? ''
   const resend = new Resend(process.env.RESEND_API_KEY)
 
-  // Determine where the email goes and what to send
   const emailTo = invitee_email ?? existingUser?.email ?? null
   const inviteeSentTo = invitee_email ?? invitee_phone ?? ''
 
   if (emailTo) {
     if (existingUser) {
+      // Existing user: send straight to the confirm page
+      const emailParams: EmailParams = {
+        tradeName, jobType: job_type, postcode, startedAt: started_at,
+        confirmUrl: `https://workedwith.co.uk/jobs/confirm/${inviteToken}`,
+      }
       await Promise.all([
         resend.emails.send({
           from: 'WorkedWith <hello@workedwith.co.uk>',
@@ -224,10 +227,15 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
           type: 'job_invite',
           title: 'New job to confirm',
           body: `${tradeName} has logged a ${job_type} job and wants you to confirm it.`,
-          link: `/jobs/confirm/${invite.invite_token ?? ''}`,
+          link: `/jobs/confirm/${inviteToken}`,
         }),
       ])
     } else {
+      // New user: send to the branded invite landing page
+      const emailParams: EmailParams = {
+        tradeName, jobType: job_type, postcode, startedAt: started_at,
+        confirmUrl: `https://workedwith.co.uk/invite/job/${inviteToken}`,
+      }
       await resend.emails.send({
         from: 'WorkedWith <hello@workedwith.co.uk>',
         to: emailTo,

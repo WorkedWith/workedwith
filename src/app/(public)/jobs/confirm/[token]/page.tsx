@@ -166,7 +166,7 @@ export default async function ConfirmJobPage({ params }: { params: { token: stri
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/join/client/individual?token=${encodeURIComponent(token)}`)
+    redirect(`/invite/job/${token}`)
   }
 
   // Ensure the logged-in account matches the invited email

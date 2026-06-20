@@ -54,7 +54,8 @@ export default async function DashboardPage() {
           .not('trade_profile_id', 'is', null)
       : admin.from('jobs')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending_confirmation'),
+          .eq('status', 'pending_confirmation')
+          .eq('initiated_by', 'trade'),
     getJobHistory(),
   ])
 
@@ -129,13 +130,34 @@ export default async function DashboardPage() {
             </h1>
             <p className="mt-0.5 text-sm text-gray-500">{accountLabel} account</p>
           </div>
-          {/* Active-jobs badge for trade users only */}
-          {isTrade && pendingCount > 0 && (
-            <div className="shrink-0 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-center">
-              <p className="text-xl font-bold text-amber-700">{pendingCount}</p>
-              <p className="text-xs text-amber-600">
-                active job{pendingCount !== 1 ? 's' : ''}
-              </p>
+          {isTrade ? (
+            /* Trade: active-jobs badge */
+            pendingCount > 0 ? (
+              <div className="shrink-0 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-center">
+                <p className="text-xl font-bold text-amber-700">{pendingCount}</p>
+                <p className="text-xs text-amber-600">
+                  active job{pendingCount !== 1 ? 's' : ''}
+                </p>
+              </div>
+            ) : null
+          ) : (
+            /* Client: pending badge + quick action button */
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
+              {pendingCount > 0 && (
+                <a
+                  href="#your-jobs"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
+                >
+                  <span className="text-base leading-none">⏳</span>
+                  {pendingCount} to confirm
+                </a>
+              )}
+              <a
+                href="/jobs/log/backdated"
+                className="whitespace-nowrap rounded-lg bg-brand-amber px-4 py-2 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
+              >
+                + Add a past job
+              </a>
             </div>
           )}
         </div>
@@ -341,7 +363,7 @@ export default async function DashboardPage() {
               <FindTradeForm />
             </section>
 
-            {/* 2. Pending actions banner */}
+            {/* 2. Pending actions banner — only jobs logged BY the tradesperson */}
             {pendingCount > 0 && (
               <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-4">
                 <div className="shrink-0 mt-0.5 h-9 w-9 rounded-full bg-amber-100 flex items-center justify-center">
@@ -351,10 +373,10 @@ export default async function DashboardPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-amber-800 text-sm">
-                    You have {pendingCount} job{pendingCount !== 1 ? 's' : ''} waiting for your confirmation
+                    You have {pendingCount} job{pendingCount !== 1 ? 's' : ''} to confirm
                   </p>
                   <p className="mt-1 text-sm text-amber-700 leading-relaxed">
-                    A tradesperson has logged a job with you and is waiting for you to confirm it happened.
+                    A tradesperson has logged a job with you. Review and confirm it happened.
                   </p>
                 </div>
                 <a
@@ -366,40 +388,7 @@ export default async function DashboardPage() {
               </div>
             )}
 
-            {/* 3. Quick actions */}
-            <section>
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Quick actions</p>
-              <div>
-                <a
-                  href="/jobs/log/backdated"
-                  className="block w-full rounded-lg bg-brand-amber py-3 px-6 text-center text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors sm:inline-block sm:w-auto"
-                >
-                  + Add a past job
-                </a>
-                <p className="mt-2 text-xs text-gray-400 sm:max-w-sm">
-                  Invite a tradesperson you have worked with to confirm a past job and leave mutual reviews.
-                </p>
-              </div>
-            </section>
-
-            {/* 4. Checklist */}
-            {showChecklist && (
-              <section className="rounded-xl bg-brand-navy/5 border border-brand-navy/10 p-5">
-                <p className="text-sm font-semibold text-brand-navy mb-4">Get started with WorkedWith</p>
-                <div className="divide-y divide-brand-navy/10">
-                  <OnboardingItem done={phone_verified} label="Verify your phone number" href="/verify/phone" />
-                  <OnboardingItem done={hasBackdatedJob} label="Add your first past job" href="/jobs/log/backdated" />
-                  <ExploreItem />
-                </div>
-              </section>
-            )}
-
-            {/* 5. Your jobs */}
-            <div id="your-jobs">
-              <JobHistory jobs={jobHistory} />
-            </div>
-
-            {/* 6. Your reputation */}
+            {/* 3. Your reputation */}
             <section>
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Your reputation</p>
               {clientHasReviews ? (
@@ -441,6 +430,23 @@ export default async function DashboardPage() {
                 </div>
               )}
             </section>
+
+            {/* 4. Your jobs */}
+            <div id="your-jobs">
+              <JobHistory jobs={jobHistory} />
+            </div>
+
+            {/* 5. Onboarding checklist */}
+            {showChecklist && (
+              <section className="rounded-xl bg-brand-navy/5 border border-brand-navy/10 p-5">
+                <p className="text-sm font-semibold text-brand-navy mb-4">Get started with WorkedWith</p>
+                <div className="divide-y divide-brand-navy/10">
+                  <OnboardingItem done={phone_verified} label="Verify your phone number" href="/verify/phone" />
+                  <OnboardingItem done={hasBackdatedJob} label="Add your first past job" href="/jobs/log/backdated" />
+                  <ExploreItem />
+                </div>
+              </section>
+            )}
           </>
         )}
 

@@ -5,9 +5,24 @@ import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TRADE_TYPES } from '@/lib/trade-types'
-import type { JobInitiatedBy } from '@/types/database'
+import type { JobInitiatedBy, RedFlagReason } from '@/types/database'
 
 // ── Types ─────────────────────────────────────────────────────
+
+export type ReviewInput = {
+  overall_rating: number
+  quality_score?: number
+  reliability_score?: number
+  value_score?: number
+  payment_score?: number
+  scope_clarity_score?: number
+  site_access_score?: number
+  communication_score?: number
+  would_work_again?: boolean | null
+  written_review?: string
+  red_flag?: boolean
+  red_flag_reason?: RedFlagReason
+}
 
 export type LogBackdatedJobInput = {
   job_type: string
@@ -17,10 +32,11 @@ export type LogBackdatedJobInput = {
   invitee_email: string
   invitee_phone: string
   initiated_by: JobInitiatedBy
+  review?: ReviewInput
 }
 
 export type LogBackdatedJobResult =
-  | { success: true; jobId: string; inviteeSentTo: string }
+  | { success: true; jobId: string; inviteeSentTo: string; reviewSaved: boolean }
   | {
       success: false
       error: string
@@ -234,14 +250,58 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
     if (data) existingUser = { id: data.id, email: data.email }
   }
 
-  const confirmUrl = `https://workedwith.co.uk/jobs/confirm/${invite.invite_token ?? ''}`
+  // Save review immediately if provided and invitee is already on the platform
+  let reviewSaved = false
+  if (input.review && existingUser) {
+    const r = input.review
+    const reviewerType = input.initiated_by
+    const revieweeType = input.initiated_by === 'trade' ? 'client' : 'trade'
+    const { error: reviewErr } = await admin.from('reviews').insert({
+      job_id: job.id,
+      reviewer_id: user.id,
+      reviewee_id: existingUser.id,
+      reviewer_type: reviewerType,
+      reviewee_type: revieweeType,
+      overall_rating: r.overall_rating,
+      quality_score: r.quality_score ?? null,
+      reliability_score: r.reliability_score ?? null,
+      value_score: r.value_score ?? null,
+      payment_score: r.payment_score ?? null,
+      scope_clarity_score: r.scope_clarity_score ?? null,
+      site_access_score: r.site_access_score ?? null,
+      communication_score: r.communication_score ?? null,
+      would_work_again: r.would_work_again ?? null,
+      written_review: r.written_review?.trim() || null,
+      red_flag: r.red_flag ?? false,
+      red_flag_reason: r.red_flag ? (r.red_flag_reason ?? null) : null,
+      is_backdated: true,
+      is_visible: false,
+    })
+    if (!reviewErr) {
+      const blindWindowCloses = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      await admin.from('review_windows').insert({
+        job_id: job.id,
+        window_opened_at: new Date().toISOString(),
+        blind_window_closes_at: blindWindowCloses,
+        trade_review_submitted: input.initiated_by === 'trade',
+        client_review_submitted: input.initiated_by === 'client',
+      })
+      reviewSaved = true
+    }
+  }
+
+  const inviteToken = invite.invite_token ?? ''
   const emailTo = invitee_email ?? existingUser?.email ?? null
   const inviteeSentTo = invitee_email ?? invitee_phone ?? ''
-  const emailParams: BackdatedEmailParams = { callerName, jobType: job_type, backdatedPeriod: backdated_period, confirmUrl }
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   if (emailTo) {
     if (existingUser) {
+      // Existing user: send straight to the confirm page
+      const emailParams: BackdatedEmailParams = {
+        callerName, jobType: job_type, backdatedPeriod: backdated_period,
+        confirmUrl: `https://workedwith.co.uk/jobs/confirm/${inviteToken}`,
+      }
       await Promise.all([
         resend.emails.send({
           from: 'WorkedWith <hello@workedwith.co.uk>',
@@ -254,10 +314,15 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
           type: 'job_invite',
           title: 'Past job to confirm',
           body: `${callerName} worked with you as a ${job_type} in ${backdated_period}. Confirm it on WorkedWith to leave mutual reviews.`,
-          link: `/jobs/confirm/${invite.invite_token ?? ''}`,
+          link: `/jobs/confirm/${inviteToken}`,
         }),
       ])
     } else {
+      // New user: send to the branded invite landing page
+      const emailParams: BackdatedEmailParams = {
+        callerName, jobType: job_type, backdatedPeriod: backdated_period,
+        confirmUrl: `https://workedwith.co.uk/invite/job/${inviteToken}`,
+      }
       await resend.emails.send({
         from: 'WorkedWith <hello@workedwith.co.uk>',
         to: emailTo,
@@ -267,5 +332,5 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
     }
   }
 
-  return { success: true, jobId: job.id, inviteeSentTo }
+  return { success: true, jobId: job.id, inviteeSentTo, reviewSaved }
 }

@@ -97,11 +97,17 @@ export function JobHistory({ jobs }: Props) {
                       {formatDate(job.started_at, job.backdated_period, job.is_backdated)}
                     </span>
                   </div>
-                  {job.status === 'pending_confirmation' && (
-                    <p className="mt-1.5 text-xs text-gray-400">
-                      You logged this job. {job.other_party.name} has been invited to confirm.
-                    </p>
-                  )}
+                  {job.status === 'pending_confirmation' && (() => {
+                    const initiatedByViewer =
+                      (job.my_role === 'trade' && job.initiated_by === 'trade') ||
+                      (job.my_role === 'client' && job.initiated_by === 'client')
+                    const text = initiatedByViewer
+                      ? `You sent this invite — waiting for ${job.other_party.name} to confirm`
+                      : job.my_role === 'client'
+                        ? 'Logged by the tradesperson — confirm this job happened'
+                        : `Logged by ${job.other_party.name} — confirm this job happened`
+                    return <p className="mt-1.5 text-xs text-gray-400">{text}</p>
+                  })()}
                 </div>
                 <StatusBadge status={job.status} otherPartyName={job.other_party.name} />
               </div>

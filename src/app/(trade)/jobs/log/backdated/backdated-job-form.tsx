@@ -3,12 +3,21 @@
 import { useState, useTransition } from 'react'
 import { TRADE_TYPES } from '@/lib/trade-types'
 import { logBackdatedJob } from '@/actions/log-backdated-job'
-import type { JobInitiatedBy } from '@/types/database'
+import type { JobInitiatedBy, RedFlagReason } from '@/types/database'
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ] as const
+
+const RED_FLAG_REASONS: Array<{ value: RedFlagReason; label: string }> = [
+  { value: 'aggressive_behaviour', label: 'Aggressive behaviour' },
+  { value: 'refused_access',       label: 'Refused access' },
+  { value: 'non_payment',          label: 'Non-payment' },
+  { value: 'false_dispute',        label: 'False dispute' },
+  { value: 'unsafe_site',          label: 'Unsafe site' },
+  { value: 'other',                label: 'Other' },
+]
 
 type FieldErrors = Partial<Record<
   'job_type' | 'description' | 'postcode' | 'backdated_period' | 'invitee_email' | 'invitee_phone',
@@ -17,6 +26,8 @@ type FieldErrors = Partial<Record<
 
 export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy }) {
   const [isPending, startTransition] = useTransition()
+
+  // Core job fields
   const [jobType, setJobType] = useState('')
   const [description, setDescription] = useState('')
   const [postcode, setPostcode] = useState('')
@@ -26,26 +37,54 @@ export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy 
   const [inviteePhone, setInviteePhone] = useState('')
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<{ jobId: string; inviteeSentTo: string } | null>(null)
+  const [success, setSuccess] = useState<{ jobId: string; inviteeSentTo: string; reviewSaved: boolean } | null>(null)
+
+  // Optional review fields
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [overallRating, setOverallRating] = useState(0)
+  const [qualityScore, setQualityScore] = useState(0)
+  const [reliabilityScore, setReliabilityScore] = useState(0)
+  const [valueScore, setValueScore] = useState(0)
+  const [paymentScore, setPaymentScore] = useState(0)
+  const [scopeClarityScore, setScopeClarityScore] = useState(0)
+  const [siteAccessScore, setSiteAccessScore] = useState(0)
+  const [communicationScore, setCommunicationScore] = useState(0)
+  const [wouldWorkAgain, setWouldWorkAgain] = useState<boolean | null>(null)
+  const [writtenReview, setWrittenReview] = useState('')
+  const [redFlag, setRedFlag] = useState(false)
+  const [redFlagReason, setRedFlagReason] = useState<RedFlagReason | ''>('')
+  const [reviewError, setReviewError] = useState<string | null>(null)
 
   const currentYear = new Date().getFullYear()
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
-
   const inviteeLabel = initiatedBy === 'trade' ? 'client' : 'tradesperson'
 
   function clearFieldError(field: keyof FieldErrors) {
     setFieldErrors(prev => { const n = { ...prev }; delete n[field]; return n })
   }
 
+  function resetReview() {
+    setOverallRating(0); setQualityScore(0); setReliabilityScore(0)
+    setValueScore(0); setPaymentScore(0); setScopeClarityScore(0)
+    setSiteAccessScore(0); setCommunicationScore(0)
+    setWouldWorkAgain(null); setWrittenReview('')
+    setRedFlag(false); setRedFlagReason(''); setReviewError(null)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setGlobalError(null)
     setFieldErrors({})
+    setReviewError(null)
 
     const backdated_period = month && year ? `${MONTHS[parseInt(month) - 1]} ${year}` : ''
-
     if (!month || !year) {
       setFieldErrors({ backdated_period: 'Please select a month and year.' })
+      return
+    }
+
+    if (reviewOpen && overallRating === 0) {
+      setReviewError('Please select an overall rating.')
       return
     }
 
@@ -58,10 +97,24 @@ export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy 
         invitee_email: inviteeEmail,
         invitee_phone: inviteePhone,
         initiated_by: initiatedBy,
+        review: reviewOpen ? {
+          overall_rating: overallRating,
+          quality_score:       qualityScore || undefined,
+          reliability_score:   reliabilityScore || undefined,
+          value_score:         valueScore || undefined,
+          payment_score:       paymentScore || undefined,
+          scope_clarity_score: scopeClarityScore || undefined,
+          site_access_score:   siteAccessScore || undefined,
+          communication_score: communicationScore || undefined,
+          would_work_again:    wouldWorkAgain,
+          written_review:      writtenReview || undefined,
+          red_flag:            redFlag || undefined,
+          red_flag_reason:     redFlag && redFlagReason ? redFlagReason : undefined,
+        } : undefined,
       })
 
       if (result.success) {
-        setSuccess({ jobId: result.jobId, inviteeSentTo: result.inviteeSentTo })
+        setSuccess({ jobId: result.jobId, inviteeSentTo: result.inviteeSentTo, reviewSaved: result.reviewSaved })
       } else {
         if (result.field) {
           setFieldErrors({ [result.field]: result.error })
@@ -80,11 +133,13 @@ export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy 
             <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
           </svg>
         </div>
-        <h2 className="text-xl font-semibold text-brand-navy">Invite sent</h2>
+        <h2 className="text-xl font-semibold text-brand-navy">
+          {success.reviewSaved ? 'Invite sent & review saved' : 'Invite sent'}
+        </h2>
         <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-          Once{' '}
-          <span className="font-medium text-brand-navy">{success.inviteeSentTo}</span>
-          {' '}confirms, you can both leave verified reviews.
+          {success.reviewSaved
+            ? <>Your invite has been sent and your review saved. <span className="font-medium text-brand-navy">{success.inviteeSentTo}</span> will be notified.</>
+            : <>Once <span className="font-medium text-brand-navy">{success.inviteeSentTo}</span> confirms, you can both leave verified reviews.</>}
         </p>
         <div className="mt-6 flex flex-col gap-3">
           <a
@@ -100,6 +155,7 @@ export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy 
               setJobType(''); setDescription(''); setPostcode('')
               setMonth(''); setYear('')
               setInviteeEmail(''); setInviteePhone('')
+              setReviewOpen(false); resetReview()
             }}
             className="block w-full rounded-lg border border-gray-300 px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
@@ -202,7 +258,6 @@ export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy 
             {inviteeLabel} contact <span className="text-red-500">*</span>
           </p>
           <p className="text-xs text-gray-400 mb-4">Provide at least one — email is preferred.</p>
-
           <div className="space-y-3">
             <Field
               label={`${inviteeLabel.charAt(0).toUpperCase() + inviteeLabel.slice(1)} email`}
@@ -218,13 +273,11 @@ export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy 
                 className={inputCls(!!fieldErrors.invitee_email)}
               />
             </Field>
-
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px bg-gray-200" />
               <span className="text-xs text-gray-400 font-medium">or</span>
               <div className="flex-1 h-px bg-gray-200" />
             </div>
-
             <Field
               label={`${inviteeLabel.charAt(0).toUpperCase() + inviteeLabel.slice(1)} mobile`}
               error={fieldErrors.invitee_phone}
@@ -240,6 +293,88 @@ export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy 
               />
             </Field>
           </div>
+        </div>
+
+        {/* ── Optional review section ───────────────────────────── */}
+        <div className="pt-4 border-t border-gray-100">
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={reviewOpen}
+              onChange={e => { setReviewOpen(e.target.checked); if (!e.target.checked) resetReview() }}
+              disabled={isPending}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-brand-amber focus:ring-brand-amber"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              Leave your review now{' '}
+              <span className="font-normal text-gray-400">(optional — saves you coming back later)</span>
+            </span>
+          </label>
+
+          {reviewOpen && (
+            <div className="mt-5 space-y-5">
+              {/* Overall rating */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Overall rating <span className="text-red-500">*</span>
+                </p>
+                <StarPicker value={overallRating} onChange={setOverallRating} disabled={isPending} />
+                {reviewError && (
+                  <p className="mt-1 text-xs text-red-600">{reviewError}</p>
+                )}
+              </div>
+
+              {initiatedBy === 'client' ? (
+                // Client reviewing trade
+                <>
+                  <StarField label="Quality of work" value={qualityScore} onChange={setQualityScore} disabled={isPending} />
+                  <StarField label="Communication"   value={communicationScore} onChange={setCommunicationScore} disabled={isPending} />
+                  <StarField label="Reliability"     value={reliabilityScore} onChange={setReliabilityScore} disabled={isPending} />
+                  <StarField label="Value"           value={valueScore} onChange={setValueScore} disabled={isPending} />
+                  <YesNoField label="Would hire again" value={wouldWorkAgain} onChange={setWouldWorkAgain} disabled={isPending} />
+                </>
+              ) : (
+                // Trade reviewing client
+                <>
+                  <StarField label="Payment"       value={paymentScore} onChange={setPaymentScore} disabled={isPending} />
+                  <StarField label="Communication" value={communicationScore} onChange={setCommunicationScore} disabled={isPending} />
+                  <StarField label="Scope clarity" value={scopeClarityScore} onChange={setScopeClarityScore} disabled={isPending} />
+                  <StarField label="Site access"   value={siteAccessScore} onChange={setSiteAccessScore} disabled={isPending} />
+                  <YesNoField label="Would work with again" value={wouldWorkAgain} onChange={setWouldWorkAgain} disabled={isPending} />
+                  <RedFlagField
+                    redFlag={redFlag}
+                    onToggle={v => { setRedFlag(v); if (!v) setRedFlagReason('') }}
+                    reason={redFlagReason}
+                    onReason={setRedFlagReason}
+                    disabled={isPending}
+                  />
+                </>
+              )}
+
+              {/* Written review */}
+              <div>
+                <div className="flex items-baseline justify-between mb-1.5">
+                  <label className="text-sm font-medium text-gray-700">Written review</label>
+                  <span className="text-xs text-gray-400">{writtenReview.length}/500</span>
+                </div>
+                <textarea
+                  value={writtenReview}
+                  onChange={e => setWrittenReview(e.target.value)}
+                  disabled={isPending}
+                  rows={4}
+                  maxLength={500}
+                  placeholder="Share your experience…"
+                  className={`${inputCls(false)} resize-none`}
+                />
+              </div>
+
+              <p className="text-xs text-gray-400 leading-relaxed">
+                {initiatedBy === 'client'
+                  ? 'Your review is saved privately and published once the tradesperson confirms and leaves their review too.'
+                  : 'Your review is saved privately and published once the client confirms and leaves their review too.'}
+              </p>
+            </div>
+          )}
         </div>
 
         {globalError && (
@@ -274,6 +409,113 @@ function Field({ label, hint, required, error, children }: {
       </div>
       {children}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+    </div>
+  )
+}
+
+function StarPicker({ value, onChange, disabled }: {
+  value: number; onChange: (v: number) => void; disabled: boolean
+}) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(s => (
+        <button
+          key={s}
+          type="button"
+          onClick={() => onChange(s)}
+          disabled={disabled}
+          className={`text-3xl leading-none transition-colors disabled:opacity-50 ${
+            s <= value ? 'text-brand-amber' : 'text-gray-200 hover:text-amber-200'
+          }`}
+          aria-label={`${s} star${s !== 1 ? 's' : ''}`}
+        >
+          ★
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function StarField({ label, value, onChange, disabled }: {
+  label: string; value: number; onChange: (v: number) => void; disabled: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-gray-600">{label}</span>
+      <StarPicker value={value} onChange={onChange} disabled={disabled} />
+    </div>
+  )
+}
+
+function YesNoField({ label, value, onChange, disabled }: {
+  label: string; value: boolean | null; onChange: (v: boolean) => void; disabled: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-sm text-gray-600">{label}</span>
+      <div className="flex gap-2 shrink-0">
+        {([true, false] as const).map(v => (
+          <button
+            key={String(v)}
+            type="button"
+            onClick={() => onChange(v)}
+            disabled={disabled}
+            className={`rounded-lg border px-4 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${
+              value === v
+                ? v
+                  ? 'border-green-500 bg-green-50 text-green-700'
+                  : 'border-red-400 bg-red-50 text-red-700'
+                : 'border-gray-200 text-gray-500 hover:border-gray-300'
+            }`}
+          >
+            {v ? 'Yes' : 'No'}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function RedFlagField({ redFlag, onToggle, reason, onReason, disabled }: {
+  redFlag: boolean
+  onToggle: (v: boolean) => void
+  reason: RedFlagReason | ''
+  onReason: (v: RedFlagReason) => void
+  disabled: boolean
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-sm text-gray-600">Red flag this client</span>
+        <button
+          type="button"
+          onClick={() => onToggle(!redFlag)}
+          disabled={disabled}
+          className={`rounded-lg border px-4 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${
+            redFlag
+              ? 'border-red-500 bg-red-50 text-red-700'
+              : 'border-gray-200 text-gray-500 hover:border-gray-300'
+          }`}
+        >
+          {redFlag ? 'Yes' : 'No'}
+        </button>
+      </div>
+      {redFlag && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Reason</label>
+          <select
+            value={reason}
+            onChange={e => onReason(e.target.value as RedFlagReason)}
+            disabled={disabled}
+            className={selectCls(false)}
+          >
+            <option value="">Select a reason…</option>
+            {RED_FLAG_REASONS.map(r => (
+              <option key={r.value} value={r.value}>{r.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   )
 }

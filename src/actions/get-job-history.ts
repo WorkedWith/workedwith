@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { Job, JobStatus, Review, ReviewWindow, UserType } from '@/types/database'
+import type { Job, JobInitiatedBy, JobStatus, Review, ReviewWindow, UserType } from '@/types/database'
 
 export interface OtherParty {
   name: string
@@ -18,6 +18,7 @@ export interface JobHistoryItem {
   id: string
   job_type: string
   status: JobStatus
+  initiated_by: JobInitiatedBy | null
   started_at: string | null
   backdated_period: string | null
   is_backdated: boolean
@@ -31,7 +32,7 @@ export interface JobHistoryItem {
 
 type JobRow = Pick<Job,
   | 'id' | 'trade_profile_id' | 'client_profile_id' | 'job_type'
-  | 'status' | 'started_at' | 'backdated_period' | 'is_backdated'
+  | 'status' | 'initiated_by' | 'started_at' | 'backdated_period' | 'is_backdated'
   | 'postcode' | 'created_at'
 >
 
@@ -71,7 +72,7 @@ export async function getJobHistory(): Promise<JobHistoryItem[]> {
 
   let jobsQuery = admin
     .from('jobs')
-    .select('id, trade_profile_id, client_profile_id, job_type, status, started_at, backdated_period, is_backdated, postcode, created_at')
+    .select('id, trade_profile_id, client_profile_id, job_type, status, initiated_by, started_at, backdated_period, is_backdated, postcode, created_at')
 
   if (tpId && cpId) {
     jobsQuery = jobsQuery.or(`trade_profile_id.eq.${tpId},client_profile_id.eq.${cpId}`)
@@ -180,6 +181,7 @@ export async function getJobHistory(): Promise<JobHistoryItem[]> {
       id: job.id,
       job_type: job.job_type,
       status: job.status,
+      initiated_by: job.initiated_by,
       started_at: job.started_at,
       backdated_period: job.backdated_period,
       is_backdated: job.is_backdated,
