@@ -118,6 +118,9 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
 
   const admin = createAdminClient()
 
+  // Fetch full auth user so we have email + metadata for the fallback upsert
+  const { data: { user: authUser } } = await admin.auth.admin.getUserById(user.id)
+
   // Guard against the phone already belonging to another account
   const { data: conflict } = await admin
     .from('users')
@@ -133,35 +136,44 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
   // Fetch current row to avoid downgrading a fully_verified user
   const { data: current } = await admin
     .from('users')
-    .select('verification_tier')
+    .select('verification_tier, user_type')
     .eq('id', user.id)
     .maybeSingle()
 
   const newTier: VerificationTier =
     current?.verification_tier === 'fully_verified' ? 'fully_verified' : 'phone_verified'
 
+  // Include email and full_name so the upsert can create the row if the trigger didn't fire
+  const fullName = (authUser?.user_metadata?.full_name as string | undefined) ?? ''
+  const email = authUser?.email ?? user.email ?? ''
+  const userTypeFromMeta = (authUser?.user_metadata?.user_type as string | undefined) ?? null
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const upsertPayload: any = { id: user.id, phone: normalized, phone_verified: true, verification_tier: newTier }
-  const { data: updateData, error: updateError } = await admin
+  const upsertPayload: any = {
+    id: user.id,
+    email,
+    full_name: fullName,
+    phone: normalized,
+    phone_verified: true,
+    verification_tier: newTier,
+    // Only set user_type if the row doesn't exist yet (avoid overwriting existing value)
+    ...(current === null && userTypeFromMeta ? { user_type: userTypeFromMeta } : {}),
+  }
+
+  const { data: upsertData, error: upsertError } = await admin
     .from('users')
     .upsert(upsertPayload, { onConflict: 'id' })
     .select()
 
-  console.log('Upsert data:', JSON.stringify(updateData, null, 2))
-  console.log('Upsert error:', JSON.stringify(updateError, null, 2))
+  console.log('Upsert data:', JSON.stringify(upsertData, null, 2))
+  console.log('Upsert error:', JSON.stringify(upsertError, null, 2))
 
-  if (updateError) {
+  if (upsertError) {
     return { success: false, error: 'Failed to save your phone number. Please try again.' }
   }
 
-  // Redirect based on user_type
-  const { data: userData } = await admin
-    .from('users')
-    .select('user_type')
-    .eq('id', user.id)
-    .single()
-
-  const userType = userData?.user_type
+  // Resolve user_type: prefer existing DB value, fall back to signup metadata
+  const userType = (current?.user_type ?? userTypeFromMeta) as string | null
 
   if (userType === 'trade') {
     redirect('/onboarding/trade')
