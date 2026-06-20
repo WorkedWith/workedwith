@@ -169,6 +169,12 @@ export default async function ConfirmJobPage({ params }: { params: { token: stri
     redirect(`/join/client/individual?token=${encodeURIComponent(token)}`)
   }
 
+  // Ensure the logged-in account matches the invited email
+  if (invite.invitee_email && user.email !== invite.invitee_email) {
+    await supabase.auth.signOut()
+    redirect(`/sign-in?message=Please sign in with ${invite.invitee_email} to accept this job invite&next=/jobs/confirm/${token}`)
+  }
+
   const { data: userData } = await admin.from('users').select('*').eq('id', user.id).single()
 
   if (!userData || userData.verification_tier === 'unverified') {
