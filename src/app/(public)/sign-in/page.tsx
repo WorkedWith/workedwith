@@ -27,26 +27,24 @@ export default function SignInPage() {
         return
       }
 
-      // Determine redirect based on user_type
+      // Determine redirect based on user_type and verification_tier
       const { data: { user: authedUser } } = await supabase.auth.getUser()
       if (authedUser) {
         const { data: userData } = await supabase
           .from('users')
-          .select('user_type')
+          .select('user_type, verification_tier, phone_verified')
           .eq('id', authedUser.id)
           .maybeSingle()
 
-        const userType = userData?.user_type ?? null
-        if (userType === 'client_business') {
-          window.location.href = '/org/dashboard'
-        } else if (userType === 'trade' || userType === 'both' || userType === 'client_individual') {
-          window.location.href = '/dashboard'
-        } else {
-          // user_type is null — account exists but onboarding incomplete
+        if (!userData || !userData.phone_verified || userData.verification_tier === 'unverified') {
           window.location.href = '/verify/phone'
+        } else if (userData.user_type === 'client_business') {
+          window.location.href = '/org/dashboard'
+        } else {
+          window.location.href = '/dashboard'
         }
       } else {
-        window.location.href = '/dashboard'
+        window.location.href = '/verify/phone'
       }
     })
   }
