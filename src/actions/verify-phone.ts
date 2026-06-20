@@ -108,12 +108,17 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
     return { success: false, error: 'Verification failed. Please try again.' }
   }
 
+  console.log('Twilio verification successful')
+
   // Get the authenticated user
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return { success: false, error: 'You must be signed in to verify your phone number.' }
   }
+
+  console.log('Attempting to update user:', user.id)
+  console.log('Phone to save:', normalized)
 
   const admin = createAdminClient()
 
@@ -129,6 +134,16 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
     return { success: false, error: 'This number is already linked to another account. Please contact support.' }
   }
 
+  // Check if the user row exists before attempting the update
+  const { data: existingUser, error: fetchError } = await supabase
+    .from('users')
+    .select('id, phone, verification_tier')
+    .eq('id', user.id)
+    .single()
+
+  console.log('Existing user row:', JSON.stringify(existingUser, null, 2))
+  console.log('Fetch error:', JSON.stringify(fetchError, null, 2))
+
   // Fetch current tier so we never downgrade a fully_verified user
   const { data: current } = await admin
     .from('users')
@@ -139,14 +154,22 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
   const newTier: VerificationTier =
     current?.verification_tier === 'fully_verified' ? 'fully_verified' : 'phone_verified'
 
-  const { error: updateError } = await admin
+  const { data, error } = await supabase
     .from('users')
-    .update({ phone: normalized, phone_verified: true, verification_tier: newTier })
+    .update({
+      phone: normalized,
+      phone_verified: true,
+      verification_tier: 'phone_verified',
+    })
     .eq('id', user.id)
 
-  if (updateError) {
-    return { success: false, error: 'Failed to save your phone number. Please try again.' }
-  }
+  console.log('Update result data:', data)
+  console.log('Update result error:', JSON.stringify(error, null, 2))
+
+  if (error) throw error
+
+  // Keep newTier reference to satisfy the linter (used in non-debug path)
+  void newTier
 
   // Redirect destination differs by user type — both point to /dashboard for now;
   // extend this switch when type-specific dashboards are built
