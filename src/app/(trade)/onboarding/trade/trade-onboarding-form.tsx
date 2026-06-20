@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { TRADE_TYPES } from '@/lib/trade-types'
 import { createTradeProfile, type CreateTradeProfileInput } from '@/actions/create-trade-profile'
+import { addTradeRole } from '@/actions/add-role'
 import { checkUsername } from '@/actions/check-username'
 
 type Step = 1 | 2
@@ -12,7 +13,7 @@ type FieldErrors = Partial<Record<keyof CreateTradeProfileInput, string>>
 
 const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}$/i
 
-export function TradeOnboardingForm() {
+export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: string; upgrading?: boolean }) {
   const router = useRouter()
   const [step, setStep] = useState<Step>(1)
   const [isPending, startTransition] = useTransition()
@@ -70,15 +71,18 @@ export function TradeOnboardingForm() {
     if (usernameStatus !== 'available') return
     setGlobalError(null)
     startTransition(async () => {
-      const result = await createTradeProfile({
+      const payload: CreateTradeProfileInput = {
         trade_type: tradeType,
         company_name: companyName,
         postcode,
         bio,
         username: username.trim().toLowerCase(),
-      })
+      }
+      const result = upgrading
+        ? await addTradeRole(payload)
+        : await createTradeProfile(payload)
       if (result.success) {
-        router.push('/dashboard')
+        router.push(redirectTo ?? '/dashboard')
       } else {
         if (result.field) {
           setFieldErrors({ [result.field]: result.error })

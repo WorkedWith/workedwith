@@ -12,6 +12,7 @@ export function PhoneVerifyForm() {
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [signInHint, setSignInHint] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const codeInputRef = useRef<HTMLInputElement>(null)
 
@@ -25,9 +26,11 @@ export function PhoneVerifyForm() {
     startTransition(async () => {
       const result = await sendOTP(phone)
       if (result.success) {
+        setSignInHint(null)
         setStep('code')
       } else {
         setError(result.error)
+        setSignInHint(result.redirectTo ?? null)
       }
     })
   }
@@ -90,7 +93,19 @@ export function PhoneVerifyForm() {
               disabled:opacity-50 disabled:bg-gray-50"
           />
 
-          {error && <ErrorMessage message={error} />}
+          {error && (
+            <>
+              <ErrorMessage message={error} />
+              {signInHint && (
+                <a
+                  href={signInHint}
+                  className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-lg border-2 border-brand-navy px-4 text-sm font-semibold text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
+                >
+                  Sign in to your account
+                </a>
+              )}
+            </>
+          )}
 
           <button
             type="submit"

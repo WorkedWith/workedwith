@@ -4,13 +4,16 @@ import { useState, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { signOut } from '@/actions/sign-out'
 import { deleteAccount } from '@/actions/delete-account'
+import { addClientRole } from '@/actions/add-role'
 
-export function SettingsContent({ email }: { email: string }) {
+export function SettingsContent({ email, userType }: { email: string; userType: string | null }) {
   const [resetSent, setResetSent] = useState(false)
   const [resetPending, startResetTransition] = useTransition()
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deletePending, startDeleteTransition] = useTransition()
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [roleError, setRoleError] = useState<string | null>(null)
+  const [rolePending, startRoleTransition] = useTransition()
 
   function handlePasswordReset() {
     startResetTransition(async () => {
@@ -30,6 +33,15 @@ export function SettingsContent({ email }: { email: string }) {
         setDeleteError(result.error)
         setDeleteConfirm(false)
       }
+    })
+  }
+
+  function handleAddClientRole() {
+    setRoleError(null)
+    startRoleTransition(async () => {
+      const result = await addClientRole()
+      if (result?.error) setRoleError(result.error)
+      // on success, addClientRole redirects to /dashboard
     })
   }
 
@@ -64,6 +76,49 @@ export function SettingsContent({ email }: { email: string }) {
           </div>
         )}
       </section>
+
+      {/* Add another role */}
+      {userType !== null && (
+        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-2 text-base font-semibold text-brand-navy">Add another role</h2>
+
+          {userType === 'both' ? (
+            <p className="text-sm text-gray-500">
+              You have both a trade and client profile on this account.
+            </p>
+          ) : userType === 'trade' ? (
+            <>
+              <p className="mb-4 text-sm text-gray-500">
+                Use WorkedWith as a client too. Build your client reputation and find tradespeople.
+              </p>
+              {roleError && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                  <p className="text-sm text-red-700">{roleError}</p>
+                </div>
+              )}
+              <button
+                onClick={handleAddClientRole}
+                disabled={rolePending}
+                className="min-h-[44px] rounded-xl bg-brand-amber px-5 text-sm font-semibold text-brand-navy hover:bg-amber-400 disabled:opacity-50 transition-colors"
+              >
+                {rolePending ? 'Adding…' : 'Add client profile'}
+              </button>
+            </>
+          ) : (userType === 'client_individual' || userType === 'client_business') ? (
+            <>
+              <p className="mb-4 text-sm text-gray-500">
+                Already working in the trades? Add your trade profile to the same account.
+              </p>
+              <a
+                href="/onboarding/trade?upgrading=true"
+                className="inline-flex min-h-[44px] items-center rounded-xl bg-brand-amber px-5 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
+              >
+                Add trade profile
+              </a>
+            </>
+          ) : null}
+        </section>
+      )}
 
       {/* Sign out */}
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">

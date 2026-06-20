@@ -76,6 +76,36 @@ function SuccessCard({ tradePersonName, isBackdated, jobId }: {
   )
 }
 
+function NoProfileCard({ token }: { token: string }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 text-center">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+        <svg className="h-6 w-6 text-amber-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+          <path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
+        </svg>
+      </div>
+      <h2 className="text-lg font-semibold text-brand-navy">
+        You need to complete your profile first
+      </h2>
+      <p className="mt-2 text-sm leading-relaxed text-gray-600">
+        To confirm this job and leave a review, you need to set up your WorkedWith trade profile. It only takes a minute.
+      </p>
+      <a
+        href={`/onboarding/trade?redirect=${encodeURIComponent(`/jobs/confirm/${token}`)}`}
+        className="mt-6 inline-block w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy hover:opacity-90 transition-opacity"
+      >
+        Set up my trade profile
+      </a>
+      <p className="mt-4 text-sm text-gray-500">
+        Not a tradesperson?{' '}
+        <a href="/join/client/individual" className="font-medium text-brand-amber hover:underline">
+          Join as a client instead
+        </a>
+      </p>
+    </div>
+  )
+}
+
 const errorTitles: Record<string, string> = {
   invalid:           'Invalid invitation',
   expired:           'Invitation expired',
@@ -156,6 +186,14 @@ export default async function ConfirmJobPage({ params }: { params: { token: stri
           isBackdated={result.isBackdated}
           jobId={result.jobId}
         />
+      </Shell>
+    )
+  }
+
+  if (!result.success && result.code === 'no_profile') {
+    return (
+      <Shell>
+        <NoProfileCard token={token} />
       </Shell>
     )
   }

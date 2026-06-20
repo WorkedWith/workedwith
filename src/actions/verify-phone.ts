@@ -11,7 +11,7 @@ import type { VerificationTier } from '@/types/database'
 
 export type SendOTPResult =
   | { success: true }
-  | { success: false; error: string }
+  | { success: false; error: string; redirectTo?: string }
 
 export type VerifyOTPResult =
   | { success: true; redirectTo: string }
@@ -62,8 +62,25 @@ export async function sendOTP(phone: string): Promise<SendOTPResult> {
   const normalized = normaliseUKPhone(phone)
   console.log('Normalised phone:', normalized)
 
-  // Check deactivated identities — return a generic error to avoid info leakage
   const admin = createAdminClient()
+
+  // Detect conflict early so we don't send an SMS that can't be used
+  const supabase = await createClient()
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+
+  const { data: phoneConflict } = currentUser
+    ? await admin.from('users').select('id').eq('phone', normalized).neq('id', currentUser.id).maybeSingle()
+    : await admin.from('users').select('id').eq('phone', normalized).maybeSingle()
+
+  if (phoneConflict) {
+    return {
+      success: false,
+      error: 'You already have a WorkedWith account with this number. Sign in instead.',
+      redirectTo: '/sign-in',
+    }
+  }
+
+  // Check deactivated identities — return a generic error to avoid info leakage
   const { data: blocked } = await admin
     .from('deactivated_identities')
     .select('id')
@@ -130,7 +147,7 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
     .maybeSingle()
 
   if (conflict) {
-    return { success: false, error: 'This number is already linked to another account. Please contact support.' }
+    return { success: false, error: 'You already have a WorkedWith account with this number. Sign in instead.' }
   }
 
   // Fetch current row to avoid downgrading a fully_verified user

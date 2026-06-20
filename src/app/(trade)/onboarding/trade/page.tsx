@@ -5,7 +5,16 @@ import { TradeOnboardingForm } from './trade-onboarding-form'
 
 export const metadata = { title: 'Create your trade profile | WorkedWith' }
 
-export default async function TradeOnboardingPage() {
+type PageProps = {
+  searchParams: Promise<{ redirect?: string; upgrading?: string }>
+}
+
+export default async function TradeOnboardingPage({ searchParams }: PageProps) {
+  const { redirect: redirectParam, upgrading: upgradingParam } = await searchParams
+  // Only allow internal redirects
+  const redirectTo = redirectParam?.startsWith('/') ? redirectParam : undefined
+  const upgrading = upgradingParam === 'true'
+
   const supabase = await createClient()
   const {
     data: { user },
@@ -27,11 +36,11 @@ export default async function TradeOnboardingPage() {
   // Already has a trade profile — skip onboarding
   const { data: existing } = await admin
     .from('trade_profiles')
-    .select('*')
+    .select('id')
     .eq('user_id', user.id)
     .maybeSingle()
 
-  if (existing) redirect('/dashboard')
+  if (existing) redirect(redirectTo ?? '/dashboard')
 
   return (
     <main className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-4">
@@ -47,7 +56,7 @@ export default async function TradeOnboardingPage() {
             This is how clients will find and trust you.
           </p>
         </div>
-        <TradeOnboardingForm />
+        <TradeOnboardingForm redirectTo={redirectTo} upgrading={upgrading} />
       </div>
     </main>
   )

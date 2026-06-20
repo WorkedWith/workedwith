@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { UserMenu } from '@/components/user-menu'
 import { TRADE_TYPES } from '@/lib/trade-types'
+import { getJobHistory } from '@/actions/get-job-history'
+import { JobHistory } from '@/components/job-history'
 import type { User, Notification } from '@/types/database'
 
 export const metadata = { title: 'Dashboard — WorkedWith' }
@@ -22,6 +24,8 @@ export default async function DashboardPage() {
   if (!user_type) redirect('/verify/phone')
 
   const isTrade = user_type === 'trade' || user_type === 'both'
+  const isBoth = user_type === 'both'
+  const isClient = isBoth || !isTrade
   const firstName = full_name.split(' ')[0]
 
   // Parallel data fetch
@@ -30,6 +34,7 @@ export default async function DashboardPage() {
     { data: tradeProfile },
     { data: clientProfile },
     { count: pendingJobsCount },
+    jobHistory,
   ] = await Promise.all([
     admin
       .from('notifications')
@@ -38,10 +43,10 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(5),
     isTrade
-      ? admin.from('trade_profiles').select('average_rating, total_reviews, total_jobs, public_slug, subscription_tier').eq('user_id', user.id).maybeSingle()
+      ? admin.from('trade_profiles').select('id, average_rating, total_reviews, total_jobs, public_slug, subscription_tier').eq('user_id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
-    !isTrade
-      ? admin.from('client_profiles').select('average_rating, total_reviews, total_jobs').eq('user_id', user.id).maybeSingle()
+    isClient
+      ? admin.from('client_profiles').select('id, average_rating, total_reviews, total_jobs').eq('user_id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
     isTrade
       ? admin.from('jobs')
@@ -51,20 +56,50 @@ export default async function DashboardPage() {
       : admin.from('jobs')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending_confirmation'),
+    getJobHistory(),
   ])
 
   const notifications = (rawNotifications ?? []) as unknown as Notification[]
+
+  // Job presence checks for onboarding checklist
+  const tpId = tradeProfile ? (tradeProfile as unknown as { id: string }).id : undefined
+  const cpId = clientProfile ? (clientProfile as unknown as { id: string }).id : undefined
+
+  let hasLiveJob = false
+  let hasBackdatedJobTrade = false
+  let hasBackdatedJobClient = false
+
+  if (isTrade && tpId) {
+    const [{ count: liveCount }, { count: backdatedCount }] = await Promise.all([
+      admin.from('jobs').select('id', { count: 'exact', head: true })
+        .eq('trade_profile_id', tpId).eq('is_backdated', false),
+      admin.from('jobs').select('id', { count: 'exact', head: true })
+        .eq('trade_profile_id', tpId).eq('is_backdated', true),
+    ])
+    hasLiveJob = (liveCount ?? 0) > 0
+    hasBackdatedJobTrade = (backdatedCount ?? 0) > 0
+  }
+
+  if (cpId) {
+    const { count } = await admin.from('jobs').select('id', { count: 'exact', head: true })
+      .eq('client_profile_id', cpId).eq('is_backdated', true)
+    hasBackdatedJobClient = (count ?? 0) > 0
+  }
+
+  const hasBackdatedJob = hasBackdatedJobTrade || hasBackdatedJobClient
+  const showChecklist = isTrade ? (!hasLiveJob || !hasBackdatedJob) : !hasBackdatedJob
+
   const hasJobs = isTrade
     ? (tradeProfile?.total_jobs ?? 0) > 0
     : (clientProfile?.total_jobs ?? 0) > 0
-  const hasReviews = isTrade
-    ? (tradeProfile?.total_reviews ?? 0) > 0
-    : (clientProfile?.total_reviews ?? 0) > 0
+  const tradeHasReviews = (tradeProfile?.total_reviews ?? 0) > 0
+  const clientHasReviews = (clientProfile?.total_reviews ?? 0) > 0
 
   const accountLabel =
     user_type === 'trade' ? 'Tradesperson' :
     user_type === 'client_individual' ? 'Client' :
-    user_type === 'client_business' ? 'Business client' : 'Account'
+    user_type === 'client_business' ? 'Business client' :
+    user_type === 'both' ? 'Tradesperson & Client' : 'Account'
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -100,51 +135,43 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* WorkedWith score — shown if they have reviews */}
-        {hasReviews && (
+        {/* Role label for 'both' users — trade side */}
+        {isBoth && (
+          <p className="text-xs font-bold uppercase tracking-widest text-brand-amber">As a tradesperson</p>
+        )}
+
+        {/* Trade WorkedWith score */}
+        {isTrade && tradeHasReviews && (
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
-              Your WorkedWith Score
+              {isBoth ? 'Your trade score' : 'Your WorkedWith Score'}
             </p>
             <div className="flex items-center gap-6">
               <div>
                 <p className="text-4xl font-bold text-brand-navy">
-                  {isTrade
-                    ? (tradeProfile?.average_rating ?? 0).toFixed(1)
-                    : (clientProfile?.average_rating ?? 0).toFixed(1)}
+                  {(tradeProfile?.average_rating ?? 0).toFixed(1)}
                 </p>
                 <div className="mt-1 flex text-lg">
-                  {[1, 2, 3, 4, 5].map(s => {
-                    const rating = isTrade
-                      ? (tradeProfile?.average_rating ?? 0)
-                      : (clientProfile?.average_rating ?? 0)
-                    return (
-                      <span
-                        key={s}
-                        className={s <= Math.round(rating) ? 'text-brand-amber' : 'text-gray-200'}
-                        aria-hidden
-                      >
-                        ★
-                      </span>
-                    )
-                  })}
+                  {[1, 2, 3, 4, 5].map(s => (
+                    <span
+                      key={s}
+                      className={s <= Math.round(tradeProfile?.average_rating ?? 0) ? 'text-brand-amber' : 'text-gray-200'}
+                      aria-hidden
+                    >★</span>
+                  ))}
                 </div>
               </div>
               <div className="space-y-1 text-sm text-gray-500">
                 <p>
-                  <span className="font-semibold text-brand-navy">
-                    {isTrade ? (tradeProfile?.total_reviews ?? 0) : (clientProfile?.total_reviews ?? 0)}
-                  </span>{' '}
-                  verified review{((isTrade ? tradeProfile?.total_reviews : clientProfile?.total_reviews) ?? 0) !== 1 ? 's' : ''}
+                  <span className="font-semibold text-brand-navy">{tradeProfile?.total_reviews ?? 0}</span>{' '}
+                  verified review{(tradeProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
                 </p>
                 <p>
-                  <span className="font-semibold text-brand-navy">
-                    {isTrade ? (tradeProfile?.total_jobs ?? 0) : (clientProfile?.total_jobs ?? 0)}
-                  </span>{' '}
-                  confirmed job{((isTrade ? tradeProfile?.total_jobs : clientProfile?.total_jobs) ?? 0) !== 1 ? 's' : ''}
+                  <span className="font-semibold text-brand-navy">{tradeProfile?.total_jobs ?? 0}</span>{' '}
+                  confirmed job{(tradeProfile?.total_jobs ?? 0) !== 1 ? 's' : ''}
                 </p>
               </div>
-              {isTrade && tradeProfile?.public_slug && (
+              {tradeProfile?.public_slug && (
                 <a
                   href={`/t/${tradeProfile.public_slug}`}
                   className="ml-auto text-xs font-medium text-brand-amber hover:underline shrink-0"
@@ -156,8 +183,8 @@ export default async function DashboardPage() {
           </section>
         )}
 
-        {/* Onboarding checklist — new users only */}
-        {!hasJobs && (
+        {/* Onboarding checklist — shown until all items are done */}
+        {showChecklist && (
           <section className="rounded-2xl border-2 border-dashed border-brand-amber/30 bg-amber-50/50 p-5">
             <p className="text-sm font-semibold text-brand-navy mb-4">Get started with WorkedWith</p>
             <div className="space-y-3">
@@ -169,14 +196,14 @@ export default async function DashboardPage() {
               />
               {isTrade && (
                 <OnboardingItem
-                  done={false}
+                  done={hasLiveJob}
                   label="Log your first job"
                   href="/jobs/log"
                   description="Invite your client to confirm a current or upcoming job."
                 />
               )}
               <OnboardingItem
-                done={false}
+                done={hasBackdatedJob}
                 label="Add a past job"
                 href="/jobs/log/backdated"
                 description="Build your verified work history from day one."
@@ -184,6 +211,9 @@ export default async function DashboardPage() {
             </div>
           </section>
         )}
+
+        {/* Job history */}
+        <JobHistory jobs={jobHistory} />
 
         {/* Quick actions */}
         <section>
@@ -199,7 +229,7 @@ export default async function DashboardPage() {
                 <QuickAction href="/search" label="Search clients" emoji="🔍" />
               </>
             )}
-            {!isTrade && (
+            {isClient && !isBoth && (
               <>
                 <QuickAction href="/jobs/log/backdated" label="Add a past job" emoji="↩" />
                 <QuickAction href="/notifications" label="Notifications" emoji="🔔" />
@@ -208,8 +238,48 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        {/* Tradesperson search — clients only */}
-        {!isTrade && (
+        {/* Role label for 'both' users — client side */}
+        {isBoth && (
+          <p className="text-xs font-bold uppercase tracking-widest text-brand-amber">As a client</p>
+        )}
+
+        {/* Client WorkedWith score */}
+        {isClient && clientHasReviews && (
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+              {isBoth ? 'Your client score' : 'Your WorkedWith Score'}
+            </p>
+            <div className="flex items-center gap-6">
+              <div>
+                <p className="text-4xl font-bold text-brand-navy">
+                  {(clientProfile?.average_rating ?? 0).toFixed(1)}
+                </p>
+                <div className="mt-1 flex text-lg">
+                  {[1, 2, 3, 4, 5].map(s => (
+                    <span
+                      key={s}
+                      className={s <= Math.round(clientProfile?.average_rating ?? 0) ? 'text-brand-amber' : 'text-gray-200'}
+                      aria-hidden
+                    >★</span>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1 text-sm text-gray-500">
+                <p>
+                  <span className="font-semibold text-brand-navy">{clientProfile?.total_reviews ?? 0}</span>{' '}
+                  verified review{(clientProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
+                </p>
+                <p>
+                  <span className="font-semibold text-brand-navy">{clientProfile?.total_jobs ?? 0}</span>{' '}
+                  confirmed job{(clientProfile?.total_jobs ?? 0) !== 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Tradesperson search — client role only */}
+        {isClient && (
           <section>
             <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Find a tradesperson</p>
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
