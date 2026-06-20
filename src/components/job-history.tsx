@@ -16,12 +16,15 @@ function formatDate(started_at: string | null, backdated_period: string | null, 
   return 'Date unknown'
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, otherPartyName }: { status: string; otherPartyName: string }) {
   const variants: Record<string, { label: string; className: string }> = {
-    pending_confirmation: { label: 'Awaiting confirmation', className: 'bg-gray-100 text-gray-600' },
-    active:              { label: 'In progress',            className: 'bg-blue-100 text-blue-700' },
-    completed:           { label: 'Completed',              className: 'bg-green-100 text-green-700' },
-    disputed:            { label: 'Disputed',               className: 'bg-red-100 text-red-700' },
+    pending_confirmation: {
+      label: `Waiting for ${otherPartyName} to confirm`,
+      className: 'bg-gray-100 text-gray-600',
+    },
+    active:    { label: 'In progress', className: 'bg-blue-100 text-blue-700' },
+    completed: { label: 'Completed',   className: 'bg-green-100 text-green-700' },
+    disputed:  { label: 'Disputed',    className: 'bg-red-100 text-red-700' },
   }
   const { label, className } = variants[status] ?? { label: status, className: 'bg-gray-100 text-gray-600' }
   return (
@@ -47,8 +50,8 @@ export function JobHistory({ jobs }: Props) {
   if (jobs.length === 0) {
     return (
       <section>
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Your jobs</p>
-        <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Your jobs</p>
+        <div className="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
           <p className="text-sm font-medium text-gray-500">No jobs yet. Add a past job to get started.</p>
         </div>
       </section>
@@ -58,7 +61,7 @@ export function JobHistory({ jobs }: Props) {
   return (
     <section>
       <div className="flex items-center gap-2 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Your jobs</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Your jobs</p>
         <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
           {jobs.length}
         </span>
@@ -81,7 +84,7 @@ export function JobHistory({ jobs }: Props) {
             <button
               key={job.id}
               onClick={() => setSelectedJob(job)}
-              className="w-full text-left rounded-2xl border border-gray-200 bg-white p-4 shadow-sm hover:border-brand-amber hover:shadow-md transition-all"
+              className="w-full text-left rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:border-brand-amber hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -94,8 +97,13 @@ export function JobHistory({ jobs }: Props) {
                       {formatDate(job.started_at, job.backdated_period, job.is_backdated)}
                     </span>
                   </div>
+                  {job.status === 'pending_confirmation' && (
+                    <p className="mt-1.5 text-xs text-gray-400">
+                      You logged this job. {job.other_party.name} has been invited to confirm.
+                    </p>
+                  )}
                 </div>
-                <StatusBadge status={job.status} />
+                <StatusBadge status={job.status} otherPartyName={job.other_party.name} />
               </div>
 
               {(job.reviews.received || job.reviews.given || reviewPending) && (

@@ -4,17 +4,27 @@ export const metadata: Metadata = {
   title: 'Join WorkedWith',
 }
 
-export default function JoinPage() {
+export default function JoinPage({
+  searchParams,
+}: {
+  searchParams: { next?: string }
+}) {
+  const next = searchParams.next && searchParams.next.startsWith('/')
+    ? searchParams.next
+    : undefined
+
+  const tradeHref = next ? `/join/trade?next=${encodeURIComponent(next)}` : '/join/trade'
+  const clientHref = next ? `/join/client?next=${encodeURIComponent(next)}` : '/join/client'
+  const signInHref = next ? `/sign-in?next=${encodeURIComponent(next)}` : '/sign-in'
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <header className="px-4 py-6 text-center sm:px-6">
         <a href="/" className="text-2xl font-bold tracking-tight text-brand-navy">
           Worked<span className="text-brand-amber">With</span>
         </a>
       </header>
 
-      {/* Main content */}
       <main className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6">
         <h1 className="text-center text-3xl font-bold text-brand-navy sm:text-4xl">
           What brings you to WorkedWith?
@@ -23,7 +33,7 @@ export default function JoinPage() {
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
           {/* Tradesperson card */}
           <a
-            href="/join/trade"
+            href={tradeHref}
             className="group flex flex-col rounded-2xl bg-brand-navy p-8 hover:opacity-95 transition-opacity"
           >
             <h2 className="text-2xl font-bold text-white">I&apos;m a tradesperson</h2>
@@ -37,7 +47,7 @@ export default function JoinPage() {
 
           {/* Client card */}
           <a
-            href="/join/client"
+            href={clientHref}
             className="group flex flex-col rounded-2xl border border-amber-100 bg-amber-50 p-8 hover:bg-amber-100/60 transition-colors"
           >
             <h2 className="text-2xl font-bold text-brand-navy">I&apos;m a client</h2>
@@ -52,7 +62,7 @@ export default function JoinPage() {
 
         <p className="mt-8 text-center text-sm text-gray-400">
           Already have an account?{' '}
-          <a href="/sign-in" className="font-medium text-gray-600 hover:text-brand-navy transition-colors">
+          <a href={signInHref} className="font-medium text-gray-600 hover:text-brand-navy transition-colors">
             Sign in
           </a>
         </p>

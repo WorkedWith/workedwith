@@ -3,13 +3,16 @@
 import { useState, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-export function SignInForm({ message }: { message?: string }) {
+export function SignInForm({ message, next }: { message?: string; next?: string }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [resetSent, setResetSent] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [isResetting, startResetting] = useTransition()
+
+  // Only allow relative paths to prevent open-redirect attacks
+  const safeNext = next && next.startsWith('/') ? next : null
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -27,7 +30,6 @@ export function SignInForm({ message }: { message?: string }) {
         return
       }
 
-      // Determine redirect based on user_type and verification_tier
       const { data: { user: authedUser } } = await supabase.auth.getUser()
       if (authedUser) {
         const { data: userData } = await supabase
@@ -38,6 +40,8 @@ export function SignInForm({ message }: { message?: string }) {
 
         if (!userData || !userData.phone_verified || userData.verification_tier === 'unverified') {
           window.location.href = '/verify/phone'
+        } else if (safeNext) {
+          window.location.href = safeNext
         } else if (userData.user_type === 'client_business') {
           window.location.href = '/org/dashboard'
         } else {
@@ -81,10 +85,20 @@ export function SignInForm({ message }: { message?: string }) {
           </p>
         </div>
 
-        {/* Info banner from redirect (e.g. wrong account on job invite) */}
+        {/* Prominent info banner — shown when redirected with context (e.g. wrong account) */}
         {message && (
-          <div className="mb-6 rounded-xl bg-amber-900/40 border border-amber-500/30 px-4 py-3 text-sm text-amber-300">
-            {message}
+          <div className="mb-6 rounded-xl bg-amber-400/20 border border-amber-400/60 p-4">
+            <div className="flex gap-3">
+              <svg
+                className="h-5 w-5 shrink-0 mt-0.5 text-brand-amber"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden
+              >
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm font-medium text-amber-200 leading-relaxed">{message}</p>
+            </div>
           </div>
         )}
 
@@ -157,19 +171,31 @@ export function SignInForm({ message }: { message?: string }) {
           </form>
         )}
 
-        <div className="mt-6 text-center space-y-2">
-          <p className="text-sm text-white/50">
-            Don&apos;t have an account?
-          </p>
-          <div className="flex items-center justify-center gap-4">
-            <a href="/join/trade" className="text-sm font-medium text-brand-amber hover:underline">
-              Join as Tradesperson
+        <div className="mt-6 text-center space-y-3">
+          {safeNext ? (
+            /* When arriving via a redirect (e.g. job invite), offer account creation */
+            <a
+              href={`/join?next=${encodeURIComponent(safeNext)}`}
+              className="block w-full min-h-[48px] rounded-xl border border-white/20 px-6 py-3 text-sm font-medium text-white/70 hover:border-white/40 hover:text-white transition-colors"
+            >
+              Create a new account instead
             </a>
-            <span className="text-white/20">·</span>
-            <a href="/join/client" className="text-sm font-medium text-white/60 hover:text-white transition-colors">
-              Join as Client
-            </a>
-          </div>
+          ) : (
+            <>
+              <p className="text-sm text-white/50">
+                Don&apos;t have an account?
+              </p>
+              <div className="flex items-center justify-center gap-4">
+                <a href="/join/trade" className="text-sm font-medium text-brand-amber hover:underline">
+                  Join as Tradesperson
+                </a>
+                <span className="text-white/20">·</span>
+                <a href="/join/client" className="text-sm font-medium text-white/60 hover:text-white transition-colors">
+                  Join as Client
+                </a>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </main>

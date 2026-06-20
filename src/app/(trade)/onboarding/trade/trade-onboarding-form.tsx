@@ -82,7 +82,7 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
         ? await addTradeRole(payload)
         : await createTradeProfile(payload)
       if (result.success) {
-        router.push(redirectTo ?? '/dashboard')
+        router.push(redirectTo ?? (upgrading ? '/dashboard' : '/welcome'))
       } else {
         if (result.field) {
           setFieldErrors({ [result.field]: result.error })

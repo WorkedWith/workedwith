@@ -13,7 +13,7 @@ const PRICE_IDS: Record<'pro' | 'team', string | undefined> = {
   team: process.env.STRIPE_TEAM_PRICE_ID,
 }
 
-export async function createCheckoutSession(tier: 'pro' | 'team'): Promise<CheckoutResult> {
+export async function createCheckoutSession(tier: 'pro' | 'team', successUrl?: string): Promise<CheckoutResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'You must be signed in.' }
@@ -67,7 +67,9 @@ export async function createCheckoutSession(tier: 'pro' | 'team'): Promise<Check
       trial_period_days: 14,
       metadata: { user_id: user.id },
     },
-    success_url: `${BASE_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: successUrl
+      ? `${BASE_URL}${successUrl}`
+      : `${BASE_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${BASE_URL}/subscription`,
     allow_promotion_codes: true,
   })
