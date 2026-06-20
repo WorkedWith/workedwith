@@ -19,7 +19,7 @@ export default async function DashboardPage() {
   const { data: userData } = await admin.from('users').select('*').eq('id', user.id).single()
   if (!userData) redirect('/')
 
-  const { verification_tier, user_type, full_name } = userData as unknown as User
+  const { verification_tier, user_type, full_name, phone_verified } = userData as unknown as User
   if (verification_tier === 'unverified') redirect('/verify/phone')
   if (!user_type) redirect('/verify/phone')
 
@@ -28,7 +28,6 @@ export default async function DashboardPage() {
   const isClient = isBoth || !isTrade
   const firstName = full_name.split(' ')[0]
 
-  // Parallel data fetch
   const [
     { data: rawNotifications },
     { data: tradeProfile },
@@ -61,7 +60,6 @@ export default async function DashboardPage() {
 
   const notifications = (rawNotifications ?? []) as unknown as Notification[]
 
-  // Job presence checks for onboarding checklist
   const tpId = tradeProfile ? (tradeProfile as unknown as { id: string }).id : undefined
   const cpId = clientProfile ? (clientProfile as unknown as { id: string }).id : undefined
 
@@ -87,13 +85,17 @@ export default async function DashboardPage() {
   }
 
   const hasBackdatedJob = hasBackdatedJobTrade || hasBackdatedJobClient
-  const showChecklist = isTrade ? (!hasLiveJob || !hasBackdatedJob) : !hasBackdatedJob
+
+  const showChecklist = isTrade
+    ? (!phone_verified || !tradeProfile || !hasLiveJob || !hasBackdatedJob)
+    : (!phone_verified || !hasBackdatedJob)
+
+  const tradeHasReviews = (tradeProfile?.total_reviews ?? 0) > 0
+  const clientHasReviews = (clientProfile?.total_reviews ?? 0) > 0
 
   const hasJobs = isTrade
     ? (tradeProfile?.total_jobs ?? 0) > 0
     : (clientProfile?.total_jobs ?? 0) > 0
-  const tradeHasReviews = (tradeProfile?.total_reviews ?? 0) > 0
-  const clientHasReviews = (clientProfile?.total_reviews ?? 0) > 0
 
   const accountLabel =
     user_type === 'trade' ? 'Tradesperson' :
@@ -115,7 +117,8 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 space-y-6">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 space-y-8">
+
         {/* Welcome row */}
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -128,86 +131,37 @@ export default async function DashboardPage() {
             <div className="shrink-0 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-center">
               <p className="text-xl font-bold text-amber-700">{pendingJobsCount}</p>
               <p className="text-xs text-amber-600">
-                {isTrade ? 'active job' : 'pending'}
-                {(pendingJobsCount ?? 0) !== 1 ? 's' : ''}
+                {isTrade
+                  ? `active job${(pendingJobsCount ?? 0) !== 1 ? 's' : ''}`
+                  : 'awaiting confirmation'}
               </p>
             </div>
           )}
         </div>
 
-        {/* Role label for 'both' users — trade side */}
+        {/* 'both' users — trade side label */}
         {isBoth && (
           <p className="text-xs font-bold uppercase tracking-widest text-brand-amber">As a tradesperson</p>
         )}
 
-        {/* Trade WorkedWith score */}
-        {isTrade && tradeHasReviews && (
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
-              {isBoth ? 'Your trade score' : 'Your WorkedWith Score'}
-            </p>
-            <div className="flex items-center gap-6">
-              <div>
-                <p className="text-4xl font-bold text-brand-navy">
-                  {(tradeProfile?.average_rating ?? 0).toFixed(1)}
-                </p>
-                <div className="mt-1 flex text-lg">
-                  {[1, 2, 3, 4, 5].map(s => (
-                    <span
-                      key={s}
-                      className={s <= Math.round(tradeProfile?.average_rating ?? 0) ? 'text-brand-amber' : 'text-gray-200'}
-                      aria-hidden
-                    >★</span>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-1 text-sm text-gray-500">
-                <p>
-                  <span className="font-semibold text-brand-navy">{tradeProfile?.total_reviews ?? 0}</span>{' '}
-                  verified review{(tradeProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
-                </p>
-                <p>
-                  <span className="font-semibold text-brand-navy">{tradeProfile?.total_jobs ?? 0}</span>{' '}
-                  confirmed job{(tradeProfile?.total_jobs ?? 0) !== 1 ? 's' : ''}
-                </p>
-              </div>
-              {tradeProfile?.public_slug && (
-                <a
-                  href={`/t/${tradeProfile.public_slug}`}
-                  className="ml-auto text-xs font-medium text-brand-amber hover:underline shrink-0"
-                >
-                  View profile →
-                </a>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* Onboarding checklist — shown until all items are done */}
+        {/* Onboarding checklist */}
         {showChecklist && (
-          <section className="rounded-2xl border-2 border-dashed border-brand-amber/30 bg-amber-50/50 p-5">
+          <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <p className="text-sm font-semibold text-brand-navy mb-4">Get started with WorkedWith</p>
-            <div className="space-y-3">
-              <OnboardingItem
-                done={true}
-                label="Complete your profile"
-                href={isTrade ? '/onboarding/trade' : '/onboarding/individual'}
-                description="Add your details so clients or tradespeople can find you."
-              />
-              {isTrade && (
-                <OnboardingItem
-                  done={hasLiveJob}
-                  label="Log your first job"
-                  href="/jobs/log"
-                  description="Invite your client to confirm a current or upcoming job."
-                />
+            <div className="divide-y divide-gray-50">
+              <OnboardingItem done={phone_verified} label="Verify your phone number" href="/verify/phone" />
+              {isTrade ? (
+                <>
+                  <OnboardingItem done={!!tradeProfile} label="Complete your trade profile" href="/onboarding/trade" />
+                  <OnboardingItem done={hasLiveJob} label="Log your first job" href="/jobs/log" />
+                  <OnboardingItem done={hasBackdatedJob} label="Add a past job" href="/jobs/log/backdated" />
+                </>
+              ) : (
+                <>
+                  <OnboardingItem done={hasBackdatedJob} label="Add a past job" href="/jobs/log/backdated" />
+                  <OnboardingItem done={false} label="Find a tradesperson" href="/find" />
+                </>
               )}
-              <OnboardingItem
-                done={hasBackdatedJob}
-                label="Add a past job"
-                href="/jobs/log/backdated"
-                description="Build your verified work history from day one."
-              />
             </div>
           </section>
         )}
@@ -218,71 +172,144 @@ export default async function DashboardPage() {
         {/* Quick actions */}
         <section>
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Quick actions</p>
-          <div className={`grid gap-3 ${isTrade ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2'}`}>
-            {isTrade && (
-              <>
-                <QuickAction href="/jobs/log" label="Log a job" emoji="＋" />
-                <QuickAction href="/jobs/log/backdated" label="Past job" emoji="↩" />
-                {tradeProfile?.public_slug && (
-                  <QuickAction href={`/t/${tradeProfile.public_slug}`} label="My profile" emoji="👤" />
-                )}
-                <QuickAction href="/search" label="Search clients" emoji="🔍" />
-              </>
-            )}
-            {isClient && !isBoth && (
-              <>
-                <QuickAction href="/jobs/log/backdated" label="Add a past job" emoji="↩" />
-                <QuickAction href="/notifications" label="Notifications" emoji="🔔" />
-              </>
-            )}
-          </div>
+          {isTrade ? (
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="/jobs/log"
+                className="rounded-lg bg-brand-amber px-6 py-3 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
+              >
+                + Log a job
+              </a>
+              <a
+                href="/jobs/log/backdated"
+                className="rounded-lg border-2 border-brand-navy px-6 py-3 text-sm font-semibold text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
+              >
+                + Add a past job
+              </a>
+            </div>
+          ) : (
+            <a
+              href="/jobs/log/backdated"
+              className="block w-full rounded-lg bg-brand-amber py-3 px-6 text-center text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors sm:inline-block sm:w-auto"
+            >
+              + Add a past job
+            </a>
+          )}
         </section>
 
-        {/* Role label for 'both' users — client side */}
+        {/* Trade reputation */}
+        {isTrade && (
+          <section>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Your reputation</p>
+            {tradeHasReviews ? (
+              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-6">
+                  <div>
+                    <p className="text-4xl font-bold text-brand-navy">
+                      {(tradeProfile?.average_rating ?? 0).toFixed(1)}
+                    </p>
+                    <div className="mt-1 flex text-lg">
+                      {[1, 2, 3, 4, 5].map(s => (
+                        <span
+                          key={s}
+                          className={s <= Math.round(tradeProfile?.average_rating ?? 0) ? 'text-brand-amber' : 'text-gray-200'}
+                          aria-hidden
+                        >★</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-sm text-gray-500">
+                    <p>
+                      <span className="font-semibold text-brand-navy">{tradeProfile?.total_reviews ?? 0}</span>{' '}
+                      verified review{(tradeProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-brand-navy">{tradeProfile?.total_jobs ?? 0}</span>{' '}
+                      confirmed job{(tradeProfile?.total_jobs ?? 0) !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  {tradeProfile?.public_slug && (
+                    <a
+                      href={`/t/${tradeProfile.public_slug}`}
+                      className="ml-auto text-xs font-medium text-brand-amber hover:underline shrink-0"
+                    >
+                      View profile →
+                    </a>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-gray-50 border border-gray-200 p-6">
+                <p className="font-semibold text-gray-700 mb-2">Your WorkedWith reputation</p>
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  Your rating will appear here once you have completed jobs and received reviews.
+                  The more verified jobs you complete, the stronger your profile.
+                </p>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* 'both' users — client side label */}
         {isBoth && (
           <p className="text-xs font-bold uppercase tracking-widest text-brand-amber">As a client</p>
         )}
 
-        {/* Client WorkedWith score */}
-        {isClient && clientHasReviews && (
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
-              {isBoth ? 'Your client score' : 'Your WorkedWith Score'}
-            </p>
-            <div className="flex items-center gap-6">
-              <div>
-                <p className="text-4xl font-bold text-brand-navy">
-                  {(clientProfile?.average_rating ?? 0).toFixed(1)}
-                </p>
-                <div className="mt-1 flex text-lg">
-                  {[1, 2, 3, 4, 5].map(s => (
-                    <span
-                      key={s}
-                      className={s <= Math.round(clientProfile?.average_rating ?? 0) ? 'text-brand-amber' : 'text-gray-200'}
-                      aria-hidden
-                    >★</span>
-                  ))}
+        {/* Client reputation */}
+        {isClient && (
+          <section>
+            {!isBoth && (
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Your reputation</p>
+            )}
+            {isBoth && (
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Your client reputation</p>
+            )}
+            {clientHasReviews ? (
+              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center gap-6">
+                  <div>
+                    <p className="text-4xl font-bold text-brand-navy">
+                      {(clientProfile?.average_rating ?? 0).toFixed(1)}
+                    </p>
+                    <div className="mt-1 flex text-lg">
+                      {[1, 2, 3, 4, 5].map(s => (
+                        <span
+                          key={s}
+                          className={s <= Math.round(clientProfile?.average_rating ?? 0) ? 'text-brand-amber' : 'text-gray-200'}
+                          aria-hidden
+                        >★</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-sm text-gray-500">
+                    <p>
+                      <span className="font-semibold text-brand-navy">{clientProfile?.total_reviews ?? 0}</span>{' '}
+                      verified review{(clientProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-brand-navy">{clientProfile?.total_jobs ?? 0}</span>{' '}
+                      confirmed job{(clientProfile?.total_jobs ?? 0) !== 1 ? 's' : ''}
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-1 text-sm text-gray-500">
-                <p>
-                  <span className="font-semibold text-brand-navy">{clientProfile?.total_reviews ?? 0}</span>{' '}
-                  verified review{(clientProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
-                </p>
-                <p>
-                  <span className="font-semibold text-brand-navy">{clientProfile?.total_jobs ?? 0}</span>{' '}
-                  confirmed job{(clientProfile?.total_jobs ?? 0) !== 1 ? 's' : ''}
+            ) : (
+              <div className="rounded-xl bg-gray-50 border border-gray-200 p-6">
+                <p className="font-semibold text-gray-700 mb-2">Your WorkedWith reputation</p>
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  Your rating will appear here once you have completed jobs and received reviews.
+                  The more verified jobs you complete, the stronger your profile.
                 </p>
               </div>
-            </div>
+            )}
           </section>
         )}
 
         {/* Tradesperson search — client role only */}
         {isClient && (
           <section>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Find a tradesperson</p>
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Find a tradesperson</p>
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
               <form
                 method="GET"
                 action="/find"
@@ -334,7 +361,7 @@ export default async function DashboardPage() {
                 See all
               </a>
             </div>
-            <div className="rounded-2xl border border-gray-200 bg-white divide-y divide-gray-50 overflow-hidden shadow-sm">
+            <div className="rounded-xl border border-gray-200 bg-white divide-y divide-gray-50 overflow-hidden shadow-sm">
               {notifications.map(n => (
                 <div
                   key={n.id}
@@ -359,13 +386,13 @@ export default async function DashboardPage() {
           </section>
         )}
 
-        {/* Empty state if no notifications and has jobs */}
         {notifications.length === 0 && hasJobs && (
-          <section className="rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+          <section className="rounded-xl border border-gray-200 bg-white p-10 text-center shadow-sm">
             <p className="text-sm font-medium text-gray-500">No recent activity</p>
             <p className="mt-1 text-xs text-gray-400">Job updates, reviews, and notifications will appear here.</p>
           </section>
         )}
+
       </div>
     </main>
   )
@@ -377,43 +404,32 @@ function OnboardingItem({
   done,
   label,
   href,
-  description,
 }: {
   done: boolean
   label: string
   href: string
-  description: string
 }) {
   return (
     <a
-      href={done ? '#' : href}
-      className={`flex items-start gap-3 rounded-xl p-3 transition-colors ${
-        done ? 'opacity-50 cursor-default' : 'hover:bg-amber-100/50'
+      href={done ? undefined : href}
+      aria-disabled={done}
+      className={`flex items-center gap-3 py-3 px-1 transition-colors ${
+        done ? 'cursor-default' : 'hover:bg-gray-50 rounded-lg'
       }`}
     >
-      <span className={`mt-0.5 shrink-0 h-5 w-5 rounded-full border-2 flex items-center justify-center text-xs ${
-        done ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300 bg-white text-transparent'
-      }`}>
-        {done && '✓'}
+      <span
+        className={`shrink-0 h-5 w-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${
+          done ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300 bg-white'
+        }`}
+      >
+        {done ? '✓' : ''}
       </span>
-      <div>
-        <p className={`text-sm font-semibold ${done ? 'line-through text-gray-400' : 'text-brand-navy'}`}>
-          {label}
-        </p>
-        <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-      </div>
-    </a>
-  )
-}
-
-function QuickAction({ href, label, emoji }: { href: string; label: string; emoji: string }) {
-  return (
-    <a
-      href={href}
-      className="min-h-[80px] flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-gray-200 bg-white p-3 text-center hover:border-brand-amber hover:shadow-sm transition-all"
-    >
-      <span className="text-2xl" aria-hidden>{emoji}</span>
-      <span className="text-xs font-medium text-gray-700 leading-tight">{label}</span>
+      <span className={`flex-1 text-sm ${done ? 'text-gray-400 line-through' : 'font-medium text-brand-navy'}`}>
+        {label}
+      </span>
+      {!done && (
+        <span className="text-gray-400 text-sm" aria-hidden>→</span>
+      )}
     </a>
   )
 }

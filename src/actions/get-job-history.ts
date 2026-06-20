@@ -38,6 +38,7 @@ type JobRow = Pick<Job,
 type TradeProfileRow = { id: string; user_id: string; company_name: string | null; public_slug: string }
 type ClientProfileRow = { id: string; user_id: string; display_name: string | null; company_name: string | null }
 type UserRow = { id: string; full_name: string }
+type InviteRow = { job_id: string; invitee_email: string | null }
 
 export async function getJobHistory(): Promise<JobHistoryItem[]> {
   const supabase = await createClient()
@@ -95,16 +96,18 @@ export async function getJobHistory(): Promise<JobHistoryItem[]> {
     if (myRole === 'client' && job.trade_profile_id) otherTradeProfileIds.add(job.trade_profile_id)
   }
 
-  const [tradeProfilesResult, clientProfilesResult, reviewsResult, reviewWindowsResult] = await Promise.all([
-    otherTradeProfileIds.size > 0
-      ? admin.from('trade_profiles').select('id, user_id, company_name, public_slug').in('id', Array.from(otherTradeProfileIds))
-      : Promise.resolve({ data: [] }),
-    otherClientProfileIds.size > 0
-      ? admin.from('client_profiles').select('id, user_id, display_name, company_name').in('id', Array.from(otherClientProfileIds))
-      : Promise.resolve({ data: [] }),
-    admin.from('reviews').select('*').in('job_id', jobIds).eq('is_visible', true),
-    admin.from('review_windows').select('*').in('job_id', jobIds),
-  ])
+  const [tradeProfilesResult, clientProfilesResult, reviewsResult, reviewWindowsResult, jobInvitesResult] =
+    await Promise.all([
+      otherTradeProfileIds.size > 0
+        ? admin.from('trade_profiles').select('id, user_id, company_name, public_slug').in('id', Array.from(otherTradeProfileIds))
+        : Promise.resolve({ data: [] }),
+      otherClientProfileIds.size > 0
+        ? admin.from('client_profiles').select('id, user_id, display_name, company_name').in('id', Array.from(otherClientProfileIds))
+        : Promise.resolve({ data: [] }),
+      admin.from('reviews').select('*').in('job_id', jobIds).eq('is_visible', true),
+      admin.from('review_windows').select('*').in('job_id', jobIds),
+      admin.from('job_invites').select('job_id, invitee_email').in('job_id', jobIds),
+    ])
 
   const tradeProfiles = (tradeProfilesResult.data ?? []) as unknown as TradeProfileRow[]
   const clientProfiles = (clientProfilesResult.data ?? []) as unknown as ClientProfileRow[]
@@ -123,6 +126,14 @@ export async function getJobHistory(): Promise<JobHistoryItem[]> {
   const tradeProfilesMap = new Map(tradeProfiles.map(p => [p.id, p]))
   const clientProfilesMap = new Map(clientProfiles.map(p => [p.id, p]))
 
+  // First invitee_email per job — fallback when the other party hasn't joined yet
+  const inviteeEmailByJob = new Map<string, string>()
+  for (const invite of (jobInvitesResult.data ?? []) as unknown as InviteRow[]) {
+    if (invite.invitee_email && !inviteeEmailByJob.has(invite.job_id)) {
+      inviteeEmailByJob.set(invite.job_id, invite.invitee_email)
+    }
+  }
+
   const reviews = (reviewsResult.data ?? []) as unknown as Review[]
   const reviewWindows = (reviewWindowsResult.data ?? []) as unknown as ReviewWindow[]
 
@@ -139,23 +150,26 @@ export async function getJobHistory(): Promise<JobHistoryItem[]> {
   return jobs.map(job => {
     const myRole: 'trade' | 'client' = tpId && job.trade_profile_id === tpId ? 'trade' : 'client'
 
-    let otherParty: OtherParty = { name: 'Unknown', public_slug: null }
+    let resolvedName: string | null = null
+    let resolvedSlug: string | null = null
+
     if (myRole === 'trade' && job.client_profile_id) {
       const cp = clientProfilesMap.get(job.client_profile_id)
       if (cp) {
-        otherParty = {
-          name: cp.display_name ?? cp.company_name ?? usersMap.get(cp.user_id) ?? 'Client',
-          public_slug: null,
-        }
+        resolvedName = cp.display_name ?? cp.company_name ?? usersMap.get(cp.user_id) ?? null
       }
     } else if (myRole === 'client' && job.trade_profile_id) {
       const tp = tradeProfilesMap.get(job.trade_profile_id)
       if (tp) {
-        otherParty = {
-          name: tp.company_name ?? usersMap.get(tp.user_id) ?? 'Tradesperson',
-          public_slug: tp.public_slug,
-        }
+        resolvedName = tp.company_name ?? usersMap.get(tp.user_id) ?? null
+        resolvedSlug = tp.public_slug
       }
+    }
+
+    const inviteeEmail = inviteeEmailByJob.get(job.id) ?? null
+    const otherParty: OtherParty = {
+      name: resolvedName ?? inviteeEmail ?? 'Invited user',
+      public_slug: resolvedSlug,
     }
 
     const jobReviews = reviewsByJob.get(job.id) ?? []
