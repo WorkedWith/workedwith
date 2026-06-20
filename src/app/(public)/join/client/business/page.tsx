@@ -30,7 +30,7 @@ export default function JoinClientBusinessPage() {
         password,
         options: {
           data: { full_name: fullName.trim(), user_type: 'client_business' },
-          emailRedirectTo: `${window.location.origin}/verify/phone`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/verify/phone`,
         },
       })
 

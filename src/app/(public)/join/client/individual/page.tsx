@@ -30,7 +30,7 @@ export default function JoinClientIndividualPage() {
         password,
         options: {
           data: { full_name: fullName.trim(), user_type: 'client_individual' },
-          emailRedirectTo: `${window.location.origin}/verify/phone`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/verify/phone`,
         },
       })
 
