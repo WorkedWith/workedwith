@@ -140,10 +140,14 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
   const newTier: VerificationTier =
     current?.verification_tier === 'fully_verified' ? 'fully_verified' : 'phone_verified'
 
-  const { error: updateError } = await admin
+  const { data: updateData, error: updateError } = await admin
     .from('users')
     .update({ phone: normalized, phone_verified: true, verification_tier: newTier })
     .eq('id', user.id)
+    .select()
+
+  console.log('Admin update data:', JSON.stringify(updateData, null, 2))
+  console.log('Admin update error:', JSON.stringify(updateError, null, 2))
 
   if (updateError) {
     return { success: false, error: 'Failed to save your phone number. Please try again.' }
