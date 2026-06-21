@@ -89,13 +89,18 @@ export default async function FindPage({ searchParams }: PageProps) {
 
         {/* Results list (authenticated) */}
         {hasSearch && searchResult?.success && searchResult.results.length > 0 && isAuthenticated && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-400">
+          <div>
+            <p className="text-sm text-gray-400 mb-4">
               {searchResult.results.length} result{searchResult.results.length !== 1 ? 's' : ''} near {postcode?.toUpperCase()}
             </p>
-            {searchResult.results.map(result => (
-              <ResultCard key={result.id} result={result} />
-            ))}
+            <div className="space-y-4">
+              {searchResult.results.map(result => (
+                <ResultCard key={result.id} result={result} />
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 text-center mt-4">
+              Pro members appear at the top of results. Standard and Free members appear below.
+            </p>
           </div>
         )}
 
@@ -133,7 +138,7 @@ function ResultCard({ result }: { result: TradesearchResult }) {
 
   return (
     <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
-      {/* Top row: name + distance badge */}
+      {/* Top row: name + tier badge + distance badge */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-lg font-bold text-brand-navy leading-snug">{result.full_name}</h2>
@@ -148,9 +153,21 @@ function ResultCard({ result }: { result: TradesearchResult }) {
             </span>
           )}
         </div>
-        <span className="shrink-0 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-500">
-          {result.distance.toFixed(1)} miles
-        </span>
+        <div className="shrink-0 flex items-center gap-2">
+          {result.subscription_tier === 'pro' && (
+            <span className="rounded-full bg-brand-amber px-2.5 py-0.5 text-xs font-bold text-brand-navy">
+              Pro
+            </span>
+          )}
+          {result.subscription_tier === 'standard' && (
+            <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500">
+              Verified
+            </span>
+          )}
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-500">
+            {result.distance.toFixed(1)} miles
+          </span>
+        </div>
       </div>
 
       {/* Trade type pills */}

@@ -4,16 +4,24 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripeClient } from '@/lib/stripe/client'
 
+export type CheckoutTier =
+  | 'standard_monthly'
+  | 'standard_annual'
+  | 'pro_monthly'
+  | 'pro_annual'
+
 export type CheckoutResult = { url: string } | { error: string }
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://workedwith.co.uk'
 
-const PRICE_IDS: Record<'pro' | 'team', string | undefined> = {
-  pro:  process.env.STRIPE_PRO_PRICE_ID,
-  team: process.env.STRIPE_TEAM_PRICE_ID,
+const PRICE_IDS: Record<CheckoutTier, string | undefined> = {
+  standard_monthly: process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID,
+  standard_annual:  process.env.STRIPE_STANDARD_ANNUAL_PRICE_ID,
+  pro_monthly:      process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
+  pro_annual:       process.env.STRIPE_PRO_ANNUAL_PRICE_ID,
 }
 
-export async function createCheckoutSession(tier: 'pro' | 'team', successUrl?: string): Promise<CheckoutResult> {
+export async function createCheckoutSession(tier: CheckoutTier, successUrl?: string): Promise<CheckoutResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'You must be signed in.' }
@@ -29,7 +37,7 @@ export async function createCheckoutSession(tier: 'pro' | 'team', successUrl?: s
   }
 
   const priceId = PRICE_IDS[tier]
-  if (!priceId) return { error: `Price ID for ${tier} tier is not configured.` }
+  if (!priceId) return { error: `Price ID for ${tier} is not configured.` }
 
   const { data: tradeProfile } = await admin
     .from('trade_profiles')
@@ -41,7 +49,6 @@ export async function createCheckoutSession(tier: 'pro' | 'team', successUrl?: s
 
   const stripe = getStripeClient()
 
-  // Create or retrieve Stripe customer
   let customerId = tradeProfile.stripe_customer_id as string | null
 
   if (!customerId) {

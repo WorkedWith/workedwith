@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createCheckoutSession } from '@/actions/create-checkout-session'
+import { createCheckoutSession, type CheckoutTier } from '@/actions/create-checkout-session'
 import { createPortalSession } from '@/actions/manage-subscription'
 import type { SubscriptionTier } from '@/types/database'
 
@@ -12,7 +12,7 @@ export function UpgradeButton({
   label,
   className,
 }: {
-  tier: 'pro' | 'team'
+  tier: CheckoutTier
   label: string
   className: string
 }) {
@@ -63,7 +63,7 @@ export function ManageButton({ currentTier }: { currentTier: SubscriptionTier })
     })
   }
 
-  const label = currentTier === 'pro' ? 'Pro' : 'Team'
+  const label = currentTier === 'pro' ? 'Pro' : 'Standard'
 
   return (
     <div>

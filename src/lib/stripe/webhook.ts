@@ -1,23 +1,40 @@
 import type Stripe from 'stripe'
 import { getStripeClient } from './client'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { SubscriptionTier } from '@/types/database'
+import type { BillingPeriod, SubscriptionTier } from '@/types/database'
 
-// Maps a Stripe price ID to a WorkedWith subscription tier.
-// Active and trialing statuses both count as the paid tier.
 function tierFromPriceId(priceId: string | null | undefined): SubscriptionTier {
   if (!priceId) return 'free'
-  if (priceId === process.env.STRIPE_TEAM_PRICE_ID) return 'team'
-  if (priceId === process.env.STRIPE_PRO_PRICE_ID) return 'pro'
+  const standardIds = [
+    process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID,
+    process.env.STRIPE_STANDARD_ANNUAL_PRICE_ID,
+  ]
+  const proIds = [
+    process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
+    process.env.STRIPE_PRO_ANNUAL_PRICE_ID,
+  ]
+  if (standardIds.includes(priceId)) return 'standard'
+  if (proIds.includes(priceId)) return 'pro'
   return 'free'
 }
 
-function activeTier(subscription: Stripe.Subscription): SubscriptionTier {
+function billingPeriodFromPriceId(priceId: string | null | undefined): BillingPeriod {
+  const annualIds = [
+    process.env.STRIPE_STANDARD_ANNUAL_PRICE_ID,
+    process.env.STRIPE_PRO_ANNUAL_PRICE_ID,
+  ]
+  return priceId && annualIds.includes(priceId) ? 'annual' : 'monthly'
+}
+
+function activeTier(subscription: Stripe.Subscription): { tier: SubscriptionTier; billingPeriod: BillingPeriod } {
   if (subscription.status !== 'active' && subscription.status !== 'trialing') {
-    return 'free'
+    return { tier: 'free', billingPeriod: 'monthly' }
   }
-  const priceId = subscription.items.data[0]?.price.id
-  return tierFromPriceId(priceId)
+  const priceId = subscription.items.data[0]?.price.id ?? null
+  return {
+    tier: tierFromPriceId(priceId),
+    billingPeriod: billingPeriodFromPriceId(priceId),
+  }
 }
 
 export async function handleStripeWebhook(body: string, sig: string): Promise<void> {
@@ -42,14 +59,17 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
 
       if (!userId || !subscriptionId || !customerId) break
 
-      // Retrieve subscription to determine tier from price
       const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-      const tier = activeTier(subscription)
+      const { tier, billingPeriod } = activeTier(subscription)
+      const periodEndTs = subscription.items.data[0]?.current_period_end ?? null
+      const currentPeriodEnd = periodEndTs ? new Date(periodEndTs * 1000).toISOString() : null
 
       await admin
         .from('trade_profiles')
         .update({
           subscription_tier: tier,
+          billing_period: billingPeriod,
+          subscription_expires_at: currentPeriodEnd,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
           is_searchable: tier !== 'free',
@@ -62,12 +82,16 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
     case 'customer.subscription.updated': {
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
-      const tier = activeTier(subscription)
+      const { tier, billingPeriod } = activeTier(subscription)
+      const periodEndTs = subscription.items.data[0]?.current_period_end ?? null
+      const currentPeriodEnd = periodEndTs ? new Date(periodEndTs * 1000).toISOString() : null
 
       await admin
         .from('trade_profiles')
         .update({
           subscription_tier: tier,
+          billing_period: billingPeriod,
+          subscription_expires_at: currentPeriodEnd,
           stripe_subscription_id: subscription.id,
           is_searchable: tier !== 'free',
         })
@@ -84,6 +108,8 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
         .from('trade_profiles')
         .update({
           subscription_tier: 'free',
+          billing_period: 'monthly',
+          subscription_expires_at: null,
           stripe_subscription_id: null,
           is_searchable: false,
         })
@@ -91,7 +117,5 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
 
       break
     }
-
-    // Unhandled events are silently ignored
   }
 }

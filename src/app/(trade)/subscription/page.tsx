@@ -9,16 +9,20 @@ export const metadata = { title: 'Subscription | WorkedWith' }
 
 // ── Feature table ─────────────────────────────────────────────
 
-const FEATURES: { label: string; free: boolean; pro: boolean; team: boolean }[] = [
-  { label: 'Unlimited jobs and reviews',       free: true,  pro: true,  team: true  },
-  { label: 'Verified review history',          free: true,  pro: true,  team: true  },
-  { label: 'Public profile page',              free: true,  pro: true,  team: true  },
-  { label: 'Searchable profile',               free: false, pro: true,  team: true  },
-  { label: 'Full client reputation lookup',    free: false, pro: true,  team: true  },
-  { label: 'Respond to reviews',               free: false, pro: true,  team: true  },
-  { label: 'Priority search placement',        free: false, pro: false, team: true  },
-  { label: 'Team member seats',                free: false, pro: false, team: true  },
-  { label: 'API access',                       free: false, pro: false, team: true  },
+const FEATURES: { label: string; free: boolean; standard: boolean; pro: boolean }[] = [
+  { label: 'Unlimited jobs and reviews',          free: true,  standard: true,  pro: true  },
+  { label: 'Verified review history',             free: true,  standard: true,  pro: true  },
+  { label: 'Public profile page',                 free: true,  standard: true,  pro: true  },
+  { label: 'Respond to reviews',                  free: true,  standard: true,  pro: true  },
+  { label: 'Basic client lookup',                 free: true,  standard: true,  pro: true  },
+  { label: 'Full client reputation lookup',       free: false, standard: true,  pro: true  },
+  { label: 'Verified badge on profile',           free: false, standard: true,  pro: true  },
+  { label: 'Featured job images',                 free: false, standard: true,  pro: true  },
+  { label: 'Top of local search results',         free: false, standard: false, pro: true  },
+  { label: 'Featured badge in search',            free: false, standard: false, pro: true  },
+  { label: 'Extended featured job images',        free: false, standard: false, pro: true  },
+  { label: 'Profile analytics',                   free: false, standard: false, pro: true  },
+  { label: 'Priority dispute resolution',         free: false, standard: false, pro: true  },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -30,8 +34,8 @@ function fmtDate(unix: number): string {
 }
 
 function tierLabel(tier: SubscriptionTier): string {
-  if (tier === 'pro')  return 'Pro'
-  if (tier === 'team') return 'Team'
+  if (tier === 'pro')      return 'Pro'
+  if (tier === 'standard') return 'Standard'
   return 'Free'
 }
 
@@ -56,9 +60,8 @@ export default async function SubscriptionPage() {
 
   const currentTier = (tradeProfile?.subscription_tier as SubscriptionTier | null | undefined) ?? 'free'
   const subscriptionId = tradeProfile?.stripe_subscription_id as string | null | undefined
-  const isPaid = currentTier === 'pro' || currentTier === 'team'
+  const isPaid = currentTier === 'standard' || currentTier === 'pro'
 
-  // Fetch next billing date via upcoming invoice preview
   let nextBillingDate: string | null = null
   if (subscriptionId) {
     try {
@@ -96,7 +99,7 @@ export default async function SubscriptionPage() {
                 <p className="mt-1 text-sm text-gray-500">Next billing date: {nextBillingDate}</p>
               )}
               {!isPaid && (
-                <p className="mt-1 text-sm text-gray-500">Free forever &mdash; upgrade any time.</p>
+                <p className="mt-1 text-sm text-gray-500">Free forever — upgrade any time.</p>
               )}
             </div>
             {isPaid && (
@@ -126,33 +129,33 @@ export default async function SubscriptionPage() {
               cta={null}
             />
             <TierCard
-              name="Pro"
+              name="Standard"
               price="£9.99"
               period="per month"
-              description="Full client lookup, searchable profile, and review responses."
-              highlight={currentTier === 'pro'}
-              isCurrent={currentTier === 'pro'}
+              description="Full client lookup, verified badge, and featured job images."
+              highlight={currentTier === 'standard'}
+              isCurrent={currentTier === 'standard'}
               cta={
                 currentTier === 'free' ? (
                   <UpgradeButton
-                    tier="pro"
+                    tier="standard_monthly"
                     label="Start 14-day free trial"
                     className="w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy transition-opacity hover:opacity-90"
                   />
-                ) : currentTier === 'team' ? null : null
+                ) : null
               }
             />
             <TierCard
-              name="Team"
-              price="£59"
+              name="Pro"
+              price="£39.99"
               period="per month"
-              description="Priority placement, team seats, and API access."
-              highlight={currentTier === 'team'}
-              isCurrent={currentTier === 'team'}
+              description="Top search placement, analytics, and priority support."
+              highlight={currentTier === 'pro'}
+              isCurrent={currentTier === 'pro'}
               cta={
-                (currentTier === 'free' || currentTier === 'pro') ? (
+                currentTier === 'free' || currentTier === 'standard' ? (
                   <UpgradeButton
-                    tier="team"
+                    tier="pro_monthly"
                     label="Start 14-day free trial"
                     className="w-full rounded-lg bg-brand-navy px-4 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90"
                   />
@@ -160,22 +163,21 @@ export default async function SubscriptionPage() {
               }
             />
           </div>
+          <p className="mt-3 text-xs text-gray-400 text-center">
+            Switch to annual billing via the customer portal for one month free each year.
+          </p>
         </div>
 
         {/* Feature comparison table */}
         <div>
           <h2 className="mb-4 text-xl font-bold text-brand-navy">What&apos;s included</h2>
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            {/* Header row */}
             <div className="grid grid-cols-4 border-b border-gray-100 bg-gray-50">
               <div className="px-5 py-3 text-sm font-medium text-gray-500">Feature</div>
-              {(['Free', 'Pro', 'Team'] as const).map(t => (
-                <div key={t} className="px-3 py-3 text-center text-sm font-semibold text-brand-navy">
-                  {t}
-                </div>
+              {(['Free', 'Standard', 'Pro'] as const).map(t => (
+                <div key={t} className="px-3 py-3 text-center text-sm font-semibold text-brand-navy">{t}</div>
               ))}
             </div>
-
             {FEATURES.map((f, i) => (
               <div
                 key={f.label}
@@ -183,8 +185,8 @@ export default async function SubscriptionPage() {
               >
                 <div className="px-5 py-3 text-sm text-gray-700">{f.label}</div>
                 <FeatureCell included={f.free} />
+                <FeatureCell included={f.standard} />
                 <FeatureCell included={f.pro} />
-                <FeatureCell included={f.team} />
               </div>
             ))}
           </div>
@@ -201,13 +203,7 @@ export default async function SubscriptionPage() {
 // ── Sub-components ────────────────────────────────────────────
 
 function TierCard({
-  name,
-  price,
-  period,
-  description,
-  highlight,
-  isCurrent,
-  cta,
+  name, price, period, description, highlight, isCurrent, cta,
 }: {
   name: string
   price: string
@@ -244,11 +240,10 @@ function TierCard({
 function FeatureCell({ included }: { included: boolean }) {
   return (
     <div className="flex items-center justify-center px-3 py-3">
-      {included ? (
-        <span className="text-green-600 font-bold text-base" aria-label="Included">✓</span>
-      ) : (
-        <span className="text-gray-300 text-base" aria-label="Not included">—</span>
-      )}
+      {included
+        ? <span className="text-green-600 font-bold text-base" aria-label="Included">✓</span>
+        : <span className="text-gray-300 text-base" aria-label="Not included">—</span>
+      }
     </div>
   )
 }

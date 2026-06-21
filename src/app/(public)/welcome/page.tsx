@@ -7,18 +7,27 @@ import type { User } from '@/types/database'
 export const metadata = { title: 'Welcome to WorkedWith' }
 
 const FREE_FEATURES = [
+  'Appear in search results',
   'Unlimited job logging',
+  'Backdated jobs',
   'Unlimited reviews',
-  'Public profile at workedwith.co.uk/t/your-username',
-  'Basic client lookup — overall rating only',
-  'Add past jobs to build your history',
+  'Blind review submission',
+  'Basic client lookup (overall rating only)',
+  'Public profile page',
+]
+
+const STANDARD_EXTRAS = [
+  'Full client profile on lookup (payment reliability, red flag history, written review excerpts)',
+  'Verified badge on your public profile',
+  'Featured job images (3 jobs, up to 5 images each)',
 ]
 
 const PRO_EXTRAS = [
-  'Full client profile on lookup — payment score, red flags, written reviews',
-  'Your profile appears in client search results',
-  'Verified badge on your public profile',
-  'Respond publicly to client reviews',
+  'Top of local search results (randomised rotation within Pro band)',
+  'Featured badge in search results',
+  'Extended featured job images (5 jobs, up to 10 images each)',
+  'Profile analytics (views and search appearances)',
+  'Priority dispute resolution',
 ]
 
 export default async function WelcomePage() {
@@ -48,65 +57,89 @@ export default async function WelcomePage() {
       </div>
 
       {/* Pricing cards */}
-      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-        <div className="grid gap-6 sm:grid-cols-2">
+      <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+        <div className="grid gap-6 sm:grid-cols-3">
 
-          {/* Free card */}
+          {/* Free */}
           <div className="flex flex-col rounded-2xl border border-gray-200 bg-white p-7 shadow-sm">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Free</p>
-              <p className="mt-2 text-4xl font-bold text-brand-navy">
-                £0{' '}
-                <span className="text-lg font-normal text-gray-400">forever</span>
+              <p className="mt-2 text-3xl font-bold text-brand-navy">
+                £0 <span className="text-base font-normal text-gray-400">forever</span>
               </p>
             </div>
-
-            <ul className="mt-7 flex-1 space-y-3">
+            <ul className="mt-6 flex-1 space-y-2.5">
               {FREE_FEATURES.map(f => (
                 <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
-                  <TickIcon />
+                  <Tick />
                   {f}
                 </li>
               ))}
             </ul>
-
             <a
               href="/dashboard"
-              className="mt-8 block w-full rounded-lg border-2 border-brand-navy py-3 text-center text-sm font-semibold text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
+              className="mt-7 block w-full rounded-lg border-2 border-brand-navy py-2.5 text-center text-sm font-semibold text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
             >
               Continue with free
             </a>
           </div>
 
-          {/* Pro card */}
+          {/* Standard */}
           <div className="flex flex-col rounded-2xl border-2 border-brand-amber bg-white p-7 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-gray-900">Pro</p>
-                <p className="mt-2 text-4xl font-bold text-brand-navy">
-                  £9.99{' '}
-                  <span className="text-lg font-normal text-gray-400">/month</span>
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-900">Standard</p>
+                <p className="mt-2 text-3xl font-bold text-brand-navy">
+                  £9.99 <span className="text-base font-normal text-gray-400">/month</span>
                 </p>
               </div>
               <span className="shrink-0 rounded-full bg-brand-amber px-2.5 py-1 text-xs font-semibold text-brand-navy">
                 Verified
               </span>
             </div>
-
-            <ul className="mt-7 flex-1 space-y-3">
+            <ul className="mt-6 flex-1 space-y-2.5">
               <li className="flex items-start gap-2.5 text-sm font-medium text-brand-navy">
-                <TickIcon amber />
+                <Tick amber />
                 Everything in Free
               </li>
-              {PRO_EXTRAS.map(f => (
+              {STANDARD_EXTRAS.map(f => (
                 <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
-                  <TickIcon amber />
+                  <Tick amber />
                   {f}
                 </li>
               ))}
             </ul>
+            <UpgradeButton tier="standard_monthly" label="Get Standard" />
+          </div>
 
-            <UpgradeButton />
+          {/* Pro */}
+          <div className="flex flex-col rounded-2xl bg-brand-navy p-7 shadow-sm">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-white/50">Pro</p>
+                <p className="mt-2 text-3xl font-bold text-white">
+                  £39.99 <span className="text-base font-normal text-white/50">/month</span>
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-brand-amber px-2.5 py-1 text-xs font-semibold text-brand-navy">
+                Pro
+              </span>
+            </div>
+            <ul className="mt-6 flex-1 space-y-2.5">
+              <li className="flex items-start gap-2.5 text-sm font-medium text-white">
+                <Tick amber />
+                Everything in Standard
+              </li>
+              {PRO_EXTRAS.map(f => (
+                <li key={f} className="flex items-start gap-2.5 text-sm text-white/70">
+                  <Tick amber />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-7">
+              <UpgradeButton tier="pro_monthly" label="Get Pro" />
+            </div>
           </div>
 
         </div>
@@ -119,7 +152,7 @@ export default async function WelcomePage() {
   )
 }
 
-function TickIcon({ amber }: { amber?: boolean }) {
+function Tick({ amber }: { amber?: boolean }) {
   return (
     <svg
       className={`mt-0.5 h-4 w-4 shrink-0 ${amber ? 'text-brand-amber' : 'text-green-500'}`}

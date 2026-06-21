@@ -1,7 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { VerificationTier } from '@/types/database'
+import type { SubscriptionTier, VerificationTier } from '@/types/database'
 
 const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}$/i
 
@@ -54,8 +54,18 @@ export type TradesearchResult = {
   average_rating: number
   total_reviews: number
   total_jobs: number
+  subscription_tier: SubscriptionTier
   verification_tier: VerificationTier
   distance: number
+}
+
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
 }
 
 export type SearchTradesResult =
@@ -103,7 +113,7 @@ export async function searchTradespeople(
   const admin = createAdminClient()
   const { data: rawProfiles } = await admin
     .from('trade_profiles')
-    .select('id, user_id, trade_types, postcode, public_slug, average_rating, total_reviews, total_jobs')
+    .select('id, user_id, trade_types, postcode, public_slug, average_rating, total_reviews, total_jobs, subscription_tier')
     .eq('is_searchable', true)
     .contains('trade_types', [tradeType])
 
@@ -176,17 +186,16 @@ export async function searchTradespeople(
       average_rating: (profile.average_rating as number) ?? 0,
       total_reviews: (profile.total_reviews as number) ?? 0,
       total_jobs: (profile.total_jobs as number) ?? 0,
+      subscription_tier: (profile.subscription_tier as SubscriptionTier | null) ?? 'free',
       verification_tier: user.verification_tier as VerificationTier,
       distance,
     })
   }
 
-  // 6. Sort: rating desc, then review count desc; cap at 20
-  results.sort((a, b) =>
-    b.average_rating !== a.average_rating
-      ? b.average_rating - a.average_rating
-      : b.total_reviews - a.total_reviews
-  )
+  // 6. Two-band ranking: Pro (shuffled) above Standard/Free (shuffled), cap at 20
+  const proResults = shuffleArray(results.filter(r => r.subscription_tier === 'pro'))
+  const otherResults = shuffleArray(results.filter(r => r.subscription_tier !== 'pro'))
+  const sortedResults = [...proResults, ...otherResults]
 
-  return { success: true, results: results.slice(0, 20) }
+  return { success: true, results: sortedResults.slice(0, 20) }
 }

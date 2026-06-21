@@ -13,5 +13,13 @@ export async function getUserTier(userId: string): Promise<SubscriptionTier> {
 }
 
 export function isPaidTier(tier: SubscriptionTier): boolean {
-  return tier === 'pro' || tier === 'team'
+  return tier === 'standard' || tier === 'pro'
+}
+
+export function isProTier(tier: string | null): boolean {
+  return tier === 'pro'
+}
+
+export function isStandardOrAbove(tier: string | null): boolean {
+  return tier === 'standard' || tier === 'pro'
 }

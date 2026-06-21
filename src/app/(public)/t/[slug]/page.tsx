@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { VerificationTier } from '@/types/database'
 import { CopyUrlButton } from './copy-url-button'
+import { getFeaturedJobs } from '@/actions/featured-jobs/get-featured-jobs'
+import { FeaturedWorkSection } from '@/components/featured-work-section'
 
 type Props = { params: { slug: string } }
 
@@ -70,11 +72,14 @@ export default async function TradeProfilePage({ params }: Props) {
   const tradeTypes = tradeProfile.trade_types as string[]
   const userId = tradeProfile.user_id as string
 
-  // 2. Parallel: user row + visible reviews + reviewer activity
+  const tradeProfileId = tradeProfile.id as string
+
+  // 2. Parallel: user row + visible reviews + reviewer activity + featured jobs
   const [
     { data: tradeUser },
     { data: reviews },
     { data: reviewerActivity },
+    featuredJobs,
   ] = await Promise.all([
     admin.from('users').select('*').eq('id', userId).single(),
     admin
@@ -91,6 +96,7 @@ export default async function TradeProfilePage({ params }: Props) {
       .eq('reviewer_type', 'trade')
       .eq('is_visible', true)
       .limit(1),
+    getFeaturedJobs(tradeProfileId),
   ])
 
   if (!tradeUser) notFound()
@@ -315,6 +321,14 @@ export default async function TradeProfilePage({ params }: Props) {
                 })}
               </div>
             </section>
+          )}
+
+          {/* ── Featured work ────────────────────────────────── */}
+          {featuredJobs.length > 0 && (
+            <FeaturedWorkSection
+              jobs={featuredJobs}
+              supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}
+            />
           )}
 
           {/* ── Also reviews clients ──────────────────────────── */}

@@ -4,7 +4,8 @@ export type UserType = 'trade' | 'client_individual' | 'client_business' | 'both
 export type ClientType = 'individual' | 'business'
 export type VerificationTier = 'unverified' | 'phone_verified' | 'fully_verified'
 export type IdVerificationStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected'
-export type SubscriptionTier = 'free' | 'pro' | 'team'
+export type SubscriptionTier = 'free' | 'standard' | 'pro'
+export type BillingPeriod = 'monthly' | 'annual'
 
 // ── Row interfaces ────────────────────────────────────────────
 
@@ -43,6 +44,8 @@ export interface TradeProfile {
   radius_miles: number
   is_searchable: boolean
   subscription_tier: SubscriptionTier
+  billing_period: BillingPeriod
+  subscription_expires_at: string | null
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
   total_jobs: number
@@ -333,6 +336,7 @@ export interface SearchAuditLog {
 // ── Verification documents ────────────────────────────────────
 
 export type VerificationOutcome = 'pending' | 'approved' | 'rejected'
+export type ModerationStatus = 'pending' | 'approved' | 'rejected'
 
 export interface VerificationDocument {
   id: string
@@ -343,6 +347,26 @@ export interface VerificationDocument {
   reviewed_at: string | null
   reviewed_by: string | null
   rejection_reason: string | null
+}
+
+// ── Featured jobs ─────────────────────────────────────────────
+
+export interface FeaturedJob {
+  id: string
+  trade_profile_id: string
+  job_id: string | null
+  title: string
+  created_at: string
+}
+
+export interface FeaturedJobImage {
+  id: string
+  featured_job_id: string
+  storage_path: string
+  caption: string | null
+  display_order: number
+  moderation_status: ModerationStatus
+  created_at: string
 }
 
 // ── Supabase Database type ────────────────────────────────────
@@ -362,7 +386,7 @@ export interface Database {
       }
       trade_profiles: {
         Row: WithIndex<TradeProfile>
-        Insert: Omit<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'radius_miles' | 'total_jobs' | 'subscription_tier' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'radius_miles' | 'total_jobs' | 'subscription_tier' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
+        Insert: Omit<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'radius_miles' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'radius_miles' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
         Update: Partial<TradeProfile>
         Relationships: []
       }
@@ -455,6 +479,18 @@ export interface Database {
         Row: WithIndex<VerificationDocument>
         Insert: { user_id: string; storage_path: string } & Partial<Omit<VerificationDocument, 'user_id' | 'storage_path'>>
         Update: Partial<VerificationDocument>
+        Relationships: []
+      }
+      featured_jobs: {
+        Row: WithIndex<FeaturedJob>
+        Insert: { trade_profile_id: string; title: string } & Partial<Omit<FeaturedJob, 'trade_profile_id' | 'title' | 'id' | 'created_at'>>
+        Update: Partial<FeaturedJob>
+        Relationships: []
+      }
+      featured_job_images: {
+        Row: WithIndex<FeaturedJobImage>
+        Insert: { featured_job_id: string; storage_path: string } & Partial<Omit<FeaturedJobImage, 'featured_job_id' | 'storage_path' | 'id' | 'created_at'>>
+        Update: Partial<FeaturedJobImage>
         Relationships: []
       }
     }
