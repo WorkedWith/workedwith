@@ -10,6 +10,19 @@ export async function middleware(request: NextRequest) {
   const sessionResponse = await updateSession(request)
   const { pathname } = request.nextUrl
 
+  // Authenticated users visiting / skip the selector and go straight to dashboard
+  if (pathname === '/') {
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} } }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+  }
+
   // Protect /profile and /settings — redirect to /sign-in if no session
   if (AUTH_PROTECTED.some(p => pathname === p || pathname.startsWith(p + '/'))) {
     const supabase = createServerClient<Database>(
