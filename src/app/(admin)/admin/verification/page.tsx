@@ -27,8 +27,8 @@ export default async function VerificationPage() {
   const docsWithData: VerificationDocWithUser[] = await Promise.all(
     docs.map(async doc => {
       const { data: urlData } = await admin.storage
-        .from('id-documents')
-        .createSignedUrl(doc.storage_path, 3600)
+        .from('verification-documents')
+        .createSignedUrl(doc.storage_path, 60)
       return {
         ...doc,
         user: users.find(u => u.id === doc.user_id) ?? null,

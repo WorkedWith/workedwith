@@ -318,6 +318,8 @@ export default function LandingPage() {
               <a href="/join/trade" className="text-sm text-white/50 hover:text-white transition-colors">Join as Trade</a>
               <a href="/join/client" className="text-sm text-white/50 hover:text-white transition-colors">Join as Client</a>
               <a href="/sign-in" className="text-sm text-white/50 hover:text-white transition-colors">Sign in</a>
+              <a href="/terms" className="text-sm text-white/50 hover:text-white transition-colors">Terms</a>
+              <a href="/privacy" className="text-sm text-white/50 hover:text-white transition-colors">Privacy</a>
             </nav>
           </div>
           <p className="mt-10 text-xs text-white/30">

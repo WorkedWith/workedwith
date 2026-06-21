@@ -99,7 +99,7 @@ export default async function DashboardPage() {
   const hasBackdatedJob = hasBackdatedJobTrade || hasBackdatedJobClient
 
   const showChecklist = isTrade
-    ? (!phone_verified || !tradeProfile || !hasLiveJob || !hasBackdatedJob)
+    ? (!phone_verified || !tradeProfile || !hasLiveJob || !hasBackdatedJob || verification_tier !== 'fully_verified')
     : (!phone_verified || !hasBackdatedJob)
 
   const tradeHasReviews = (tradeProfile?.total_reviews ?? 0) > 0
@@ -191,6 +191,14 @@ export default async function DashboardPage() {
                   <OnboardingItem done={!!tradeProfile} label="Complete your trade profile" href="/onboarding/trade" />
                   <OnboardingItem done={hasLiveJob} label="Log your first job" href="/jobs/log" />
                   <OnboardingItem done={hasBackdatedJob} label="Add a past job" href="/jobs/log/backdated" />
+                  {phone_verified && (
+                    <OnboardingItem
+                      done={verification_tier === 'fully_verified'}
+                      label="Get your Verified badge"
+                      href="/verify/identity"
+                      helper="Upload your driving licence to show clients you are who you say you are. Takes 1 to 2 working days to review."
+                    />
+                  )}
                 </div>
               </section>
             )}
@@ -550,31 +558,38 @@ function OnboardingItem({
   done,
   label,
   href,
+  helper,
 }: {
   done: boolean
   label: string
   href: string
+  helper?: string
 }) {
   return (
     <a
       href={done ? undefined : href}
       aria-disabled={done}
-      className={`flex items-center gap-3 py-3 px-1 transition-colors ${
+      className={`flex items-start gap-3 py-3 px-1 transition-colors ${
         done ? 'cursor-default' : 'hover:bg-black/5 rounded-lg'
       }`}
     >
       <span
-        className={`shrink-0 h-5 w-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${
+        className={`mt-0.5 shrink-0 h-5 w-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${
           done ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300 bg-white'
         }`}
       >
         {done ? '✓' : ''}
       </span>
-      <span className={`flex-1 text-sm ${done ? 'text-gray-400 line-through' : 'font-medium text-brand-navy'}`}>
-        {label}
+      <span className="flex-1 min-w-0">
+        <span className={`block text-sm ${done ? 'text-gray-400 line-through' : 'font-medium text-brand-navy'}`}>
+          {label}
+        </span>
+        {helper && !done && (
+          <span className="block text-xs text-gray-400 mt-0.5 leading-relaxed">{helper}</span>
+        )}
       </span>
       {!done && (
-        <span className="text-gray-400 text-sm" aria-hidden>→</span>
+        <span className="mt-0.5 text-gray-400 text-sm shrink-0" aria-hidden>→</span>
       )}
     </a>
   )
