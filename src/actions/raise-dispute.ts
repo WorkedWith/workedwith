@@ -4,6 +4,7 @@ import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { DisputeReason } from '@/types/database'
+import { getUserTier, isProTier } from '@/lib/stripe/get-tier'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -83,8 +84,11 @@ export async function raiseDispute(
     return { success: false, error: 'Details must be 1000 characters or fewer.', field: 'details' }
   }
 
-  // Fetch review
-  const { data: review } = await admin.from('reviews').select('*').eq('id', reviewId).maybeSingle()
+  // Fetch review + raiser tier in parallel
+  const [{ data: review }, tier] = await Promise.all([
+    admin.from('reviews').select('*').eq('id', reviewId).maybeSingle(),
+    getUserTier(user.id),
+  ])
   if (!review) return { success: false, error: 'Review not found.' }
 
   // Must be the reviewee
@@ -110,6 +114,8 @@ export async function raiseDispute(
 
   const respondentId = review.reviewer_id as string
 
+  const isPriority = isProTier(tier)
+
   // Create dispute
   const { data: dispute, error: insertErr } = await admin
     .from('disputes')
@@ -119,6 +125,7 @@ export async function raiseDispute(
       reason,
       details: trimmedDetails,
       respondent_id: respondentId,
+      is_priority: isPriority,
     })
     .select('*')
     .single()
@@ -158,6 +165,8 @@ export async function raiseDispute(
         to: respondentUser.email as string,
         subject: 'A dispute has been raised on your WorkedWith review — you have 7 days to submit evidence',
         html: disputeRaisedHtml({ raiserName, evidenceDeadline, evidenceUrl }),
+      }).catch((emailError: unknown) => {
+        console.error('Email send failed (non-fatal):', emailError)
       })
     )
   }

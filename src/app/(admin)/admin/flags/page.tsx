@@ -109,6 +109,11 @@ export default async function FlagsPage() {
           <p className="mt-1 text-sm text-gray-500">
             {pendingImages.length} image{pendingImages.length !== 1 ? 's' : ''} awaiting review
           </p>
+          {pendingImages.length > 0 && (
+            <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              These images could not be automatically moderated and require manual review.
+            </p>
+          )}
         </div>
 
         {pendingImages.length === 0 ? (

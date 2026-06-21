@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import type { VerificationTier } from '@/types/database'
 import { CopyUrlButton } from './copy-url-button'
 import { getFeaturedJobs } from '@/actions/featured-jobs/get-featured-jobs'
@@ -74,12 +75,14 @@ export default async function TradeProfilePage({ params }: Props) {
 
   const tradeProfileId = tradeProfile.id as string
 
-  // 2. Parallel: user row + visible reviews + reviewer activity + featured jobs
+  // 2. Parallel: user row + visible reviews + reviewer activity + featured jobs + current viewer
+  const supabase = await createClient()
   const [
     { data: tradeUser },
     { data: reviews },
     { data: reviewerActivity },
     featuredJobs,
+    { data: { user: currentUser } },
   ] = await Promise.all([
     admin.from('users').select('*').eq('id', userId).single(),
     admin
@@ -97,7 +100,15 @@ export default async function TradeProfilePage({ params }: Props) {
       .eq('is_visible', true)
       .limit(1),
     getFeaturedJobs(tradeProfileId),
+    supabase.auth.getUser(),
   ])
+
+  // Fire-and-forget view log
+  admin.from('profile_views').insert({
+    trade_profile_id: tradeProfileId,
+    viewer_id: currentUser?.id ?? null,
+    source: 'direct',
+  }).then(() => {})
 
   if (!tradeUser) notFound()
 

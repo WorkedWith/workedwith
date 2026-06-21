@@ -2,8 +2,9 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripeClient } from '@/lib/stripe/client'
-import type { SubscriptionTier } from '@/types/database'
-import { UpgradeButton, ManageButton } from './subscription-buttons'
+import type { BillingPeriod, SubscriptionTier } from '@/types/database'
+import { ManageButton } from './subscription-buttons'
+import { SubscriptionTierCards } from './subscription-tier-cards'
 
 export const metadata = { title: 'Subscription | WorkedWith' }
 
@@ -59,6 +60,7 @@ export default async function SubscriptionPage() {
     .maybeSingle()
 
   const currentTier = (tradeProfile?.subscription_tier as SubscriptionTier | null | undefined) ?? 'free'
+  const currentBillingPeriod = (tradeProfile?.billing_period as BillingPeriod | null | undefined) ?? 'monthly'
   const subscriptionId = tradeProfile?.stripe_subscription_id as string | null | undefined
   const isPaid = currentTier === 'standard' || currentTier === 'pro'
 
@@ -95,8 +97,11 @@ export default async function SubscriptionPage() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Current plan</p>
               <p className="mt-1 text-2xl font-bold text-brand-navy">{tierLabel(currentTier)}</p>
-              {isPaid && nextBillingDate && (
-                <p className="mt-1 text-sm text-gray-500">Next billing date: {nextBillingDate}</p>
+              {isPaid && (
+                <p className="mt-0.5 text-sm text-gray-500">
+                  {currentBillingPeriod === 'annual' ? 'Annual billing' : 'Monthly billing'}
+                  {nextBillingDate && ` · Next renewal ${nextBillingDate}`}
+                </p>
               )}
               {!isPaid && (
                 <p className="mt-1 text-sm text-gray-500">Free forever — upgrade any time.</p>
@@ -115,58 +120,11 @@ export default async function SubscriptionPage() {
           )}
         </div>
 
-        {/* Tier cards */}
-        <div>
-          <h2 className="mb-5 text-xl font-bold text-brand-navy">Plans</h2>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <TierCard
-              name="Free"
-              price="£0"
-              period="forever"
-              description="Everything you need to build a verified reputation."
-              highlight={currentTier === 'free'}
-              isCurrent={currentTier === 'free'}
-              cta={null}
-            />
-            <TierCard
-              name="Standard"
-              price="£9.99"
-              period="per month"
-              description="Full client lookup, verified badge, and featured job images."
-              highlight={currentTier === 'standard'}
-              isCurrent={currentTier === 'standard'}
-              cta={
-                currentTier === 'free' ? (
-                  <UpgradeButton
-                    tier="standard_monthly"
-                    label="Start 14-day free trial"
-                    className="w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy transition-opacity hover:opacity-90"
-                  />
-                ) : null
-              }
-            />
-            <TierCard
-              name="Pro"
-              price="£39.99"
-              period="per month"
-              description="Top search placement, analytics, and priority support."
-              highlight={currentTier === 'pro'}
-              isCurrent={currentTier === 'pro'}
-              cta={
-                currentTier === 'free' || currentTier === 'standard' ? (
-                  <UpgradeButton
-                    tier="pro_monthly"
-                    label="Start 14-day free trial"
-                    className="w-full rounded-lg bg-brand-navy px-4 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90"
-                  />
-                ) : null
-              }
-            />
-          </div>
-          <p className="mt-3 text-xs text-gray-400 text-center">
-            Switch to annual billing via the customer portal for one month free each year.
-          </p>
-        </div>
+        {/* Tier cards with period toggle */}
+        <SubscriptionTierCards
+          currentTier={currentTier}
+          currentBillingPeriod={currentBillingPeriod}
+        />
 
         {/* Feature comparison table */}
         <div>
@@ -201,41 +159,6 @@ export default async function SubscriptionPage() {
 }
 
 // ── Sub-components ────────────────────────────────────────────
-
-function TierCard({
-  name, price, period, description, highlight, isCurrent, cta,
-}: {
-  name: string
-  price: string
-  period: string
-  description: string
-  highlight: boolean
-  isCurrent: boolean
-  cta: React.ReactNode
-}) {
-  return (
-    <div className={`rounded-2xl border-2 p-5 flex flex-col gap-4 ${
-      highlight ? 'border-brand-amber bg-amber-50' : 'border-gray-200 bg-white'
-    }`}>
-      <div>
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-base font-bold text-brand-navy">{name}</p>
-          {isCurrent && (
-            <span className="inline-flex items-center rounded-full bg-brand-navy px-2 py-0.5 text-xs font-semibold text-white">
-              Current
-            </span>
-          )}
-        </div>
-        <p className="mt-1">
-          <span className="text-2xl font-bold text-brand-navy">{price}</span>
-          <span className="text-sm text-gray-500"> {period}</span>
-        </p>
-        <p className="mt-2 text-sm text-gray-600 leading-snug">{description}</p>
-      </div>
-      {cta && <div className="mt-auto">{cta}</div>}
-    </div>
-  )
-}
 
 function FeatureCell({ included }: { included: boolean }) {
   return (

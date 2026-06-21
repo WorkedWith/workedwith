@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createCheckoutSession, type CheckoutTier } from '@/actions/create-checkout-session'
+import { createCheckoutSession, type CheckoutTier, type CheckoutPeriod } from '@/actions/create-checkout-session'
 import { createPortalSession } from '@/actions/manage-subscription'
 import type { SubscriptionTier } from '@/types/database'
 
@@ -9,12 +9,14 @@ import type { SubscriptionTier } from '@/types/database'
 
 export function UpgradeButton({
   tier,
+  period,
   label,
   className,
 }: {
   tier: CheckoutTier
+  period: CheckoutPeriod
   label: string
-  className: string
+  className?: string
 }) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -22,7 +24,7 @@ export function UpgradeButton({
   function handleClick() {
     setError(null)
     startTransition(async () => {
-      const result = await createCheckoutSession(tier)
+      const result = await createCheckoutSession(tier, period)
       if ('url' in result) {
         window.location.href = result.url
       } else {
@@ -36,7 +38,7 @@ export function UpgradeButton({
       <button
         onClick={handleClick}
         disabled={isPending}
-        className={`${className} disabled:opacity-40 disabled:cursor-not-allowed`}
+        className={`${className ?? 'w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy transition-opacity hover:opacity-90'} disabled:opacity-40 disabled:cursor-not-allowed`}
       >
         {isPending ? 'Redirecting…' : label}
       </button>

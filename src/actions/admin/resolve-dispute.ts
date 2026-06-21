@@ -122,6 +122,8 @@ export async function resolveDispute(
         to: raiser.email,
         subject: 'Your dispute has been resolved — WorkedWith',
         html: disputeEmailHtml(raiser.full_name, label, 'raiser'),
+      }).catch((emailError: unknown) => {
+        console.error('Email send failed (non-fatal):', emailError)
       })
     )
   }
@@ -132,6 +134,8 @@ export async function resolveDispute(
         to: respondent.email,
         subject: 'Dispute resolved — WorkedWith',
         html: disputeEmailHtml(respondent.full_name, label, 'respondent'),
+      }).catch((emailError: unknown) => {
+        console.error('Email send failed (non-fatal):', emailError)
       })
     )
   }

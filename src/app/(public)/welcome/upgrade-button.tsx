@@ -1,16 +1,26 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createCheckoutSession, type CheckoutTier } from '@/actions/create-checkout-session'
+import { createCheckoutSession, type CheckoutTier, type CheckoutPeriod } from '@/actions/create-checkout-session'
 
-export function UpgradeButton({ tier, label }: { tier: CheckoutTier; label: string }) {
+export function UpgradeButton({
+  tier,
+  period,
+  label,
+  className,
+}: {
+  tier: CheckoutTier
+  period: CheckoutPeriod
+  label: string
+  className?: string
+}) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
   function handleClick() {
     setError(null)
     startTransition(async () => {
-      const result = await createCheckoutSession(tier, '/dashboard')
+      const result = await createCheckoutSession(tier, period)
       if ('url' in result) {
         window.location.href = result.url
       } else {
@@ -20,11 +30,13 @@ export function UpgradeButton({ tier, label }: { tier: CheckoutTier; label: stri
   }
 
   return (
-    <div className="mt-8">
+    <div>
       <button
         onClick={handleClick}
         disabled={isPending}
-        className="w-full rounded-lg bg-brand-amber py-3 text-sm font-semibold text-brand-navy hover:bg-amber-400 disabled:opacity-50 transition-colors"
+        className={`w-full rounded-lg py-3 text-sm font-semibold transition-colors disabled:opacity-50 ${
+          className ?? 'bg-brand-amber text-brand-navy hover:bg-amber-400'
+        }`}
       >
         {isPending ? 'Redirecting to checkout…' : label}
       </button>

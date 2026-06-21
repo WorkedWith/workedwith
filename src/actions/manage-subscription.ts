@@ -26,10 +26,14 @@ export async function createPortalSession(): Promise<PortalResult> {
   }
 
   const stripe = getStripeClient()
-  const session = await stripe.billingPortal.sessions.create({
-    customer: customerId,
-    return_url: `${BASE_URL}/subscription`,
-  })
-
-  return { url: session.url }
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${BASE_URL}/subscription`,
+    })
+    return { url: session.url }
+  } catch (stripeError) {
+    console.error('Stripe API error:', stripeError)
+    return { error: 'Payment service unavailable. Please try again.' }
+  }
 }

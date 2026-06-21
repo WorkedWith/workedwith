@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import { getStripeClient } from '@/lib/stripe/client'
 
 export const metadata = { title: 'Welcome to WorkedWith Pro | WorkedWith' }
@@ -8,6 +9,10 @@ export default async function SubscriptionSuccessPage({
 }: {
   searchParams: { session_id?: string }
 }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/sign-in')
+
   const sessionId = searchParams.session_id
   if (!sessionId) redirect('/subscription')
 
@@ -25,8 +30,12 @@ export default async function SubscriptionSuccessPage({
 
     // Determine tier label from price ID
     const sub = session.subscription
-    if (sub && typeof sub !== 'string' && sub.items?.data[0]?.price.id === process.env.STRIPE_TEAM_PRICE_ID) {
-      tierLabel = 'Team'
+    if (sub && typeof sub !== 'string') {
+      const priceId = sub.items?.data[0]?.price.id
+      if (priceId === process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID ||
+          priceId === process.env.STRIPE_STANDARD_ANNUAL_PRICE_ID) {
+        tierLabel = 'Standard'
+      }
     }
   } catch {
     redirect('/subscription')

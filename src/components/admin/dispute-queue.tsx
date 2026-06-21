@@ -10,24 +10,55 @@ export type DisputeEnriched = Dispute & {
   respondent: Pick<User, 'id' | 'full_name' | 'email'> | null
 }
 
+type FilterMode = 'all' | 'priority' | 'standard'
+
 type Props = {
   disputes: DisputeEnriched[]
 }
 
 export function DisputeQueue({ disputes }: Props) {
-  if (disputes.length === 0) {
-    return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-        <p className="text-sm font-medium text-gray-500">No open disputes</p>
-      </div>
-    )
-  }
+  const [filter, setFilter] = useState<FilterMode>('all')
+
+  const filtered = disputes.filter(d => {
+    if (filter === 'priority') return d.is_priority
+    if (filter === 'standard') return !d.is_priority
+    return true
+  })
+
+  const priorityCount = disputes.filter(d => d.is_priority).length
 
   return (
-    <div className="space-y-3">
-      {disputes.map(d => (
-        <DisputeRow key={d.id} dispute={d} />
-      ))}
+    <div className="space-y-4">
+      {/* Filter toggle */}
+      <div className="flex items-center gap-2">
+        {(['all', 'priority', 'standard'] as FilterMode[]).map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+              filter === f
+                ? 'bg-brand-navy text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {f === 'all' && `All (${disputes.length})`}
+            {f === 'priority' && `Priority only (${priorityCount})`}
+            {f === 'standard' && `Standard (${disputes.length - priorityCount})`}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+          <p className="text-sm font-medium text-gray-500">No disputes in this filter</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map(d => (
+            <DisputeRow key={d.id} dispute={d} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -74,7 +105,7 @@ function DisputeRow({ dispute }: { dispute: DisputeEnriched }) {
 
   return (
     <div className={`rounded-2xl border bg-white overflow-hidden ${
-      days <= 2 ? 'border-red-200' : days <= 5 ? 'border-amber-200' : 'border-gray-200'
+      days <= 2 ? 'border-red-200' : dispute.is_priority ? 'border-amber-300' : days <= 5 ? 'border-amber-200' : 'border-gray-200'
     }`}>
       {/* Summary row */}
       <button
@@ -83,6 +114,11 @@ function DisputeRow({ dispute }: { dispute: DisputeEnriched }) {
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
+            {dispute.is_priority && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                Pro — Priority
+              </span>
+            )}
             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
               {reasonLabels[dispute.reason] ?? dispute.reason}
             </span>
@@ -162,21 +198,21 @@ function DisputeRow({ dispute }: { dispute: DisputeEnriched }) {
             <button
               onClick={() => decide('review_kept')}
               disabled={isPending}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-40 transition-colors"
+              className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-40 transition-colors"
             >
               {isPending ? 'Saving…' : 'Keep review'}
             </button>
             <button
               onClick={() => decide('review_removed')}
               disabled={isPending}
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40 transition-colors"
+              className="rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40 transition-colors"
             >
               Remove review
             </button>
             <button
               onClick={() => decide('review_amended')}
               disabled={isPending}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-40 ${
+              className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-40 ${
                 amending
                   ? 'bg-brand-amber text-brand-navy hover:bg-amber-400'
                   : 'border border-gray-300 text-gray-700 hover:bg-gray-100'

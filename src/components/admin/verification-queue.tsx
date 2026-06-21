@@ -107,14 +107,14 @@ function VerificationRow({ doc }: { doc: VerificationDocWithUser }) {
         <button
           onClick={handleApprove}
           disabled={isPending || rejecting}
-          className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-40 transition-colors"
+          className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-40 transition-colors"
         >
           {isPending && !rejecting ? 'Approving…' : 'Approve'}
         </button>
         <button
           onClick={handleReject}
           disabled={isPending && rejecting}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-40 ${
+          className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-40 ${
             rejecting
               ? 'bg-red-600 text-white hover:bg-red-700'
               : 'border border-red-300 text-red-600 hover:bg-red-50'

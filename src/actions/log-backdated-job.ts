@@ -303,18 +303,20 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
         confirmUrl: `https://workedwith.co.uk/jobs/confirm/${inviteToken}`,
       }
       await Promise.all([
-        resend.emails.send({
-          from: 'WorkedWith <hello@workedwith.co.uk>',
-          to: emailTo,
-          subject: `${callerName} has logged a past job you worked on together`,
-          html: existingUserBackdatedHtml(emailParams),
-        }),
         admin.from('notifications').insert({
           user_id: existingUser.id,
           type: 'job_invite',
           title: 'Past job to confirm',
           body: `${callerName} worked with you as a ${job_type} in ${backdated_period}. Confirm it on WorkedWith to leave mutual reviews.`,
           link: `/jobs/confirm/${inviteToken}`,
+        }),
+        resend.emails.send({
+          from: 'WorkedWith <hello@workedwith.co.uk>',
+          to: emailTo,
+          subject: `${callerName} has logged a past job you worked on together`,
+          html: existingUserBackdatedHtml(emailParams),
+        }).catch((emailError: unknown) => {
+          console.error('Email send failed (non-fatal):', emailError)
         }),
       ])
     } else {
@@ -323,12 +325,16 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
         callerName, jobType: job_type, backdatedPeriod: backdated_period,
         confirmUrl: `https://workedwith.co.uk/invite/job/${inviteToken}`,
       }
-      await resend.emails.send({
-        from: 'WorkedWith <hello@workedwith.co.uk>',
-        to: emailTo,
-        subject: `${callerName} worked with you — join WorkedWith to confirm it`,
-        html: newUserBackdatedHtml(emailParams),
-      })
+      try {
+        await resend.emails.send({
+          from: 'WorkedWith <hello@workedwith.co.uk>',
+          to: emailTo,
+          subject: `${callerName} worked with you — join WorkedWith to confirm it`,
+          html: newUserBackdatedHtml(emailParams),
+        })
+      } catch (emailError) {
+        console.error('Email send failed (non-fatal):', emailError)
+      }
     }
   }
 

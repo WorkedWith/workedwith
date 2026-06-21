@@ -6,7 +6,9 @@ import { UserMenu } from '@/components/user-menu'
 import { TRADE_TYPES } from '@/lib/trade-types'
 import { getJobHistory } from '@/actions/get-job-history'
 import { JobHistory } from '@/components/job-history'
-import type { User, Notification } from '@/types/database'
+import { getProfileAnalytics } from '@/actions/get-profile-analytics'
+import type { ProfileAnalytics } from '@/actions/get-profile-analytics'
+import type { User, Notification, SubscriptionTier } from '@/types/database'
 
 export const metadata = { title: 'Dashboard — WorkedWith' }
 
@@ -63,20 +65,29 @@ export default async function DashboardPage() {
 
   const tpId = tradeProfile ? (tradeProfile as unknown as { id: string }).id : undefined
   const cpId = clientProfile ? (clientProfile as unknown as { id: string }).id : undefined
+  const isProTrade = isTrade && (tradeProfile?.subscription_tier as SubscriptionTier | null) === 'pro'
 
   let hasLiveJob = false
   let hasBackdatedJobTrade = false
   let hasBackdatedJobClient = false
+  let analyticsData: ProfileAnalytics | null = null
 
   if (isTrade && tpId) {
-    const [{ count: liveCount }, { count: backdatedCount }] = await Promise.all([
-      admin.from('jobs').select('id', { count: 'exact', head: true })
-        .eq('trade_profile_id', tpId).eq('is_backdated', false),
-      admin.from('jobs').select('id', { count: 'exact', head: true })
-        .eq('trade_profile_id', tpId).eq('is_backdated', true),
+    const [
+      [{ count: liveCount }, { count: backdatedCount }],
+      analyticsResult,
+    ] = await Promise.all([
+      Promise.all([
+        admin.from('jobs').select('id', { count: 'exact', head: true })
+          .eq('trade_profile_id', tpId).eq('is_backdated', false),
+        admin.from('jobs').select('id', { count: 'exact', head: true })
+          .eq('trade_profile_id', tpId).eq('is_backdated', true),
+      ]),
+      isProTrade && tpId ? getProfileAnalytics(tpId) : Promise.resolve(null),
     ])
     hasLiveJob = (liveCount ?? 0) > 0
     hasBackdatedJobTrade = (backdatedCount ?? 0) > 0
+    if (analyticsResult?.success) analyticsData = analyticsResult.data
   }
 
   if (cpId) {
@@ -183,6 +194,39 @@ export default async function DashboardPage() {
                 </div>
               </section>
             )}
+
+            {/* Analytics */}
+            {isProTrade && analyticsData ? (
+              <section>
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics — {analyticsData.periodLabel}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
+                    <p className="text-3xl font-bold text-brand-navy">{analyticsData.profileViews}</p>
+                    <p className="mt-1 text-xs text-gray-500">Profile views this month</p>
+                  </div>
+                  <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
+                    <p className="text-3xl font-bold text-brand-navy">{analyticsData.searchAppearances}</p>
+                    <p className="mt-1 text-xs text-gray-500">Search appearances this month</p>
+                  </div>
+                </div>
+              </section>
+            ) : isTrade && !isProTrade ? (
+              <section>
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics</p>
+                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700">Profile analytics available on Pro</p>
+                    <p className="mt-0.5 text-xs text-gray-500">See how many people view your profile and find you in search.</p>
+                  </div>
+                  <a
+                    href="/subscription"
+                    className="shrink-0 rounded-lg bg-brand-amber px-4 py-2 text-xs font-bold text-brand-navy hover:bg-amber-400 transition-colors"
+                  >
+                    Upgrade
+                  </a>
+                </div>
+              </section>
+            ) : null}
 
             {/* Job history */}
             <JobHistory jobs={jobHistory} />

@@ -69,7 +69,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
           />
           <button
             type="submit"
-            className="rounded-lg bg-brand-navy px-4 py-2 text-sm font-semibold text-white hover:bg-brand-navy/90 transition-colors"
+            className="rounded-lg bg-brand-navy px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy/90 transition-colors"
           >
             Search
           </button>

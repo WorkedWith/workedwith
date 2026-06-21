@@ -401,6 +401,8 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
             backdatedPeriod: job.backdated_period ?? '',
             jobUrl,
           }),
+        }).catch((emailError: unknown) => {
+          console.error('Email send failed (non-fatal):', emailError)
         })
       )
     }
@@ -428,6 +430,8 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
             backdatedPeriod: job.backdated_period ?? '',
             jobUrl,
           }),
+        }).catch((emailError: unknown) => {
+          console.error('Email send failed (non-fatal):', emailError)
         })
       )
     }
@@ -450,6 +454,8 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
               to: tradeEmail,
               subject: `${clientName} has confirmed your job on WorkedWith`,
               html: jobConfirmedHtml({ clientName, jobType: job.job_type, postcode: job.postcode ?? '', jobUrl }),
+            }).catch((emailError: unknown) => {
+              console.error('Email send failed (non-fatal):', emailError)
             })]
           : []),
       ])

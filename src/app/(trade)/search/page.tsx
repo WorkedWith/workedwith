@@ -24,7 +24,7 @@ export default async function SearchPage() {
     .maybeSingle()
 
   const subscriptionTier = (tradeProfile?.subscription_tier as string | null | undefined) ?? 'free'
-  const isPro = subscriptionTier === 'pro' || subscriptionTier === 'team'
+  const isPro = subscriptionTier === 'pro'
 
   return (
     <main className="min-h-screen bg-gray-50">

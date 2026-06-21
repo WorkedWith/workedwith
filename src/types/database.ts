@@ -274,6 +274,7 @@ export interface Dispute {
   admin_notes: string | null
   decision_deadline: string
   notified_at: string | null
+  is_priority: boolean
 }
 
 export type JobInviteStatus = 'pending' | 'accepted' | 'declined' | 'expired'
@@ -347,6 +348,26 @@ export interface VerificationDocument {
   reviewed_at: string | null
   reviewed_by: string | null
   rejection_reason: string | null
+}
+
+// ── Profile analytics ─────────────────────────────────────────
+
+export type ProfileViewSource = 'direct' | 'search' | 'share'
+
+export interface ProfileView {
+  id: string
+  trade_profile_id: string
+  viewed_at: string
+  viewer_id: string | null
+  source: ProfileViewSource | null
+}
+
+export interface SearchAppearance {
+  id: string
+  trade_profile_id: string
+  appeared_at: string
+  search_postcode: string | null
+  search_trade_type: string | null
 }
 
 // ── Featured jobs ─────────────────────────────────────────────
@@ -479,6 +500,18 @@ export interface Database {
         Row: WithIndex<VerificationDocument>
         Insert: { user_id: string; storage_path: string } & Partial<Omit<VerificationDocument, 'user_id' | 'storage_path'>>
         Update: Partial<VerificationDocument>
+        Relationships: []
+      }
+      profile_views: {
+        Row: WithIndex<ProfileView>
+        Insert: { trade_profile_id: string } & Partial<Omit<ProfileView, 'trade_profile_id' | 'id' | 'viewed_at'>>
+        Update: Partial<ProfileView>
+        Relationships: []
+      }
+      search_appearances: {
+        Row: WithIndex<SearchAppearance>
+        Insert: { trade_profile_id: string } & Partial<Omit<SearchAppearance, 'trade_profile_id' | 'id' | 'appeared_at'>>
+        Update: Partial<SearchAppearance>
         Relationships: []
       }
       featured_jobs: {

@@ -303,6 +303,8 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
         to: userData.email,
         subject: `Your review for ${revieweeName} is saved`,
         html: waitingHtml({ revieweeName, jobUrl }),
+      }).catch((emailError: unknown) => {
+        console.error('Email send failed (non-fatal):', emailError)
       })
     )
 
@@ -330,6 +332,8 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
             to: nonSubmitterEmail,
             subject: `Don't forget — ${reviewerName} has reviewed your job`,
             html: nudgeHtml({ reviewerName, jobUrl: reviewUrl, windowCloses }),
+          }).catch((emailError: unknown) => {
+            console.error('Email send failed (non-fatal):', emailError)
           })
         )
       }
@@ -391,6 +395,8 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
         from: 'WorkedWith <hello@workedwith.co.uk>', to: tradeUser.email,
         subject: `Your WorkedWith reviews are now live — see what ${clientName} said about you`,
         html: publishedHtml({ otherPartyName: clientName, jobUrl }),
+      }).catch((emailError: unknown) => {
+        console.error('Email send failed (non-fatal):', emailError)
       }))
     }
     if (clientUserId) {
@@ -406,6 +412,8 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
         from: 'WorkedWith <hello@workedwith.co.uk>', to: clientUser.email,
         subject: `Your WorkedWith reviews are now live — see what ${tradeName} said about you`,
         html: publishedHtml({ otherPartyName: tradeName, jobUrl }),
+      }).catch((emailError: unknown) => {
+        console.error('Email send failed (non-fatal):', emailError)
       }))
     }
     await Promise.all(publishedPromises)
@@ -462,6 +470,8 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
     from: 'WorkedWith <hello@workedwith.co.uk>', to: userData.email,
     subject: 'Your review is now live on WorkedWith',
     html: publishedAloneReviewerHtml({ revieweeName, jobUrl }),
+  }).catch((emailError: unknown) => {
+    console.error('Email send failed (non-fatal):', emailError)
   }))
 
   if (nonSubmitterUserId) {
@@ -477,6 +487,8 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
       from: 'WorkedWith <hello@workedwith.co.uk>', to: nonSubmitterEmail,
       subject: `You missed your review window — ${reviewerName}'s review of you is now live`,
       html: missedWindowHtml({ reviewerName: reviewerName, jobUrl }),
+    }).catch((emailError: unknown) => {
+      console.error('Email send failed (non-fatal):', emailError)
     }))
   }
 

@@ -197,5 +197,16 @@ export async function searchTradespeople(
   const otherResults = shuffleArray(results.filter(r => r.subscription_tier !== 'pro'))
   const sortedResults = [...proResults, ...otherResults]
 
+  // Fire-and-forget search appearance log
+  if (sortedResults.length > 0) {
+    admin.from('search_appearances').insert(
+      sortedResults.map(r => ({
+        trade_profile_id: r.id,
+        search_postcode: postcode,
+        search_trade_type: tradeType,
+      }))
+    ).then(() => {})
+  }
+
   return { success: true, results: sortedResults.slice(0, 20) }
 }

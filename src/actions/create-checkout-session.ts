@@ -4,24 +4,26 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripeClient } from '@/lib/stripe/client'
 
-export type CheckoutTier =
-  | 'standard_monthly'
-  | 'standard_annual'
-  | 'pro_monthly'
-  | 'pro_annual'
+export type CheckoutTier = 'standard' | 'pro'
+export type CheckoutPeriod = 'monthly' | 'annual'
 
 export type CheckoutResult = { url: string } | { error: string }
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://workedwith.co.uk'
 
-const PRICE_IDS: Record<CheckoutTier, string | undefined> = {
+type PriceKey = `${CheckoutTier}_${CheckoutPeriod}`
+
+const PRICE_IDS: Record<PriceKey, string | undefined> = {
   standard_monthly: process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID,
   standard_annual:  process.env.STRIPE_STANDARD_ANNUAL_PRICE_ID,
   pro_monthly:      process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
   pro_annual:       process.env.STRIPE_PRO_ANNUAL_PRICE_ID,
 }
 
-export async function createCheckoutSession(tier: CheckoutTier, successUrl?: string): Promise<CheckoutResult> {
+export async function createCheckoutSession(
+  tier: CheckoutTier,
+  period: CheckoutPeriod,
+): Promise<CheckoutResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'You must be signed in.' }
@@ -36,8 +38,8 @@ export async function createCheckoutSession(tier: CheckoutTier, successUrl?: str
     return { error: 'Subscriptions are available for trade accounts only.' }
   }
 
-  const priceId = PRICE_IDS[tier]
-  if (!priceId) return { error: `Price ID for ${tier} is not configured.` }
+  const priceId = PRICE_IDS[`${tier}_${period}`]
+  if (!priceId) return { error: `Price ID for ${tier} ${period} is not configured.` }
 
   const { data: tradeProfile } = await admin
     .from('trade_profiles')
@@ -49,38 +51,41 @@ export async function createCheckoutSession(tier: CheckoutTier, successUrl?: str
 
   const stripe = getStripeClient()
 
-  let customerId = tradeProfile.stripe_customer_id as string | null
+  try {
+    let customerId = tradeProfile.stripe_customer_id as string | null
 
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: userData.email as string,
-      name: (tradeProfile.company_name as string | null) ?? (userData.full_name as string),
-      metadata: { user_id: user.id },
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: userData.email as string,
+        name: (tradeProfile.company_name as string | null) ?? (userData.full_name as string),
+        metadata: { user_id: user.id },
+      })
+      customerId = customer.id
+
+      await admin
+        .from('trade_profiles')
+        .update({ stripe_customer_id: customerId })
+        .eq('user_id', user.id)
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      client_reference_id: user.id,
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      subscription_data: {
+        trial_period_days: 14,
+        metadata: { user_id: user.id },
+      },
+      success_url: `${BASE_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/subscription`,
+      allow_promotion_codes: true,
     })
-    customerId = customer.id
 
-    await admin
-      .from('trade_profiles')
-      .update({ stripe_customer_id: customerId })
-      .eq('user_id', user.id)
+    if (!session.url) return { error: 'Failed to create checkout session.' }
+    return { url: session.url }
+  } catch (stripeError) {
+    console.error('Stripe API error:', stripeError)
+    return { error: 'Payment service unavailable. Please try again.' }
   }
-
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    client_reference_id: user.id,
-    mode: 'subscription',
-    line_items: [{ price: priceId, quantity: 1 }],
-    subscription_data: {
-      trial_period_days: 14,
-      metadata: { user_id: user.id },
-    },
-    success_url: successUrl
-      ? `${BASE_URL}${successUrl}`
-      : `${BASE_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${BASE_URL}/subscription`,
-    allow_promotion_codes: true,
-  })
-
-  if (!session.url) return { error: 'Failed to create checkout session.' }
-  return { url: session.url }
 }

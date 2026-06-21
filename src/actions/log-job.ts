@@ -216,18 +216,20 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
         confirmUrl: `https://workedwith.co.uk/jobs/confirm/${inviteToken}`,
       }
       await Promise.all([
-        resend.emails.send({
-          from: 'WorkedWith <hello@workedwith.co.uk>',
-          to: emailTo,
-          subject: `${tradeName} wants to confirm a job with you on WorkedWith`,
-          html: existingClientHtml(emailParams),
-        }),
         admin.from('notifications').insert({
           user_id: existingUser.id,
           type: 'job_invite',
           title: 'New job to confirm',
           body: `${tradeName} has logged a ${job_type} job and wants you to confirm it.`,
           link: `/jobs/confirm/${inviteToken}`,
+        }),
+        resend.emails.send({
+          from: 'WorkedWith <hello@workedwith.co.uk>',
+          to: emailTo,
+          subject: `${tradeName} wants to confirm a job with you on WorkedWith`,
+          html: existingClientHtml(emailParams),
+        }).catch((emailError: unknown) => {
+          console.error('Email send failed (non-fatal):', emailError)
         }),
       ])
     } else {
@@ -236,12 +238,16 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
         tradeName, jobType: job_type, postcode, startedAt: started_at,
         confirmUrl: `https://workedwith.co.uk/invite/job/${inviteToken}`,
       }
-      await resend.emails.send({
-        from: 'WorkedWith <hello@workedwith.co.uk>',
-        to: emailTo,
-        subject: `${tradeName} has logged a job with you — join WorkedWith to confirm it`,
-        html: newUserHtml(emailParams),
-      })
+      try {
+        await resend.emails.send({
+          from: 'WorkedWith <hello@workedwith.co.uk>',
+          to: emailTo,
+          subject: `${tradeName} has logged a job with you — join WorkedWith to confirm it`,
+          html: newUserHtml(emailParams),
+        })
+      } catch (emailError) {
+        console.error('Email send failed (non-fatal):', emailError)
+      }
     }
   }
 

@@ -3,7 +3,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUserTier, isStandardOrAbove } from '@/lib/stripe/get-tier'
-import type { SubscriptionTier } from '@/types/database'
+import { moderateImage } from '@/lib/moderation/rekognition'
+import type { ModerationStatus, SubscriptionTier } from '@/types/database'
 
 const IMAGE_LIMITS: Partial<Record<SubscriptionTier, number>> = {
   standard: 5,
@@ -78,12 +79,27 @@ export async function uploadFeaturedImage(formData: FormData): Promise<UploadFea
     }
   }
 
+  // Convert to bytes for moderation
+  const buffer = await file.arrayBuffer()
+  const imageBytes = new Uint8Array(buffer)
+
+  // Moderate with Rekognition; fall back to manual review if unavailable
+  let moderationStatus: ModerationStatus = 'approved'
+  try {
+    const modResult = await moderateImage(imageBytes)
+    if (!modResult.approved) {
+      return { success: false, error: 'Image contains inappropriate content and cannot be uploaded.' }
+    }
+  } catch (err) {
+    console.error('[Rekognition] Moderation unavailable, falling back to manual review:', err)
+    moderationStatus = 'pending'
+  }
+
   // Build storage path and upload
   const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
   const imageId = crypto.randomUUID()
   const storagePath = `${tradeProfile.id as string}/${featuredJobId}/${imageId}.${ext}`
 
-  const buffer = await file.arrayBuffer()
   const { error: uploadErr } = await admin.storage
     .from('featured-job-images')
     .upload(storagePath, buffer, { contentType: file.type })
@@ -99,7 +115,7 @@ export async function uploadFeaturedImage(formData: FormData): Promise<UploadFea
       featured_job_id: featuredJobId,
       storage_path: storagePath,
       caption: typeof caption === 'string' && caption.trim() ? caption.trim() : null,
-      moderation_status: 'pending',
+      moderation_status: moderationStatus,
       display_order: count ?? 0,
     })
     .select('id')

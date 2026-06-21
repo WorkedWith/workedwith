@@ -235,7 +235,8 @@ export default function LandingPage() {
             Most platforms only protect one side. WorkedWith is the only platform where both parties have a reputation to protect.
           </p>
 
-          <div className="mt-12 overflow-x-auto rounded-xl shadow-sm border border-gray-200">
+          <div className="mt-12 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="rounded-xl shadow-sm border border-gray-200">
             <table className="w-full min-w-[540px] border-collapse text-sm">
               <thead>
                 <tr>
@@ -264,6 +265,7 @@ export default function LandingPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </section>
