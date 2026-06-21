@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { SampleReviewCard } from '@/components/demo/sample-review-card'
-import { DEMO_CLIENT_REVIEWS } from '@/lib/demo-data'
+import { DEMO_REVIEWS_JAMES, DEMO_REVIEWS_SARAH, DEMO_REVIEWS_OWEN } from '@/lib/demo-data'
 
 export const metadata: Metadata = {
   title: 'For Tradespeople — WorkedWith',
@@ -125,6 +125,17 @@ export default function ForTradesPage() {
         </div>
       </section>
 
+      {/* ── Mid-page CTA ─────────────────────────────────────── */}
+      <section className="bg-brand-amber py-12">
+        <div className="max-w-3xl mx-auto px-4 text-center">
+          <p className="text-brand-navy font-bold text-xl mb-2">Ready to build your verified reputation?</p>
+          <p className="text-brand-navy/80 mb-6">Join free in under 2 minutes. No credit card required.</p>
+          <a href="/join/trade" className="inline-block bg-brand-navy text-white font-bold rounded-lg px-8 py-3 hover:bg-brand-navy/90 transition-colors">
+            Join free as a tradesperson
+          </a>
+        </div>
+      </section>
+
       {/* ── Two-sided value ───────────────────────────────────── */}
       <section className="px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-5xl">
@@ -239,24 +250,54 @@ export default function ForTradesPage() {
             Every review is linked to a confirmed real job. These are example reviews showing the format.
           </p>
           <div className="mt-12 grid gap-6 sm:grid-cols-3">
-            {DEMO_CLIENT_REVIEWS.map((review, i) => (
-              <SampleReviewCard
-                key={i}
-                reviewerLabel={review.reviewer_label}
-                subjectDisplay={review.tradesperson_name}
-                tradeType={review.trade_type}
-                overallRating={review.overall_rating}
-                scores={[
-                  { label: 'Quality', value: review.quality_score },
-                  { label: 'Communication', value: review.communication_score },
-                  { label: 'Reliability', value: review.reliability_score },
-                  { label: 'Value', value: review.value_score },
-                ]}
-                writtenReview={review.written_review}
-                date={review.date}
-                isBackdated={review.is_backdated}
-              />
-            ))}
+            <SampleReviewCard
+              jobTitle={DEMO_REVIEWS_JAMES[0].job_title}
+              reviewerLabel={DEMO_REVIEWS_JAMES[0].reviewer_label}
+              subjectDisplay="James Whitfield"
+              tradeType={DEMO_REVIEWS_JAMES[0].trade_type}
+              overallRating={DEMO_REVIEWS_JAMES[0].overall_rating}
+              scores={[
+                { label: 'Quality', value: DEMO_REVIEWS_JAMES[0].quality_score },
+                { label: 'Communication', value: DEMO_REVIEWS_JAMES[0].communication_score },
+                { label: 'Reliability', value: DEMO_REVIEWS_JAMES[0].reliability_score },
+                { label: 'Value', value: DEMO_REVIEWS_JAMES[0].value_score },
+              ]}
+              writtenReview={DEMO_REVIEWS_JAMES[0].written_review}
+              date={DEMO_REVIEWS_JAMES[0].date}
+              isBackdated={DEMO_REVIEWS_JAMES[0].is_backdated}
+            />
+            <SampleReviewCard
+              jobTitle={DEMO_REVIEWS_SARAH[0].job_title}
+              reviewerLabel={DEMO_REVIEWS_SARAH[0].reviewer_label}
+              subjectDisplay="Sarah Moran"
+              tradeType={DEMO_REVIEWS_SARAH[0].trade_type}
+              overallRating={DEMO_REVIEWS_SARAH[0].overall_rating}
+              scores={[
+                { label: 'Quality', value: DEMO_REVIEWS_SARAH[0].quality_score },
+                { label: 'Communication', value: DEMO_REVIEWS_SARAH[0].communication_score },
+                { label: 'Reliability', value: DEMO_REVIEWS_SARAH[0].reliability_score },
+                { label: 'Value', value: DEMO_REVIEWS_SARAH[0].value_score },
+              ]}
+              writtenReview={DEMO_REVIEWS_SARAH[0].written_review}
+              date={DEMO_REVIEWS_SARAH[0].date}
+              isBackdated={DEMO_REVIEWS_SARAH[0].is_backdated}
+            />
+            <SampleReviewCard
+              jobTitle={DEMO_REVIEWS_OWEN[0].job_title}
+              reviewerLabel={DEMO_REVIEWS_OWEN[0].reviewer_label}
+              subjectDisplay="Owen Pritchard"
+              tradeType={DEMO_REVIEWS_OWEN[0].trade_type}
+              overallRating={DEMO_REVIEWS_OWEN[0].overall_rating}
+              scores={[
+                { label: 'Quality', value: DEMO_REVIEWS_OWEN[0].quality_score },
+                { label: 'Communication', value: DEMO_REVIEWS_OWEN[0].communication_score },
+                { label: 'Reliability', value: DEMO_REVIEWS_OWEN[0].reliability_score },
+                { label: 'Value', value: DEMO_REVIEWS_OWEN[0].value_score },
+              ]}
+              writtenReview={DEMO_REVIEWS_OWEN[0].written_review}
+              date={DEMO_REVIEWS_OWEN[0].date}
+              isBackdated={DEMO_REVIEWS_OWEN[0].is_backdated}
+            />
           </div>
         </div>
       </section>

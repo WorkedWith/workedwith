@@ -48,19 +48,19 @@ export default function HomePage() {
           {/* Audience cards */}
           <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2">
 
-            {/* Tradesperson card */}
+            {/* Tradesperson card — primary */}
             <a
               href="/for-trades"
-              className="group flex flex-col items-start rounded-2xl border-2 border-white/20 bg-white p-8 text-left hover:border-brand-amber transition-colors"
+              className="group flex flex-col items-start rounded-2xl bg-brand-navy p-8 text-left hover:bg-brand-navy/90 transition-colors"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
                 <HardHatIcon />
               </div>
-              <h2 className="mt-5 text-xl font-bold text-brand-navy">I&apos;m a tradesperson</h2>
-              <p className="mt-2 text-sm leading-relaxed text-gray-500 flex-1">
+              <h2 className="mt-5 text-xl font-bold text-white">I&apos;m a tradesperson</h2>
+              <p className="mt-2 text-sm leading-relaxed text-white/70 flex-1">
                 Build your verified reputation, vet clients before you commit, and grow your business with trust.
               </p>
-              <span className="mt-6 w-full rounded-xl bg-brand-amber py-3 text-center text-sm font-semibold text-brand-navy group-hover:bg-amber-400 transition-colors">
+              <span className="mt-6 w-full rounded-xl bg-brand-amber py-3 text-center text-sm font-bold text-brand-navy group-hover:bg-amber-400 transition-colors">
                 Get started
               </span>
             </a>
@@ -68,7 +68,7 @@ export default function HomePage() {
             {/* Client card */}
             <a
               href="/for-clients"
-              className="group flex flex-col items-start rounded-2xl bg-brand-amber p-8 text-left hover:bg-amber-400 transition-colors"
+              className="group flex flex-col items-start rounded-2xl border-2 border-brand-amber bg-amber-50 p-8 text-left hover:bg-amber-100 transition-colors"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-navy/10">
                 <SearchIcon />
@@ -77,7 +77,7 @@ export default function HomePage() {
               <p className="mt-2 text-sm leading-relaxed text-brand-navy/70 flex-1">
                 Find verified tradespeople in your area with genuine mutual reviews from real jobs.
               </p>
-              <span className="mt-6 w-full rounded-xl bg-brand-navy py-3 text-center text-sm font-semibold text-white group-hover:bg-brand-navy/90 transition-colors">
+              <span className="mt-6 w-full rounded-xl bg-brand-navy py-3 text-center text-sm font-bold text-white group-hover:bg-brand-navy/90 transition-colors">
                 Find a tradesperson
               </span>
             </a>

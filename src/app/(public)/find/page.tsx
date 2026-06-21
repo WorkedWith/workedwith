@@ -3,6 +3,8 @@ import { FindForm } from './find-form'
 import { searchTradespeople } from '@/actions/search-tradespeople'
 import type { TradesearchResult } from '@/actions/search-tradespeople'
 import { createClient } from '@/lib/supabase/server'
+import { DEMO_TRADE_PROFILES } from '@/lib/demo-data'
+import { DemoProfileCard } from '@/components/demo/demo-profile-card'
 
 export const metadata: Metadata = {
   title: 'Find a Tradesperson — WorkedWith',
@@ -76,14 +78,20 @@ export default async function FindPage({ searchParams }: PageProps) {
           </div>
         )}
 
-        {/* Empty results */}
+        {/* Empty results — show demo profiles */}
         {hasSearch && searchResult?.success && searchResult.results.length === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-200 p-16 text-center">
-            <p className="text-5xl" aria-hidden>🔍</p>
-            <p className="mt-4 text-xl font-semibold text-gray-400">No results found</p>
-            <p className="mt-2 text-sm text-gray-400">
-              Try a wider radius or different trade type.
-            </p>
+          <div>
+            <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-xl text-center">
+              <p className="text-amber-800 font-medium text-sm">
+                No verified tradespeople in your area yet — WorkedWith is growing fast.
+                Here is what a WorkedWith profile looks like.
+              </p>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-3">
+              {DEMO_TRADE_PROFILES.map(profile => (
+                <DemoProfileCard key={profile.id} profile={profile} />
+              ))}
+            </div>
           </div>
         )}
 

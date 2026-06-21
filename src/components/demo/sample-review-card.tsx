@@ -1,6 +1,7 @@
 type Score = { label: string; value: number }
 
 type Props = {
+  jobTitle: string
   reviewerLabel: string
   subjectDisplay: string
   tradeType: string
@@ -12,6 +13,7 @@ type Props = {
 }
 
 export function SampleReviewCard({
+  jobTitle,
   reviewerLabel,
   subjectDisplay,
   tradeType,
@@ -49,7 +51,8 @@ export function SampleReviewCard({
         )}
       </div>
 
-      {/* Written review */}
+      {/* Job title + written review */}
+      <p className="font-semibold text-brand-navy mb-1">{jobTitle}</p>
       <p className="text-sm leading-relaxed text-gray-700">&ldquo;{writtenReview}&rdquo;</p>
 
       {/* Sub-scores */}

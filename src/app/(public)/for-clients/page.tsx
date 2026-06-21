@@ -172,6 +172,62 @@ export default function ForClientsPage() {
         </div>
       </section>
 
+      {/* ── What tradespeople say about clients ───────────────── */}
+      <section className="bg-white px-4 py-16 sm:py-20 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center text-3xl font-bold text-brand-navy sm:text-4xl">
+            What tradespeople say about their clients
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-base text-gray-500">
+            On WorkedWith, clients build a reputation too. Here is what verified client reviews look like.
+          </p>
+          <div className="mt-12 grid gap-6 sm:grid-cols-3">
+            <SampleReviewCard
+              jobTitle={DEMO_TRADESPERSON_REVIEWS[0].job_title}
+              reviewerLabel={DEMO_TRADESPERSON_REVIEWS[0].reviewer_label}
+              subjectDisplay={DEMO_TRADESPERSON_REVIEWS[0].client_display}
+              tradeType={DEMO_TRADESPERSON_REVIEWS[0].trade_type}
+              overallRating={DEMO_TRADESPERSON_REVIEWS[0].overall_rating}
+              scores={[
+                { label: 'Payment', value: DEMO_TRADESPERSON_REVIEWS[0].payment_score },
+                { label: 'Communication', value: DEMO_TRADESPERSON_REVIEWS[0].communication_score },
+                { label: 'Scope clarity', value: DEMO_TRADESPERSON_REVIEWS[0].scope_clarity_score },
+              ]}
+              writtenReview={DEMO_TRADESPERSON_REVIEWS[0].written_review}
+              date={DEMO_TRADESPERSON_REVIEWS[0].date}
+            />
+            <SampleReviewCard
+              jobTitle={DEMO_TRADESPERSON_REVIEWS[1].job_title}
+              reviewerLabel={DEMO_TRADESPERSON_REVIEWS[1].reviewer_label}
+              subjectDisplay={DEMO_TRADESPERSON_REVIEWS[1].client_display}
+              tradeType={DEMO_TRADESPERSON_REVIEWS[1].trade_type}
+              overallRating={DEMO_TRADESPERSON_REVIEWS[1].overall_rating}
+              scores={[
+                { label: 'Payment', value: DEMO_TRADESPERSON_REVIEWS[1].payment_score },
+                { label: 'Communication', value: DEMO_TRADESPERSON_REVIEWS[1].communication_score },
+                { label: 'Scope clarity', value: DEMO_TRADESPERSON_REVIEWS[1].scope_clarity_score },
+              ]}
+              writtenReview={DEMO_TRADESPERSON_REVIEWS[1].written_review}
+              date={DEMO_TRADESPERSON_REVIEWS[1].date}
+            />
+            <SampleReviewCard
+              jobTitle={DEMO_TRADESPERSON_REVIEWS[2].job_title}
+              reviewerLabel={DEMO_TRADESPERSON_REVIEWS[2].reviewer_label}
+              subjectDisplay={DEMO_TRADESPERSON_REVIEWS[2].client_display}
+              tradeType={DEMO_TRADESPERSON_REVIEWS[2].trade_type}
+              overallRating={DEMO_TRADESPERSON_REVIEWS[2].overall_rating}
+              scores={[
+                { label: 'Payment', value: DEMO_TRADESPERSON_REVIEWS[2].payment_score },
+                { label: 'Communication', value: DEMO_TRADESPERSON_REVIEWS[2].communication_score },
+                { label: 'Scope clarity', value: DEMO_TRADESPERSON_REVIEWS[2].scope_clarity_score },
+              ]}
+              writtenReview={DEMO_TRADESPERSON_REVIEWS[2].written_review}
+              date={DEMO_TRADESPERSON_REVIEWS[2].date}
+            />
+          </div>
+        </div>
+      </section>
+
       {/* ── Demo profile cards ────────────────────────────────── */}
       <section className="px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-5xl">
@@ -219,36 +275,6 @@ export default function ForClientsPage() {
               title="Your reputation matters too"
               body="Tradespeople can see how you treat people. The good ones want to work with good clients."
             />
-          </div>
-        </div>
-      </section>
-
-      {/* ── What tradespeople say about clients ───────────────── */}
-      <section className="bg-white px-4 py-16 sm:py-20 sm:px-6">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-center text-3xl font-bold text-brand-navy sm:text-4xl">
-            What tradespeople say about their clients
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-center text-base text-gray-500">
-            On WorkedWith, clients build a reputation too. Here is what verified client reviews look like.
-          </p>
-          <div className="mt-12 grid gap-6 sm:grid-cols-3">
-            {DEMO_TRADESPERSON_REVIEWS.map((review, i) => (
-              <SampleReviewCard
-                key={i}
-                reviewerLabel={review.reviewer_label}
-                subjectDisplay={review.client_display}
-                tradeType={review.trade_type}
-                overallRating={review.overall_rating}
-                scores={[
-                  { label: 'Payment', value: review.payment_score },
-                  { label: 'Communication', value: review.communication_score },
-                  { label: 'Scope clarity', value: review.scope_clarity_score },
-                ]}
-                writtenReview={review.written_review}
-                date={review.date}
-              />
-            ))}
           </div>
         </div>
       </section>

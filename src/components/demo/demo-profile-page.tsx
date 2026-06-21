@@ -1,8 +1,8 @@
-import type { DemoTradeProfile, DemoClientReview } from '@/lib/demo-data'
+import type { DemoTradeProfile, DemoReview } from '@/lib/demo-data'
 
 type Props = {
   profile: DemoTradeProfile
-  reviews: DemoClientReview[]
+  reviews: DemoReview[]
 }
 
 export function DemoProfilePage({ profile, reviews }: Props) {
@@ -134,7 +134,7 @@ export function DemoProfilePage({ profile, reviews }: Props) {
   )
 }
 
-function ReviewCard({ review }: { review: DemoClientReview }) {
+function ReviewCard({ review }: { review: DemoReview }) {
   const rating = review.overall_rating
 
   return (
@@ -154,6 +154,7 @@ function ReviewCard({ review }: { review: DemoClientReview }) {
           </span>
         )}
       </div>
+      <p className="mt-3 font-semibold text-brand-navy">{review.job_title}</p>
 
       <p className="mt-3 text-sm leading-relaxed text-gray-700">{review.written_review}</p>
 

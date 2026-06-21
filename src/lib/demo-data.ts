@@ -18,10 +18,10 @@ export type DemoTradeProfile = {
   is_demo: true
 }
 
-export type DemoClientReview = {
+export type DemoReview = {
+  job_title: string
   reviewer_label: string
   trade_type: string
-  tradesperson_name: string
   overall_rating: number
   quality_score: number
   communication_score: number
@@ -33,6 +33,7 @@ export type DemoClientReview = {
 }
 
 export type DemoTradespersonReview = {
+  job_title: string
   reviewer_label: string
   trade_type: string
   client_display: string
@@ -95,11 +96,11 @@ export const DEMO_TRADE_PROFILES: DemoTradeProfile[] = [
   },
 ]
 
-export const DEMO_CLIENT_REVIEWS: DemoClientReview[] = [
+export const DEMO_REVIEWS_JAMES: DemoReview[] = [
   {
+    job_title: 'Full house rewire and consumer unit upgrade',
     reviewer_label: 'Verified client',
     trade_type: 'Electrician',
-    tradesperson_name: 'James Whitfield',
     overall_rating: 5,
     quality_score: 5,
     communication_score: 5,
@@ -110,9 +111,38 @@ export const DEMO_CLIENT_REVIEWS: DemoClientReview[] = [
     is_backdated: false,
   },
   {
+    job_title: 'EV charger installation',
+    reviewer_label: 'Verified client',
+    trade_type: 'Electrician',
+    overall_rating: 5,
+    quality_score: 5,
+    communication_score: 5,
+    reliability_score: 5,
+    value_score: 5,
+    written_review: 'Came out within two days of calling. Neat installation, explained the app and tariff options clearly. Would not hesitate to use again.',
+    date: 'March 2026',
+    is_backdated: false,
+  },
+  {
+    job_title: 'Fuse board replacement',
+    reviewer_label: 'Verified client',
+    trade_type: 'Electrician',
+    overall_rating: 5,
+    quality_score: 5,
+    communication_score: 4,
+    reliability_score: 5,
+    value_score: 5,
+    written_review: 'Old fuse board replaced with a modern consumer unit. Job was done in half a day, very tidy, all certificates provided. Good value.',
+    date: 'January 2026',
+    is_backdated: true,
+  },
+]
+
+export const DEMO_REVIEWS_SARAH: DemoReview[] = [
+  {
+    job_title: 'Skim plaster three rooms and full decoration',
     reviewer_label: 'Verified client',
     trade_type: 'Plasterer',
-    tradesperson_name: 'Sarah Moran',
     overall_rating: 5,
     quality_score: 5,
     communication_score: 5,
@@ -123,9 +153,38 @@ export const DEMO_CLIENT_REVIEWS: DemoClientReview[] = [
     is_backdated: false,
   },
   {
+    job_title: 'Feature wall and full lounge redecoration',
+    reviewer_label: 'Verified client',
+    trade_type: 'Decorator',
+    overall_rating: 5,
+    quality_score: 5,
+    communication_score: 5,
+    reliability_score: 5,
+    value_score: 5,
+    written_review: 'Absolutely brilliant. Feature wall looks incredible, clean lines, no mess left behind. Sarah clearly takes real pride in her work.',
+    date: 'February 2026',
+    is_backdated: false,
+  },
+  {
+    job_title: 'Render and skim new extension',
+    reviewer_label: 'Verified client',
+    trade_type: 'Plasterer',
+    overall_rating: 4,
+    quality_score: 5,
+    communication_score: 4,
+    reliability_score: 4,
+    value_score: 4,
+    written_review: 'Good quality work on a tricky extension render. Took a day longer than expected but the result is excellent and Sarah kept us updated throughout.',
+    date: 'November 2025',
+    is_backdated: true,
+  },
+]
+
+export const DEMO_REVIEWS_OWEN: DemoReview[] = [
+  {
+    job_title: 'Leak trace and repair',
     reviewer_label: 'Verified client',
     trade_type: 'Plumber',
-    tradesperson_name: 'Owen Pritchard',
     overall_rating: 5,
     quality_score: 5,
     communication_score: 4,
@@ -135,10 +194,37 @@ export const DEMO_CLIENT_REVIEWS: DemoClientReview[] = [
     date: 'March 2026',
     is_backdated: true,
   },
+  {
+    job_title: 'Full bathroom installation',
+    reviewer_label: 'Verified client',
+    trade_type: 'Plumber',
+    overall_rating: 5,
+    quality_score: 5,
+    communication_score: 5,
+    reliability_score: 5,
+    value_score: 4,
+    written_review: 'Owen installed a complete new bathroom including tiling. Superb quality, no shortcuts, and he project managed the whole thing so we did not have to worry about a thing.',
+    date: 'January 2026',
+    is_backdated: false,
+  },
+  {
+    job_title: 'Boiler service and radiator balance',
+    reviewer_label: 'Verified client',
+    trade_type: 'Plumber',
+    overall_rating: 5,
+    quality_score: 5,
+    communication_score: 5,
+    reliability_score: 5,
+    value_score: 5,
+    written_review: 'Punctual, efficient, and thorough. Serviced the boiler and balanced all the radiators in under two hours. House is noticeably warmer. Great value.',
+    date: 'October 2025',
+    is_backdated: true,
+  },
 ]
 
 export const DEMO_TRADESPERSON_REVIEWS: DemoTradespersonReview[] = [
   {
+    job_title: 'Full rewire, Chester',
     reviewer_label: 'Verified tradesperson',
     trade_type: 'Electrician',
     client_display: 'D. Harrison, Chester',
@@ -150,6 +236,7 @@ export const DEMO_TRADESPERSON_REVIEWS: DemoTradespersonReview[] = [
     date: 'May 2026',
   },
   {
+    job_title: 'Plastering, Salford',
     reviewer_label: 'Verified tradesperson',
     trade_type: 'Plasterer',
     client_display: 'R. Okafor, Salford',
@@ -161,6 +248,7 @@ export const DEMO_TRADESPERSON_REVIEWS: DemoTradespersonReview[] = [
     date: 'April 2026',
   },
   {
+    job_title: 'Boiler service, Bangor',
     reviewer_label: 'Verified tradesperson',
     trade_type: 'Plumber',
     client_display: 'T. Williams, Bangor',
@@ -172,3 +260,27 @@ export const DEMO_TRADESPERSON_REVIEWS: DemoTradespersonReview[] = [
     date: 'March 2026',
   },
 ]
+
+export const DEMO_CLIENT_PROFILE = {
+  display_name: 'D. Harrison',
+  location: 'Chester',
+  confirmed_jobs: 5,
+  average_rating: 4.9,
+  payment_score: 5.0,
+  communication_score: 5.0,
+  scope_clarity_score: 5.0,
+  red_flag_count: 0,
+  review_excerpts: [
+    {
+      trade_type: 'Plumber',
+      date: 'April 2026',
+      excerpt: 'Really easy client — brief was clear from day one. Paid same day without any chasing.',
+    },
+    {
+      trade_type: 'Electrician',
+      date: 'January 2026',
+      excerpt: 'Great communication throughout. Had everything ready for us on the day.',
+    },
+  ],
+  is_demo: true,
+}

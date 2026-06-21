@@ -4,12 +4,17 @@ import { useState, useTransition } from 'react'
 import { getClientProfile, type ClientProfileResult, type RecentReview } from '@/actions/get-client-profile'
 import type { VerificationTier } from '@/types/database'
 
-export function ClientSearchForm() {
+type Props = {
+  onFirstSearch?: () => void
+}
+
+export function ClientSearchForm({ onFirstSearch }: Props = {}) {
   const [isPending, startTransition] = useTransition()
   const [emailInput, setEmailInput] = useState('')
   const [phoneInput, setPhoneInput] = useState('')
   const [inputError, setInputError] = useState<string | null>(null)
   const [result, setResult] = useState<ClientProfileResult | null>(null)
+  const [hasSearched, setHasSearched] = useState(false)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -29,6 +34,11 @@ export function ClientSearchForm() {
     }
 
     const identifier = hasEmail ? emailInput.trim() : phoneInput.trim()
+
+    if (!hasSearched) {
+      setHasSearched(true)
+      onFirstSearch?.()
+    }
 
     startTransition(async () => {
       const res = await getClientProfile(identifier)

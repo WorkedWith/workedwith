@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { ClientSearchForm } from './client-search-form'
+import { SearchDemoWrapper } from './search-demo-wrapper'
 
 export const metadata = { title: 'Client lookup | WorkedWith' }
 
@@ -57,12 +57,7 @@ export default async function SearchPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-gray-700 mb-4">
-            Enter a client&apos;s email or phone number to look up their WorkedWith profile.
-          </p>
-          <ClientSearchForm />
-        </div>
+        <SearchDemoWrapper />
       </div>
     </main>
   )
