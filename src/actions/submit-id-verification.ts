@@ -70,12 +70,23 @@ export async function submitIdVerification(formData: FormData): Promise<SubmitId
     outcome: 'pending',
   })
 
+  console.log('verification_documents insert error:', docErr ? JSON.stringify(docErr) : 'none')
+
   if (docErr) {
     await admin.storage.from('verification-documents').remove([storagePath])
-    return { success: false, error: 'Failed to record submission. Please try again.' }
+    return { success: false, error: `Failed to record submission. Please try again. (${docErr.message})` }
   }
 
-  await admin.from('users').update({ id_verification_status: 'pending' }).eq('id', user.id)
+  const { error: statusErr } = await admin
+    .from('users')
+    .update({ id_verification_status: 'pending' })
+    .eq('id', user.id)
+
+  console.log('users id_verification_status update error:', statusErr ? JSON.stringify(statusErr) : 'none')
+
+  if (statusErr) {
+    return { success: false, error: `Failed to update verification status. Please try again. (${statusErr.message})` }
+  }
 
   const resend = new Resend(process.env.RESEND_API_KEY)
   try {

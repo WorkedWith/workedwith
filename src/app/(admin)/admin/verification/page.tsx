@@ -8,11 +8,13 @@ export const metadata = { title: 'Verification Queue — WorkedWith Admin' }
 export default async function VerificationPage() {
   const admin = createAdminClient()
 
-  const { data: rawDocs } = await admin
+  const { data: rawDocs, error: docsError } = await admin
     .from('verification_documents')
     .select('*')
     .eq('outcome', 'pending')
     .order('submitted_at', { ascending: true })
+
+  console.log('Verification queue fetch — count:', rawDocs?.length ?? 0, 'error:', docsError ? JSON.stringify(docsError) : 'none')
 
   const docs = (rawDocs ?? []) as unknown as VerificationDocument[]
 
@@ -22,6 +24,8 @@ export default async function VerificationPage() {
     ? await admin.from('users').select('id, full_name, email').in('id', userIds)
     : { data: [] }
   const users = (rawUsers ?? []) as Pick<User, 'id' | 'full_name' | 'email'>[]
+
+  console.log('Verification queue users fetched:', users.length)
 
   // Generate signed URLs for each document
   const docsWithData: VerificationDocWithUser[] = await Promise.all(

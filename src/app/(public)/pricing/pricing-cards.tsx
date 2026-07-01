@@ -41,13 +41,13 @@ function FeatureItem({ text, light = false }: { text: string; light?: boolean })
 export function PricingCards() {
   const [annual, setAnnual] = useState(false)
 
-  const standardMonthlyEq = annual ? '£9.16' : '£9.99'
-  const standardPrice     = annual ? '£109.89/year' : '£9.99/month'
-  const standardSub       = annual ? '£9.16/month, billed annually — one month free' : null
+  const standardMonthlyEq = annual ? '£8.33' : '£9.99'
+  const standardPrice     = annual ? '£99.90/year' : '£9.99/month'
+  const standardSub       = annual ? 'Save £19.98 per year, billed annually' : null
 
-  const proMonthlyEq = annual ? '£36.66' : '£39.99'
-  const proPrice     = annual ? '£439.89/year' : '£39.99/month'
-  const proSub       = annual ? '£36.66/month, billed annually — one month free' : null
+  const proMonthlyEq = annual ? '£33.33' : '£39.99'
+  const proPrice     = annual ? '£399.90/year' : '£39.99/month'
+  const proSub       = annual ? 'Save £79.98 per year, billed annually' : null
 
   // silence unused var warnings
   void standardMonthlyEq
@@ -78,7 +78,7 @@ export function PricingCards() {
           Annual
           {annual && (
             <span className="ml-1.5 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-              1 month free
+              2 months free
             </span>
           )}
         </span>

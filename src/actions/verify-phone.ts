@@ -165,6 +165,14 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
   const email = authUser?.email ?? user.email ?? ''
   const userTypeFromMeta = (authUser?.user_metadata?.user_type as string | undefined) ?? null
 
+  console.log('Upsert payload:', {
+    id: user.id,
+    email: authUser?.email,
+    phone: normalized,
+    phone_verified: true,
+    verification_tier: 'phone_verified',
+  })
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const upsertPayload: any = {
     id: user.id,

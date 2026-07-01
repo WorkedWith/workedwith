@@ -54,7 +54,7 @@ export function PricingCards() {
           >
             Annual
             <span className="ml-1.5 rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-bold text-green-700">
-              Save 1 month
+              Save 2 months
             </span>
           </button>
         </div>
@@ -102,7 +102,7 @@ export function PricingCards() {
                 </p>
               ) : (
                 <p className="mt-2 text-3xl font-bold text-brand-navy">
-                  £109.89 <span className="text-base font-normal text-gray-400">/year</span>
+                  £99.90 <span className="text-base font-normal text-gray-400">/year</span>
                 </p>
               )}
             </div>
@@ -142,7 +142,7 @@ export function PricingCards() {
                 </p>
               ) : (
                 <p className="mt-2 text-3xl font-bold text-white">
-                  £439.89 <span className="text-base font-normal text-white/50">/year</span>
+                  £399.90 <span className="text-base font-normal text-white/50">/year</span>
                 </p>
               )}
             </div>

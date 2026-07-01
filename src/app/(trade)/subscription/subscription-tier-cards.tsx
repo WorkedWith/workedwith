@@ -36,7 +36,7 @@ export function SubscriptionTierCards({ currentTier, currentBillingPeriod }: Pro
           >
             Annual
             <span className="ml-1 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-700">
-              Save 1 mo
+              Save 2 mo
             </span>
           </button>
         </div>
@@ -58,7 +58,7 @@ export function SubscriptionTierCards({ currentTier, currentBillingPeriod }: Pro
         {/* Standard */}
         <TierCard
           name="Standard"
-          price={period === 'monthly' ? '£9.99' : '£109.89'}
+          price={period === 'monthly' ? '£9.99' : '£99.90'}
           priceSuffix={period === 'monthly' ? 'per month' : 'per year'}
           description="Full client lookup, verified badge, and featured job images."
           highlight={currentTier === 'standard'}
@@ -78,7 +78,7 @@ export function SubscriptionTierCards({ currentTier, currentBillingPeriod }: Pro
         {/* Pro */}
         <TierCard
           name="Pro"
-          price={period === 'monthly' ? '£39.99' : '£439.89'}
+          price={period === 'monthly' ? '£39.99' : '£399.90'}
           priceSuffix={period === 'monthly' ? 'per month' : 'per year'}
           description="Top search placement, analytics, and priority support."
           highlight={currentTier === 'pro'}
@@ -107,7 +107,7 @@ export function SubscriptionTierCards({ currentTier, currentBillingPeriod }: Pro
       </div>
 
       <p className="mt-3 text-xs text-gray-400 text-center">
-        Annual billing saves the equivalent of one month per year. Switch via the customer portal.
+        Annual billing saves the equivalent of two months per year. Switch via the customer portal.
       </p>
     </div>
   )

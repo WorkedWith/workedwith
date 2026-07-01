@@ -6,6 +6,7 @@ import { UserMenu } from '@/components/user-menu'
 import { TRADE_TYPES } from '@/lib/trade-types'
 import { getJobHistory } from '@/actions/get-job-history'
 import { JobHistory } from '@/components/job-history'
+import { ClientLookupForm } from '@/components/client-lookup-form'
 import { getProfileAnalytics } from '@/actions/get-profile-analytics'
 import type { ProfileAnalytics } from '@/actions/get-profile-analytics'
 import type { User, Notification, SubscriptionTier } from '@/types/database'
@@ -21,7 +22,7 @@ export default async function DashboardPage() {
   const { data: userData } = await admin.from('users').select('*').eq('id', user.id).single()
   if (!userData) redirect('/')
 
-  const { verification_tier, user_type, full_name, phone_verified } = userData as unknown as User
+  const { verification_tier, user_type, full_name, phone_verified, id_verification_status } = userData as unknown as User
   if (verification_tier === 'unverified') redirect('/verify/phone')
   if (!user_type) redirect('/verify/phone')
 
@@ -98,8 +99,9 @@ export default async function DashboardPage() {
 
   const hasBackdatedJob = hasBackdatedJobTrade || hasBackdatedJobClient
 
+  const idVerified = id_verification_status === 'pending' || id_verification_status === 'approved'
   const showChecklist = isTrade
-    ? (!phone_verified || !tradeProfile || !hasLiveJob || !hasBackdatedJob || verification_tier !== 'fully_verified')
+    ? (!phone_verified || !tradeProfile || !hasLiveJob || !hasBackdatedJob || !idVerified)
     : (!phone_verified || !hasBackdatedJob)
 
   const tradeHasReviews = (tradeProfile?.total_reviews ?? 0) > 0
@@ -193,18 +195,18 @@ export default async function DashboardPage() {
                   <OnboardingItem done={hasBackdatedJob} label="Add a past job" href="/jobs/log/backdated" />
                   {phone_verified && (
                     <OnboardingItem
-                      done={verification_tier === 'fully_verified'}
+                      done={id_verification_status === 'pending' || id_verification_status === 'approved'}
                       label="Get your Verified badge"
                       href="/verify/identity"
-                      helper="Upload your driving licence to show clients you are who you say you are. Takes 1 to 2 working days to review."
+                      helper="Submit your driving licence for identity verification. Your document is reviewed securely and deleted immediately after. Never visible on your profile."
                     />
                   )}
                 </div>
               </section>
             )}
 
-            {/* Analytics */}
-            {isProTrade && analyticsData ? (
+            {/* Analytics — Pro users only, shown near top as a key paid feature */}
+            {isProTrade && analyticsData && (
               <section>
                 <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics — {analyticsData.periodLabel}</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -218,23 +220,7 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               </section>
-            ) : isTrade && !isProTrade ? (
-              <section>
-                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics</p>
-                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Profile analytics available on Pro</p>
-                    <p className="mt-0.5 text-xs text-gray-500">See how many people view your profile and find you in search.</p>
-                  </div>
-                  <a
-                    href="/subscription"
-                    className="shrink-0 rounded-lg bg-brand-amber px-4 py-2 text-xs font-bold text-brand-navy hover:bg-amber-400 transition-colors"
-                  >
-                    Upgrade
-                  </a>
-                </div>
-              </section>
-            ) : null}
+            )}
 
             {/* Job history */}
             <JobHistory jobs={jobHistory} />
@@ -256,6 +242,12 @@ export default async function DashboardPage() {
                   + Add a past job
                 </a>
               </div>
+            </section>
+
+            {/* Look up a client */}
+            <section>
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Client lookup</p>
+              <ClientLookupForm />
             </section>
 
             {/* Trade reputation */}
@@ -308,6 +300,25 @@ export default async function DashboardPage() {
                 </div>
               )}
             </section>
+
+            {/* Analytics upsell — shown at bottom for non-Pro users */}
+            {!isProTrade && (
+              <section>
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics</p>
+                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700">Profile analytics available on Pro</p>
+                    <p className="mt-0.5 text-xs text-gray-500">See how many people view your profile and find you in search.</p>
+                  </div>
+                  <a
+                    href="/subscription"
+                    className="shrink-0 rounded-lg bg-brand-amber px-4 py-2 text-xs font-bold text-brand-navy hover:bg-amber-400 transition-colors"
+                  >
+                    Upgrade
+                  </a>
+                </div>
+              </section>
+            )}
 
             {/* 'both' client side */}
             {isBoth && (
