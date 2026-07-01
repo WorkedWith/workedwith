@@ -52,6 +52,7 @@ export default async function ProfilePage() {
               phone: userData.phone,
               phone_verified: userData.phone_verified,
               user_type: userData.user_type,
+              profile_photo_url: userData.profile_photo_url,
             }}
             tradeProfile={tradeProfile ? {
               postcode: tradeProfile.postcode,

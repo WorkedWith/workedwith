@@ -22,7 +22,7 @@ export default async function DashboardPage() {
   const { data: userData } = await admin.from('users').select('*').eq('id', user.id).single()
   if (!userData) redirect('/')
 
-  const { verification_tier, user_type, full_name, phone_verified, id_verification_status } = userData as unknown as User
+  const { verification_tier, user_type, full_name, phone_verified, id_verification_status, profile_photo_url } = userData as unknown as User
   if (verification_tier === 'unverified') redirect('/verify/phone')
   if (!user_type) redirect('/verify/phone')
 
@@ -30,6 +30,12 @@ export default async function DashboardPage() {
   const isBoth = user_type === 'both'
   const isClient = isBoth || !isTrade
   const firstName = full_name.split(' ')[0]
+  const initials = full_name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0]?.toUpperCase() ?? '')
+    .join('')
 
   const [
     { data: rawNotifications },
@@ -45,7 +51,7 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(5),
     isTrade
-      ? admin.from('trade_profiles').select('id, average_rating, total_reviews, total_jobs, public_slug, subscription_tier').eq('user_id', user.id).maybeSingle()
+      ? admin.from('trade_profiles').select('id, average_rating, total_reviews, total_jobs, public_slug, subscription_tier, trade_types').eq('user_id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
     isClient
       ? admin.from('client_profiles').select('id, average_rating, total_reviews, total_jobs').eq('user_id', user.id).maybeSingle()
@@ -135,26 +141,15 @@ export default async function DashboardPage() {
 
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 space-y-6">
 
-        {/* ── Welcome row ──────────────────────────────── */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-brand-navy">
-              Welcome back, {firstName}
-            </h1>
-            <p className="mt-0.5 text-sm text-gray-500">{accountLabel} account</p>
-          </div>
-          {isTrade ? (
-            /* Trade: active-jobs badge */
-            pendingCount > 0 ? (
-              <div className="shrink-0 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-center">
-                <p className="text-xl font-bold text-amber-700">{pendingCount}</p>
-                <p className="text-xs text-amber-600">
-                  active job{pendingCount !== 1 ? 's' : ''}
-                </p>
-              </div>
-            ) : null
-          ) : (
-            /* Client: pending badge + quick action button */
+        {/* ── Client-only welcome row ───────────────────── */}
+        {!isTrade && (
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-brand-navy">
+                Welcome back, {firstName}
+              </h1>
+              <p className="mt-0.5 text-sm text-gray-500">{accountLabel} account</p>
+            </div>
             <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
               {pendingCount > 0 && (
                 <a
@@ -172,19 +167,64 @@ export default async function DashboardPage() {
                 + Add a past job
               </a>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* ══════════════════════════════════════════════
             TRADE LAYOUT  (trade + both users)
         ══════════════════════════════════════════════ */}
         {isTrade && (
           <>
+            {/* 1. Profile summary card */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex items-center gap-4">
+              <div className="flex-shrink-0 flex flex-col items-center gap-1">
+                {profile_photo_url ? (
+                  <img
+                    src={profile_photo_url}
+                    alt="Profile photo"
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-brand-navy flex items-center justify-center text-white text-xl font-bold select-none">
+                    {initials}
+                  </div>
+                )}
+                <a href="/profile" className="text-[11px] text-gray-400 hover:text-brand-amber transition-colors">
+                  {profile_photo_url ? 'Change photo' : 'Add photo'}
+                </a>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-bold text-brand-navy truncate">{full_name}</h1>
+                {((tradeProfile?.trade_types as string[] | undefined) ?? []).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {(tradeProfile?.trade_types as string[]).map(t => (
+                      <span key={t} className="bg-amber-100 text-amber-800 text-xs rounded-full px-2 py-0.5">{t}</span>
+                    ))}
+                  </div>
+                )}
+                {tradeHasReviews ? (
+                  <p className="text-sm text-gray-500 mt-1.5">
+                    ★ {(tradeProfile?.average_rating ?? 0).toFixed(1)} · {tradeProfile?.total_reviews ?? 0} verified review{(tradeProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-400 mt-1.5">No reviews yet</p>
+                )}
+              </div>
+              {tradeProfile?.public_slug && (
+                <a
+                  href={`/t/${tradeProfile.public_slug}`}
+                  className="shrink-0 text-sm text-brand-navy border border-brand-navy rounded-lg px-3 py-1.5 whitespace-nowrap hover:bg-brand-navy hover:text-white transition-colors"
+                >
+                  View profile
+                </a>
+              )}
+            </div>
+
             {isBoth && (
               <p className="text-xs font-bold uppercase tracking-widest text-brand-amber">As a tradesperson</p>
             )}
 
-            {/* Trade checklist */}
+            {/* 2. Onboarding checklist */}
             {showChecklist && (
               <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                 <p className="text-sm font-semibold text-brand-navy mb-4">Get started with WorkedWith</p>
@@ -205,27 +245,7 @@ export default async function DashboardPage() {
               </section>
             )}
 
-            {/* Analytics — Pro users only, shown near top as a key paid feature */}
-            {isProTrade && analyticsData && (
-              <section>
-                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics — {analyticsData.periodLabel}</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
-                    <p className="text-3xl font-bold text-brand-navy">{analyticsData.profileViews}</p>
-                    <p className="mt-1 text-xs text-gray-500">Profile views this month</p>
-                  </div>
-                  <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
-                    <p className="text-3xl font-bold text-brand-navy">{analyticsData.searchAppearances}</p>
-                    <p className="mt-1 text-xs text-gray-500">Search appearances this month</p>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* Job history */}
-            <JobHistory jobs={jobHistory} />
-
-            {/* Quick actions */}
+            {/* 3. Quick actions */}
             <section>
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Quick actions</p>
               <div className="flex flex-wrap gap-3">
@@ -244,13 +264,13 @@ export default async function DashboardPage() {
               </div>
             </section>
 
-            {/* Look up a client */}
+            {/* 4. Client lookup */}
             <section>
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Client lookup</p>
               <ClientLookupForm />
             </section>
 
-            {/* Trade reputation */}
+            {/* 5. Trade reputation */}
             <section>
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Your reputation</p>
               {tradeHasReviews ? (
@@ -260,12 +280,11 @@ export default async function DashboardPage() {
                       <p className="text-4xl font-bold text-brand-navy">
                         {(tradeProfile?.average_rating ?? 0).toFixed(1)}
                       </p>
-                      <div className="mt-1 flex text-lg">
+                      <div className="mt-1 flex text-lg" aria-hidden>
                         {[1, 2, 3, 4, 5].map(s => (
                           <span
                             key={s}
                             className={s <= Math.round(tradeProfile?.average_rating ?? 0) ? 'text-brand-amber' : 'text-gray-200'}
-                            aria-hidden
                           >★</span>
                         ))}
                       </div>
@@ -280,14 +299,6 @@ export default async function DashboardPage() {
                         confirmed job{(tradeProfile?.total_jobs ?? 0) !== 1 ? 's' : ''}
                       </p>
                     </div>
-                    {tradeProfile?.public_slug && (
-                      <a
-                        href={`/t/${tradeProfile.public_slug}`}
-                        className="ml-auto text-xs font-medium text-brand-amber hover:underline shrink-0"
-                      >
-                        View profile →
-                      </a>
-                    )}
                   </div>
                 </div>
               ) : (
@@ -301,8 +312,25 @@ export default async function DashboardPage() {
               )}
             </section>
 
-            {/* Analytics upsell — shown at bottom for non-Pro users */}
-            {!isProTrade && (
+            {/* 6. Your jobs */}
+            <JobHistory jobs={jobHistory} />
+
+            {/* 7. Analytics — Pro stats or upgrade prompt */}
+            {isProTrade && analyticsData ? (
+              <section>
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics — {analyticsData.periodLabel}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
+                    <p className="text-3xl font-bold text-brand-navy">{analyticsData.profileViews}</p>
+                    <p className="mt-1 text-xs text-gray-500">Profile views this month</p>
+                  </div>
+                  <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
+                    <p className="text-3xl font-bold text-brand-navy">{analyticsData.searchAppearances}</p>
+                    <p className="mt-1 text-xs text-gray-500">Search appearances this month</p>
+                  </div>
+                </div>
+              </section>
+            ) : !isProTrade ? (
               <section>
                 <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics</p>
                 <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm flex items-center justify-between gap-4">
@@ -318,9 +346,9 @@ export default async function DashboardPage() {
                   </a>
                 </div>
               </section>
-            )}
+            ) : null}
 
-            {/* 'both' client side */}
+            {/* isBoth: client side label */}
             {isBoth && (
               <p className="text-xs font-bold uppercase tracking-widest text-brand-amber">As a client</p>
             )}

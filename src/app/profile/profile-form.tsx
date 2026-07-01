@@ -2,17 +2,45 @@
 
 import { useState, useTransition } from 'react'
 import { updateProfile } from '@/actions/update-profile'
+import { uploadProfilePhoto } from '@/actions/upload-profile-photo'
 import { TRADE_TYPES } from '@/lib/trade-types'
 import type { User, TradeProfile, ClientProfile } from '@/types/database'
 
 type Props = {
-  user: Pick<User, 'full_name' | 'email' | 'phone' | 'phone_verified' | 'user_type'>
+  user: Pick<User, 'full_name' | 'email' | 'phone' | 'phone_verified' | 'user_type' | 'profile_photo_url'>
   tradeProfile: Pick<TradeProfile, 'postcode' | 'trade_types' | 'bio' | 'years_experience' | 'public_slug'> | null
   clientProfile: Pick<ClientProfile, 'postcode' | 'display_name'> | null
 }
 
 export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
   const isTrade = user.user_type === 'trade' || user.user_type === 'both'
+
+  const initials = user.full_name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0]?.toUpperCase() ?? '')
+    .join('')
+
+  const [photoUrl, setPhotoUrl] = useState<string | null>(user.profile_photo_url)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const [isPendingPhoto, startPhotoTransition] = useTransition()
+
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoError(null)
+    const fd = new FormData()
+    fd.append('photo', file)
+    startPhotoTransition(async () => {
+      const result = await uploadProfilePhoto(fd)
+      if (result.success) {
+        setPhotoUrl(result.url)
+      } else {
+        setPhotoError(result.error)
+      }
+    })
+  }
 
   const [fullName, setFullName] = useState(user.full_name)
   const [postcode, setPostcode] = useState(
@@ -58,6 +86,29 @@ export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+
+      {/* Profile photo */}
+      <div className="flex flex-col items-center gap-3 pb-2">
+        <div className="w-24 h-24 rounded-full overflow-hidden bg-brand-navy flex items-center justify-center flex-shrink-0">
+          {photoUrl ? (
+            <img src={photoUrl} alt="Profile photo" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-white text-3xl font-bold select-none">{initials}</span>
+          )}
+        </div>
+        <label className={`cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors ${isPendingPhoto ? 'opacity-50 cursor-not-allowed' : ''}`}>
+          {isPendingPhoto ? 'Uploading…' : photoUrl ? 'Change photo' : 'Upload photo'}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handlePhotoChange}
+            disabled={isPendingPhoto}
+            className="sr-only"
+          />
+        </label>
+        {photoError && <p className="text-xs text-red-600 text-center">{photoError}</p>}
+        <p className="text-xs text-gray-400">JPG, PNG, or WebP. Max 5 MB.</p>
+      </div>
 
       {/* Full name */}
       <div>

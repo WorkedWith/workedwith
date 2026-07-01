@@ -28,6 +28,7 @@ export interface User {
   stripe_customer_id: string | null
   organisation_id: string | null
   is_admin: boolean
+  profile_photo_url: string | null
 }
 
 export interface TradeProfile {
