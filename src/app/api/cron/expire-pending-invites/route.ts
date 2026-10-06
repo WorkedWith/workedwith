@@ -1,16 +1,8 @@
 import { NextResponse } from 'next/server'
-import { createHash } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendSeededOutreach } from '@/lib/seeded-outreach'
+import { normaliseBusinessName, normalisePhone, normaliseEmail, sha256 } from '@/lib/seeded-hash'
 import type { SeededProfile } from '@/types/database'
-
-function sha256(value: string): string {
-  return createHash('sha256').update(value.trim().toLowerCase()).digest('hex')
-}
-
-function normaliseBusinessName(name: string): string {
-  return name.trim().toLowerCase().replace(/\s+/g, ' ')
-}
 
 function daysSince(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
@@ -57,6 +49,7 @@ export async function GET(request: Request) {
 
     const profiles = (rawProfiles ?? []) as unknown as SeededProfile[]
 
+    let day0Sent = 0
     let reminders21 = 0
     let reminders42 = 0
     let reminders56 = 0
@@ -65,10 +58,14 @@ export async function GET(request: Request) {
     for (const profile of profiles) {
       const age = daysSince(profile.created_at)
 
-      // Day 60+: hard-delete regardless of outreach flag, write to do_not_reseed
+      // Day 60+: hard-delete regardless of outreach flag, normalise before hashing
       if (age >= 60 || new Date(profile.expires_at) <= new Date()) {
-        const phoneHash = profile.contact_phone ? sha256(profile.contact_phone) : null
-        const emailHash = profile.contact_email ? sha256(profile.contact_email) : null
+        const phoneHash = profile.contact_phone
+          ? sha256(normalisePhone(profile.contact_phone))
+          : null
+        const emailHash = profile.contact_email
+          ? sha256(normaliseEmail(profile.contact_email))
+          : null
 
         await admin.from('do_not_reseed').insert({
           business_name_normalised: normaliseBusinessName(profile.business_name),
@@ -84,7 +81,21 @@ export async function GET(request: Request) {
       // Outbound sending is gated; expiry above runs regardless
       if (process.env.SEEDED_OUTREACH_ENABLED !== 'true') continue
 
-      // Day 56 reminder (final notice: removed in 4 days) — check before day 42
+      // Day 0: send initial invite to any profile not yet contacted
+      if (!profile.initial_invite_sent_at) {
+        const result = await sendSeededOutreach(profile, 'day0')
+        if (result.sent) {
+          await admin
+            .from('seeded_profiles')
+            .update({ initial_invite_sent_at: new Date().toISOString() })
+            .eq('id', profile.id)
+          day0Sent++
+        }
+        // Do not process reminders until the initial invite has been sent
+        continue
+      }
+
+      // Day 56 reminder (final notice: removed in 4 days)
       if (age >= 56 && !profile.reminder_56_sent_at) {
         const result = await sendSeededOutreach(profile, 'day56')
         if (result.sent) {
@@ -124,10 +135,10 @@ export async function GET(request: Request) {
     }
 
     console.log(
-      `seeded-profiles: expired=${expired} rem21=${reminders21} rem42=${reminders42} rem56=${reminders56}`,
+      `seeded-profiles: expired=${expired} day0=${day0Sent} rem21=${reminders21} rem42=${reminders42} rem56=${reminders56}`,
     )
     results.seededExpired = expired
-    results.seededReminders = { day21: reminders21, day42: reminders42, day56: reminders56 }
+    results.seededReminders = { day0: day0Sent, day21: reminders21, day42: reminders42, day56: reminders56 }
   }
 
   return NextResponse.json(results)

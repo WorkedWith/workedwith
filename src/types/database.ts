@@ -435,6 +435,7 @@ export interface SeededProfile {
   created_at: string
   expires_at: string
   claimed_by_user_id: string | null
+  initial_invite_sent_at: string | null
   reminder_21_sent_at: string | null
   reminder_42_sent_at: string | null
   reminder_56_sent_at: string | null

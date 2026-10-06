@@ -1,10 +1,10 @@
 'use server'
 
-import { randomBytes, createHash } from 'crypto'
+import { randomBytes } from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TRADE_TYPES } from '@/lib/trade-types'
-import { sendSeededOutreach } from '@/lib/seeded-outreach'
+import { normaliseBusinessName, normalisePhone, normaliseEmail, sha256 } from '@/lib/seeded-hash'
 import type { SeededProfile } from '@/types/database'
 
 export type CreateSeededProfileInput = {
@@ -19,14 +19,6 @@ export type CreateSeededProfileInput = {
 export type CreateSeededProfileResult =
   | { success: true; profile: SeededProfile }
   | { success: false; error: string; code: 'unauthorized' | 'do_not_reseed' | 'validation' | 'server_error' }
-
-function normaliseBusinessName(name: string): string {
-  return name.trim().toLowerCase().replace(/\s+/g, ' ')
-}
-
-function sha256(value: string): string {
-  return createHash('sha256').update(value.trim().toLowerCase()).digest('hex')
-}
 
 function slugify(name: string): string {
   return name
@@ -62,27 +54,51 @@ export async function createSeededProfile(
     return { success: false, error: 'At least one operating area is required.', code: 'validation' }
   }
 
-  // ── do_not_reseed check ──────────────────────────────────────
+  // ── do_not_reseed check (fail closed) ─────────────────────────
   const normName = normaliseBusinessName(businessName)
-  const phoneHash = input.contact_phone ? sha256(input.contact_phone) : null
-  const emailHash = input.contact_email ? sha256(input.contact_email) : null
+  const phoneHash = input.contact_phone ? sha256(normalisePhone(input.contact_phone)) : null
+  const emailHash = input.contact_email ? sha256(normaliseEmail(input.contact_email)) : null
 
-  const orParts = [
-    `business_name_normalised.eq.${normName}`,
-    ...(phoneHash ? [`phone_hash.eq.${phoneHash}`] : []),
-    ...(emailHash ? [`email_hash.eq.${emailHash}`] : []),
-  ]
-
-  const { data: dnsRows } = await admin
+  const { data: nameMatch, error: nameErr } = await admin
     .from('do_not_reseed')
     .select('id')
-    .or(orParts.join(','))
+    .eq('business_name_normalised', normName)
+    .maybeSingle()
+  if (nameErr) {
+    console.error('do_not_reseed name query error:', nameErr)
+    return { success: false, error: 'Could not verify the do-not-reseed list. Please try again.', code: 'server_error' }
+  }
+  if (nameMatch) {
+    return { success: false, error: 'This business is on the do-not-reseed list.', code: 'do_not_reseed' }
+  }
 
-  if (dnsRows && dnsRows.length > 0) {
-    return {
-      success: false,
-      error: 'This business (or a contact detail matching it) is on the do-not-reseed list.',
-      code: 'do_not_reseed',
+  if (phoneHash) {
+    const { data: phoneMatch, error: phoneErr } = await admin
+      .from('do_not_reseed')
+      .select('id')
+      .eq('phone_hash', phoneHash)
+      .maybeSingle()
+    if (phoneErr) {
+      console.error('do_not_reseed phone query error:', phoneErr)
+      return { success: false, error: 'Could not verify the do-not-reseed list. Please try again.', code: 'server_error' }
+    }
+    if (phoneMatch) {
+      return { success: false, error: 'This phone number is on the do-not-reseed list.', code: 'do_not_reseed' }
+    }
+  }
+
+  if (emailHash) {
+    const { data: emailMatch, error: emailErr } = await admin
+      .from('do_not_reseed')
+      .select('id')
+      .eq('email_hash', emailHash)
+      .maybeSingle()
+    if (emailErr) {
+      console.error('do_not_reseed email query error:', emailErr)
+      return { success: false, error: 'Could not verify the do-not-reseed list. Please try again.', code: 'server_error' }
+    }
+    if (emailMatch) {
+      return { success: false, error: 'This email address is on the do-not-reseed list.', code: 'do_not_reseed' }
     }
   }
 
@@ -94,7 +110,6 @@ export async function createSeededProfile(
   while (true) {
     const candidate = attempt === 0 ? slug : `${baseSlug}-${attempt}`
 
-    // Check both trade_profiles and seeded_profiles for collisions
     const [{ data: tp }, { data: sp }] = await Promise.all([
       admin.from('trade_profiles').select('id').eq('public_slug', candidate).maybeSingle(),
       admin.from('seeded_profiles').select('id').eq('slug', candidate).maybeSingle(),
@@ -136,14 +151,8 @@ export async function createSeededProfile(
     return { success: false, error: 'Failed to create the listing. Please try again.', code: 'server_error' }
   }
 
-  const profile = inserted as unknown as SeededProfile
+  // Day 0 outreach is handled by the cron (initial_invite_sent_at IS NULL).
+  // No fire-and-forget here — this keeps creation synchronous and the cron responsible.
 
-  // Day 0 outreach — fire and forget, non-fatal
-  if (profile.contact_phone || profile.contact_email) {
-    sendSeededOutreach(profile, 'day0').catch(err =>
-      console.error('Day 0 outreach failed (non-fatal):', err)
-    )
-  }
-
-  return { success: true, profile }
+  return { success: true, profile: inserted as unknown as SeededProfile }
 }

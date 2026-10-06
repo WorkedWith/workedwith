@@ -10,12 +10,14 @@ function daysRemaining(expiresAt: string): number {
   return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86_400_000))
 }
 
-function remindersSent(profile: SeededProfile): string {
+function outreachSent(profile: SeededProfile): string {
   const sent: string[] = []
+  if (profile.initial_invite_sent_at) sent.push('Day 0')
   if (profile.reminder_21_sent_at) sent.push('21')
   if (profile.reminder_42_sent_at) sent.push('42')
   if (profile.reminder_56_sent_at) sent.push('56')
-  return sent.length > 0 ? `Day ${sent.join(', ')}` : 'None'
+  if (sent.length === 0) return profile.contact_email || profile.contact_phone ? 'Pending' : 'No contact'
+  return sent.join(', ')
 }
 
 const STATUS_CLASSES: Record<string, string> = {
@@ -134,7 +136,7 @@ export default async function SeededProfilesPage() {
                       {p.status === 'unclaimed' ? daysRemaining(p.expires_at) : '—'}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-gray-500">
-                      {remindersSent(p)}
+                      {outreachSent(p)}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-400">
                       {p.contact_email && <div>Email</div>}

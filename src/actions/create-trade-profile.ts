@@ -22,6 +22,15 @@ export type CreateTradeProfileResult =
 const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}$/i
 const USERNAME_RE = /^[a-z0-9-]{3,30}$/
 
+function normaliseUKPhone(phone: string): string {
+  const s = phone.replace(/[\s\-\(\)\.]/g, '')
+  if (s.startsWith('+44')) return s
+  if (s.startsWith('0044')) return '+44' + s.slice(4)
+  if (s.startsWith('00')) return '+' + s.slice(2)
+  if (s.startsWith('0')) return '+44' + s.slice(1)
+  return s
+}
+
 export async function createTradeProfile(
   input: CreateTradeProfileInput,
 ): Promise<CreateTradeProfileResult> {
@@ -109,21 +118,35 @@ export async function createTradeProfile(
     // Identity check: phone takes priority; fall back to email
     const userPhone = userData.phone as string | null
     const userPhoneVerified = userData.phone_verified as boolean
-    const userEmail = userData.email as string
+    const userEmail = (userData.email as string).trim().toLowerCase()
 
     if (sp.contact_phone) {
-      if (!userPhoneVerified || userPhone !== sp.contact_phone) {
+      const spPhoneE164 = normaliseUKPhone(sp.contact_phone)
+      if (!userPhoneVerified || userPhone !== spPhoneE164) {
         return {
           success: false,
           error: 'Your verified phone number does not match this listing. Make sure you have verified the number on file for this business.',
         }
       }
     } else if (sp.contact_email) {
-      if (userEmail.toLowerCase() !== sp.contact_email.toLowerCase()) {
+      // For the email path, require the address to be confirmed
+      const { data: { user: authUser } } = await admin.auth.admin.getUserById(user.id)
+      if (!authUser?.email_confirmed_at) {
+        return {
+          success: false,
+          error: 'Please confirm your email address before claiming this listing.',
+        }
+      }
+      if (userEmail !== sp.contact_email.trim().toLowerCase()) {
         return {
           success: false,
           error: 'Your account email does not match this listing. Sign in with the email address on file for this business.',
         }
+      }
+    } else {
+      return {
+        success: false,
+        error: 'This listing has no contact details and cannot be claimed.',
       }
     }
 

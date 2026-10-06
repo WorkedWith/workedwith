@@ -146,7 +146,8 @@ function buildSmsText(profile: SeededProfile, day: OutreachDay): string {
 // ── Dispatch ──────────────────────────────────────────────────
 
 export type OutreachResult =
-  | { sent: true; channel: 'email' | 'sms' | 'none' }
+  | { sent: true; channel: 'email' | 'sms' }
+  | { sent: false; channel: 'disabled' }
   | { sent: false; error: string }
 
 export async function sendSeededOutreach(
@@ -155,11 +156,11 @@ export async function sendSeededOutreach(
 ): Promise<OutreachResult> {
   // Gate: all outbound sending is disabled when the flag is off or absent
   if (process.env.SEEDED_OUTREACH_ENABLED !== 'true') {
-    return { sent: true, channel: 'none' }
+    return { sent: false, channel: 'disabled' }
   }
 
   if (!profile.contact_email && !profile.contact_phone) {
-    return { sent: true, channel: 'none' }
+    return { sent: false, channel: 'disabled' }
   }
 
   // Prefer email when available; fall back to SMS for phone-only profiles
@@ -173,8 +174,9 @@ export async function sendSeededOutreach(
         subject,
         html,
         headers: {
+          // Removal link leads to a confirmation page (not a direct POST endpoint),
+          // so List-Unsubscribe-Post is intentionally omitted.
           'List-Unsubscribe': `<${removeUrl(profile.claim_token)}>`,
-          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
       })
       return { sent: true, channel: 'email' }
