@@ -19,22 +19,22 @@ export default async function SubscriptionSuccessPage({
   const stripe = getStripeClient()
 
   let tierLabel = 'Pro'
+  let isPro = true
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['subscription'],
     })
 
-    // Trials use 'no_payment_required'; paid subs use 'paid'. Reject 'unpaid'.
     if (session.payment_status === 'unpaid') redirect('/subscription')
 
-    // Determine tier label from price ID
     const sub = session.subscription
     if (sub && typeof sub !== 'string') {
       const priceId = sub.items?.data[0]?.price.id
       if (priceId === process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID ||
           priceId === process.env.STRIPE_STANDARD_ANNUAL_PRICE_ID) {
         tierLabel = 'Standard'
+        isPro = false
       }
     }
   } catch {
@@ -61,25 +61,57 @@ export default async function SubscriptionSuccessPage({
             Welcome to WorkedWith {tierLabel}
           </h1>
 
-          <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-            Your subscription is active. You now have access to full client reputation
-            profiles, a searchable public profile, and the ability to respond to reviews.
-          </p>
-
-          <div className="mt-8 flex flex-col gap-3">
-            <a
-              href="/search"
-              className="block w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy hover:opacity-90 transition-opacity"
-            >
-              Look up a client
-            </a>
-            <a
-              href="/dashboard"
-              className="block w-full rounded-lg border border-gray-300 px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Go to dashboard
-            </a>
-          </div>
+          {isPro ? (
+            <>
+              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                Your Pro subscription is active. You now have access to full client profiles,
+                profile analytics, and priority dispute resolution.
+              </p>
+              <div className="mt-5 rounded-xl bg-amber-50 border border-amber-200 p-4 text-left">
+                <p className="text-sm font-semibold text-amber-900">Choose your Boosted Districts</p>
+                <p className="mt-1 text-sm text-amber-700 leading-relaxed">
+                  Select up to 3 postcode districts where you want top-band placement in search
+                  results (additional districts available at £10/month each). Your Pro badge will
+                  appear everywhere you operate — boosts apply to the specific districts you choose.
+                </p>
+              </div>
+              <div className="mt-6 flex flex-col gap-3">
+                <a
+                  href="/profile/areas"
+                  className="block w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy hover:opacity-90 transition-opacity"
+                >
+                  Choose Boosted Districts
+                </a>
+                <a
+                  href="/dashboard"
+                  className="block w-full rounded-lg border border-gray-300 px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Go to dashboard
+                </a>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                Your subscription is active. You now have access to full client reputation
+                profiles, a Verified badge, and featured job images.
+              </p>
+              <div className="mt-8 flex flex-col gap-3">
+                <a
+                  href="/search"
+                  className="block w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy hover:opacity-90 transition-opacity"
+                >
+                  Look up a client
+                </a>
+                <a
+                  href="/dashboard"
+                  className="block w-full rounded-lg border border-gray-300 px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Go to dashboard
+                </a>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </main>

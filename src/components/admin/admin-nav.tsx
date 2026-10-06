@@ -7,6 +7,8 @@ const links = [
   { href: '/admin', label: 'Dashboard', icon: GridIcon },
   { href: '/admin/verification', label: 'Verification', icon: BadgeCheckIcon },
   { href: '/admin/disputes', label: 'Disputes', icon: ScaleIcon },
+  { href: '/admin/pending-invites', label: 'Pending Invites', icon: InboxIcon },
+  { href: '/admin/seeded-profiles', label: 'Seeded Profiles', icon: SeedIcon },
   { href: '/admin/flags', label: 'Flagged Reviews', icon: FlagIcon },
   { href: '/admin/integrity', label: 'Integrity', icon: ShieldIcon },
   { href: '/admin/users', label: 'Users', icon: UsersIcon },
@@ -160,6 +162,23 @@ function SearchIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="currentColor">
       <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
+function InboxIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M2.5 3A1.5 1.5 0 0 0 1 4.5v4.75a.75.75 0 0 0 1.5 0V4.5a.5.5 0 0 1 .5-.5h5.25a.75.75 0 0 0 0-1.5H2.5Zm15 0a.75.75 0 0 0 0 1.5H18a.5.5 0 0 1 .5.5v4.75a.75.75 0 0 0 1.5 0V4.5A1.5 1.5 0 0 0 17.5 3h-.5a.75.75 0 0 0 0 1.5h.5ZM1 10.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .648.372l.537.894H13.5l.537-.894A.75.75 0 0 1 14.688 9.5h3.5a.75.75 0 0 1 .75.75v4.75A1.5 1.5 0 0 1 17.5 16.5h-15A1.5 1.5 0 0 1 1 15v-4.75Zm1.5.75v4h15v-4h-2.963l-.537.894a.75.75 0 0 1-.648.372H6.648a.75.75 0 0 1-.648-.372L5.463 11H2.5Z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
+function SeedIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z" />
+      <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
     </svg>
   )
 }

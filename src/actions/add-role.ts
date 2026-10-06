@@ -35,6 +35,7 @@ export async function addTradeRole(
   const postcode = input.postcode.trim().toUpperCase()
   const bio = input.bio.trim()
   const username = input.username.trim().toLowerCase()
+  const operating_areas = input.operating_areas.map(d => d.trim().toUpperCase())
 
   if (!(TRADE_TYPES as readonly string[]).includes(trade_type)) {
     return { success: false, error: 'Please select a valid trade type.', field: 'trade_type' }
@@ -70,6 +71,7 @@ export async function addTradeRole(
     postcode,
     public_slug: username,
     bio: bio || null,
+    operating_areas,
   })
 
   if (insertError) {

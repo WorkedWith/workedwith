@@ -17,13 +17,14 @@ export async function checkUsername(username: string): Promise<UsernameCheckResu
   }
 
   const admin = createAdminClient()
-  const { data } = await admin
-    .from('trade_profiles')
-    .select('*')
-    .eq('public_slug', username)
-    .maybeSingle()
 
-  if (data) {
+  // Check both real profiles and seeded profile slugs
+  const [{ data: realProfile }, { data: seededProfile }] = await Promise.all([
+    admin.from('trade_profiles').select('id').eq('public_slug', username).maybeSingle(),
+    admin.from('seeded_profiles').select('id').eq('slug', username).maybeSingle(),
+  ])
+
+  if (realProfile || seededProfile) {
     return { available: false, reason: 'This username is already taken.' }
   }
 

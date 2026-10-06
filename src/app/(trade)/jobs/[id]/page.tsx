@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { completeJob } from '@/actions/complete-job'
+import { ReportClaimButton } from '@/components/report-claim-button'
 import type { JobStatus } from '@/types/database'
 
 export const metadata = { title: 'Job details | WorkedWith' }
@@ -52,10 +53,11 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
   if (!tradeProfile || tradeProfile.user_id !== user.id) redirect('/dashboard')
 
-  // Fetch invite, client profile, review window in parallel
-  const [{ data: invite }, { data: reviewWindow }] = await Promise.all([
+  // Fetch invite, client profile, review window, and pending claim in parallel
+  const [{ data: invite }, { data: reviewWindow }, { data: pendingInviteClaim }] = await Promise.all([
     admin.from('job_invites').select('*').eq('job_id', id).maybeSingle(),
     admin.from('review_windows').select('*').eq('job_id', id).maybeSingle(),
+    admin.from('pending_invites').select('id, status').eq('resulting_job_id', id).maybeSingle(),
   ])
 
   // Client details if confirmed
@@ -187,6 +189,13 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           >
             Leave your review
           </a>
+        )}
+
+        {/* Report incorrect claim — shown if this job originated from the claim flow */}
+        {pendingInviteClaim && pendingInviteClaim.status === 'claimed' && (
+          <div className="text-center pt-2">
+            <ReportClaimButton jobId={job.id} />
+          </div>
         )}
       </div>
     </main>

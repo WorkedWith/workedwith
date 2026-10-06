@@ -17,7 +17,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'How do I find a tradesperson?',
-    a: 'Go to the Find a tradesperson page, select a trade type, enter your postcode and choose a radius. Results show verified tradespeople with genuine mutual reviews.',
+    a: 'Go to the Find a tradesperson page, select a trade type, and enter your postcode. We match you with tradespeople who cover your postcode district. Results show verified tradespeople with genuine mutual reviews.',
   },
   {
     q: 'What is a verified review?',

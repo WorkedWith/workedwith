@@ -6,23 +6,40 @@ import { TRADE_TYPES } from '@/lib/trade-types'
 import { createTradeProfile, type CreateTradeProfileInput } from '@/actions/create-trade-profile'
 import { addTradeRole } from '@/actions/add-role'
 import { checkUsername } from '@/actions/check-username'
+import { OperatingAreasPicker } from '@/components/operating-areas-picker'
+import type { DistrictEntry } from '@/actions/resolve-district'
 
-type Step = 1 | 2
+type Step = 1 | 2 | 3
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
 type FieldErrors = Partial<Record<keyof CreateTradeProfileInput, string>>
 
 const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}$/i
 
-export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: string; upgrading?: boolean }) {
+type SeededData = { businessName: string; tradeCategory: string; slug: string; operatingAreas: string[] }
+
+export function TradeOnboardingForm({
+  redirectTo,
+  upgrading,
+  seededToken,
+  seededData,
+}: {
+  redirectTo?: string
+  upgrading?: boolean
+  seededToken?: string
+  seededData?: SeededData
+}) {
   const router = useRouter()
   const [step, setStep] = useState<Step>(1)
   const [isPending, startTransition] = useTransition()
 
-  const [tradeType, setTradeType] = useState('')
-  const [companyName, setCompanyName] = useState('')
+  const [tradeType, setTradeType] = useState(seededData?.tradeCategory ?? '')
+  const [companyName, setCompanyName] = useState(seededData?.businessName ?? '')
   const [postcode, setPostcode] = useState('')
   const [bio, setBio] = useState('')
-  const [username, setUsername] = useState('')
+  const [operatingAreas, setOperatingAreas] = useState<DistrictEntry[]>(
+    seededData?.operatingAreas.map(code => ({ code, adminDistrict: null })) ?? []
+  )
+  const [username, setUsername] = useState(seededData?.slug ?? '')
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
@@ -66,6 +83,11 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
     if (Object.keys(errors).length === 0) setStep(2)
   }
 
+  function handleNextFromAreas(e: React.FormEvent) {
+    e.preventDefault()
+    setStep(3)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (usernameStatus !== 'available') return
@@ -77,6 +99,8 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
         postcode,
         bio,
         username: username.trim().toLowerCase(),
+        operating_areas: operatingAreas.map(e => e.code),
+        seeded_token: seededToken,
       }
       const result = upgrading
         ? await addTradeRole(payload)
@@ -86,6 +110,10 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
       } else {
         if (result.field) {
           setFieldErrors({ [result.field]: result.error })
+          // Go back to the relevant step for field-level errors
+          if (result.field === 'username') setStep(3)
+          else if (result.field === 'operating_areas') setStep(2)
+          else setStep(1)
         } else {
           setGlobalError(result.error)
         }
@@ -100,14 +128,15 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
         <StepDot n={1} current={step} />
         <div className="h-px flex-1 bg-gray-200" />
         <StepDot n={2} current={step} />
+        <div className="h-px flex-1 bg-gray-200" />
+        <StepDot n={3} current={step} />
       </div>
 
-      {step === 1 ? (
+      {step === 1 && (
         <form onSubmit={handleNext} noValidate>
           <h2 className="text-xl font-semibold text-brand-navy mb-1">Your trade</h2>
           <p className="text-sm text-gray-500 mb-6">Tell us what you do and where you&apos;re based.</p>
 
-          {/* Trade type */}
           <Field label="Trade type" error={fieldErrors.trade_type} required>
             <select
               value={tradeType}
@@ -121,7 +150,6 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
             </select>
           </Field>
 
-          {/* Company name */}
           <Field label="Company name" hint="Optional" className="mt-4">
             <input
               type="text"
@@ -132,7 +160,6 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
             />
           </Field>
 
-          {/* Postcode */}
           <Field label="Postcode" error={fieldErrors.postcode} required className="mt-4">
             <input
               type="text"
@@ -143,7 +170,6 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
             />
           </Field>
 
-          {/* Bio */}
           <Field label="Bio" hint="Optional — 300 characters max" error={fieldErrors.bio} className="mt-4">
             <textarea
               value={bio}
@@ -164,7 +190,37 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
             Next
           </button>
         </form>
-      ) : (
+      )}
+
+      {step === 2 && (
+        <form onSubmit={handleNextFromAreas} noValidate>
+          <h2 className="text-xl font-semibold text-brand-navy mb-1">Where do you work?</h2>
+          <p className="text-sm text-gray-500 mb-6">
+            Add the postcode districts you cover — up to 20. Clients searching in these areas will find your profile.
+            You can update this at any time.
+          </p>
+
+          <OperatingAreasPicker value={operatingAreas} onChange={setOperatingAreas} />
+
+          <div className="mt-6 flex gap-3">
+            <button
+              type="button"
+              onClick={() => { setStep(1); setGlobalError(null) }}
+              className="flex-none rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              Back
+            </button>
+            <button
+              type="submit"
+              className="flex-1 rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy transition-opacity hover:opacity-90"
+            >
+              {operatingAreas.length === 0 ? 'Skip for now' : 'Next'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {step === 3 && (
         <form onSubmit={handleSubmit} noValidate>
           <h2 className="text-xl font-semibold text-brand-navy mb-1">Choose your username</h2>
           <p className="text-sm text-gray-500 mb-6">
@@ -186,7 +242,6 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
                 autoComplete="off"
                 spellCheck={false}
               />
-              {/* Status icon */}
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
                 {usernameStatus === 'checking' && <SpinnerIcon />}
                 {usernameStatus === 'available' && <CheckIcon />}
@@ -194,7 +249,6 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
               </span>
             </div>
 
-            {/* Status message */}
             {usernameStatus === 'available' && (
               <p className="mt-1.5 text-xs text-green-600">Username available</p>
             )}
@@ -207,7 +261,6 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
               </p>
             )}
 
-            {/* URL preview */}
             {usernameStatus === 'available' && (
               <div className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm">
                 <span className="text-gray-500">Your profile: </span>
@@ -223,7 +276,7 @@ export function TradeOnboardingForm({ redirectTo, upgrading }: { redirectTo?: st
           <div className="mt-6 flex gap-3">
             <button
               type="button"
-              onClick={() => { setStep(1); setGlobalError(null) }}
+              onClick={() => { setStep(2); setGlobalError(null) }}
               disabled={isPending}
               className="flex-none rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-40"
             >

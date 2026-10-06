@@ -51,7 +51,7 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(5),
     isTrade
-      ? admin.from('trade_profiles').select('id, average_rating, total_reviews, total_jobs, public_slug, subscription_tier, trade_types').eq('user_id', user.id).maybeSingle()
+      ? admin.from('trade_profiles').select('id, average_rating, total_reviews, total_jobs, public_slug, subscription_tier, trade_types, operating_areas').eq('user_id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
     isClient
       ? admin.from('client_profiles').select('id, average_rating, total_reviews, total_jobs').eq('user_id', user.id).maybeSingle()
@@ -111,6 +111,7 @@ export default async function DashboardPage() {
     : (!phone_verified || !hasBackdatedJob)
 
   const tradeHasReviews = (tradeProfile?.total_reviews ?? 0) > 0
+  const hasOperatingAreas = ((tradeProfile as unknown as { operating_areas?: string[] } | null)?.operating_areas?.length ?? 0) > 0
   const clientHasReviews = (clientProfile?.total_reviews ?? 0) > 0
 
   const hasJobs = isTrade
@@ -219,6 +220,22 @@ export default async function DashboardPage() {
                 </a>
               )}
             </div>
+
+            {/* Operating areas nudge — only shown when profile exists but no areas set */}
+            {tradeProfile && !hasOperatingAreas && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 flex items-center justify-between gap-4">
+                <p className="text-sm text-amber-800">
+                  <span className="font-semibold">Your profile isn&apos;t appearing in search yet</span>
+                  {' '}— add at least one operating area to be discoverable.
+                </p>
+                <a
+                  href="/profile/areas"
+                  className="shrink-0 rounded-lg bg-brand-amber px-4 py-2 text-xs font-bold text-brand-navy hover:bg-amber-400 transition-colors whitespace-nowrap"
+                >
+                  Add areas
+                </a>
+              </div>
+            )}
 
             {isBoth && (
               <p className="text-xs font-bold uppercase tracking-widest text-brand-amber">As a tradesperson</p>
@@ -554,7 +571,7 @@ function FindTradeForm() {
       <form
         method="GET"
         action="/find"
-        className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1.5fr_1fr_auto] sm:items-center"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1.5fr_auto] sm:items-center"
       >
         <select
           name="trade"
@@ -568,20 +585,10 @@ function FindTradeForm() {
           name="postcode"
           type="text"
           required
-          placeholder="Postcode"
+          placeholder="Your postcode"
           autoComplete="postal-code"
           className="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm uppercase placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
         />
-        <select
-          name="radius"
-          defaultValue="10"
-          className="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
-        >
-          <option value="5">5 miles</option>
-          <option value="10">10 miles</option>
-          <option value="25">25 miles</option>
-          <option value="50">50 miles</option>
-        </select>
         <button
           type="submit"
           className="h-11 w-full rounded-lg bg-brand-amber px-4 text-sm font-bold text-brand-navy whitespace-nowrap hover:bg-amber-400 transition-colors"

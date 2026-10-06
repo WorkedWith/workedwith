@@ -2,17 +2,17 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import type { VerificationTier } from '@/types/database'
+import type { VerificationTier, SeededProfile } from '@/types/database'
 import { CopyUrlButton } from './copy-url-button'
 import { getFeaturedJobs } from '@/actions/featured-jobs/get-featured-jobs'
 import { FeaturedWorkSection } from '@/components/featured-work-section'
 
-type Props = { params: { slug: string } }
+type Props = { params: Promise<{ slug: string }> }
 
 // ── Metadata ──────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = params
+  const { slug } = await params
   const admin = createAdminClient()
 
   const { data: profile } = await admin
@@ -21,54 +21,162 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .eq('public_slug', slug)
     .maybeSingle()
 
-  if (!profile) return { title: 'Profile not found | WorkedWith' }
+  if (profile) {
+    const { data: user } = await admin
+      .from('users')
+      .select('full_name')
+      .eq('id', profile.user_id)
+      .single()
 
-  const { data: user } = await admin
-    .from('users')
-    .select('full_name')
-    .eq('id', profile.user_id)
-    .single()
+    const tradeTypes = profile.trade_types as string[]
+    const displayName = (profile.company_name as string | null) ?? (user?.full_name as string | undefined) ?? 'Tradesperson'
+    const tradesLabel = tradeTypes.length > 0 ? tradeTypes.join(', ') : 'Tradesperson'
+    const reviewsText =
+      (profile.total_reviews as number) > 0
+        ? `${profile.total_reviews} verified reviews on WorkedWith.`
+        : 'New to WorkedWith.'
 
-  const tradeTypes = profile.trade_types as string[]
-  const displayName = (profile.company_name as string | null) ?? (user?.full_name as string | undefined) ?? 'Tradesperson'
-  const tradesLabel = tradeTypes.length > 0 ? tradeTypes.join(', ') : 'Tradesperson'
-  const reviewsText =
-    (profile.total_reviews as number) > 0
-      ? `${profile.total_reviews} verified reviews on WorkedWith.`
-      : 'New to WorkedWith.'
+    const title = `${displayName} — ${tradesLabel} | WorkedWith`
+    const description = `${displayName} is a verified ${tradesLabel} based in ${profile.postcode}. ${reviewsText}`
+    const canonical = `https://workedwith.co.uk/t/${slug}`
 
-  const title = `${displayName} — ${tradesLabel} | WorkedWith`
-  const description = `${displayName} is a verified ${tradesLabel} based in ${profile.postcode}. ${reviewsText}`
-  const canonical = `https://workedwith.co.uk/t/${slug}`
-
-  return {
-    title,
-    description,
-    alternates: { canonical },
-    openGraph: {
+    return {
       title,
       description,
-      url: canonical,
-      siteName: 'WorkedWith',
-      type: 'profile',
-    },
+      alternates: { canonical },
+      openGraph: { title, description, url: canonical, siteName: 'WorkedWith', type: 'profile' },
+    }
   }
+
+  // Fallback: check seeded profiles
+  const { data: seeded } = await admin
+    .from('seeded_profiles')
+    .select('business_name, trade_category')
+    .eq('slug', slug)
+    .eq('status', 'unclaimed')
+    .maybeSingle()
+
+  if (seeded) {
+    const sp = seeded as unknown as Pick<SeededProfile, 'business_name' | 'trade_category'>
+    const title = `${sp.business_name} — ${sp.trade_category} | WorkedWith`
+    const description = `${sp.business_name} is a ${sp.trade_category} with a listing on WorkedWith. This profile has not yet been claimed.`
+    const canonical = `https://workedwith.co.uk/t/${slug}`
+    return {
+      title,
+      description,
+      alternates: { canonical },
+      openGraph: { title, description, url: canonical, siteName: 'WorkedWith', type: 'profile' },
+    }
+  }
+
+  return { title: 'Profile not found | WorkedWith' }
+}
+
+// ── Seeded profile page ───────────────────────────────────────
+
+function SeededProfilePage({ profile }: { profile: SeededProfile; slug: string }) {
+  return (
+    <main className="min-h-screen bg-gray-50">
+      <header className="bg-brand-navy px-4 pb-8 pt-10 sm:px-6">
+        <div className="mx-auto max-w-2xl">
+          <p className="mb-6 text-sm font-bold tracking-tight text-white/60">
+            Worked<span className="text-brand-amber">With</span>
+          </p>
+
+          {/* "Not yet on WorkedWith" — prominent, always visible */}
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-semibold text-white/80 ring-1 ring-white/20">
+            <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
+            Not yet on WorkedWith
+          </div>
+
+          <h1 className="text-3xl font-bold text-white sm:text-4xl">{profile.business_name}</h1>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="rounded-full bg-brand-amber/20 px-3 py-1 text-sm font-medium text-brand-amber">
+              {profile.trade_category}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 space-y-5">
+
+        {/* Operating areas */}
+        {profile.operating_areas.length > 0 && (
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Operating in
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {profile.operating_areas.map(district => (
+                <span
+                  key={district}
+                  className="rounded-full bg-brand-navy/10 px-3 py-1 text-sm font-medium text-brand-navy"
+                >
+                  {district}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Explanation */}
+        <section className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-5">
+          <p className="text-sm font-semibold text-amber-900">This business has not joined WorkedWith yet</p>
+          <p className="mt-1 text-sm leading-relaxed text-amber-700">
+            WorkedWith is a platform where tradespeople build a verified work history and clients leave
+            genuine reviews. This listing was created to help clients find local tradespeople. The business
+            has been invited to claim it for free.
+          </p>
+        </section>
+
+        {/* Claim CTA */}
+        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm text-center">
+          <p className="text-sm font-semibold text-brand-navy">Is this your business?</p>
+          <p className="mt-1 mb-4 text-sm text-gray-500">
+            Claiming is free and takes a few minutes.
+          </p>
+          <a
+            href={`/claim/${profile.claim_token}`}
+            className="inline-flex min-h-[44px] items-center rounded-xl bg-brand-amber px-6 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
+          >
+            Claim this listing
+          </a>
+        </section>
+
+      </div>
+    </main>
+  )
 }
 
 // ── Page ──────────────────────────────────────────────────────
 
 export default async function TradeProfilePage({ params }: Props) {
-  const { slug } = params
+  const { slug } = await params
   const admin = createAdminClient()
 
-  // 1. Trade profile
+  // 1. Trade profile (real, claimed)
   const { data: tradeProfile } = await admin
     .from('trade_profiles')
     .select('*')
     .eq('public_slug', slug)
     .maybeSingle()
 
-  if (!tradeProfile) notFound()
+  // 2. If no real profile, check seeded profiles
+  if (!tradeProfile) {
+    const { data: rawSeeded } = await admin
+      .from('seeded_profiles')
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'unclaimed')
+      .maybeSingle()
+
+    if (rawSeeded) {
+      return <SeededProfilePage profile={rawSeeded as unknown as SeededProfile} slug={slug} />
+    }
+
+    notFound()
+  }
 
   const tradeTypes = tradeProfile.trade_types as string[]
   const userId = tradeProfile.user_id as string
@@ -214,12 +322,23 @@ export default async function TradeProfilePage({ params }: Props) {
             )}
           </section>
 
-          {/* ── Verification badges ───────────────────────────── */}
+          {/* ── Verification & subscription badges ───────────── */}
           <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-gray-400">
               Verified on WorkedWith
             </h2>
             <div className="flex flex-wrap gap-2">
+              {/* Subscription badge: Pro supersedes Verified, never show both */}
+              {(tradeProfile.subscription_tier as string) === 'pro' && (
+                <span className="inline-flex items-center rounded-full bg-brand-amber px-3 py-1 text-xs font-bold text-brand-navy">
+                  Pro
+                </span>
+              )}
+              {(tradeProfile.subscription_tier as string) === 'standard' && (
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                  Verified
+                </span>
+              )}
               {(verTier === 'phone_verified' || verTier === 'fully_verified') && (
                 <VerifiedBadge>✓ Phone Verified</VerifiedBadge>
               )}
@@ -231,6 +350,25 @@ export default async function TradeProfilePage({ params }: Props) {
               </span>
             </div>
           </section>
+
+          {/* ── Operating areas ──────────────────────────────── */}
+          {((tradeProfile.operating_areas as string[]) ?? []).length > 0 && (
+            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Operating in
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {(tradeProfile.operating_areas as string[]).map(district => (
+                  <span
+                    key={district}
+                    className="rounded-full bg-brand-navy/10 px-3 py-1 text-sm font-medium text-brand-navy"
+                  >
+                    {district}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* ── Review history ────────────────────────────────── */}
           {reviewList.length > 0 && (

@@ -75,17 +75,10 @@ function reviewRequestHtml(p: { otherPartyName: string; jobType: string; backdat
   `)
 }
 
-// ── Haversine distance in miles ───────────────────────────────
-
-function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 3958.8
-  const toRad = (d: number) => (d * Math.PI) / 180
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+// Extract the outward code (district) from a full UK postcode
+// e.g. "M20 1AA" → "M20", "SW1A 1AA" → "SW1A"
+function extractOutcode(postcode: string): string {
+  return postcode.trim().toUpperCase().replace(/\s+/g, '').slice(0, -3)
 }
 
 // ── Integrity checks ──────────────────────────────────────────
@@ -100,7 +93,7 @@ async function runIntegrityChecks(params: {
   confirmedFromUa: string | null
   tradeUserCreatedAt: string | null
   clientUserCreatedAt: string | null
-  tradeProfilePostcode: string | null
+  tradeOperatingAreas: string[]
   clientProfilePostcode: string | null
 }) {
   const flags: Array<{ job_id: string; flag_type: string; details: string }> = []
@@ -137,58 +130,23 @@ async function runIntegrityChecks(params: {
     }
   }
 
-  // 4. Postcode distance anomaly — job postcode >100 miles from both parties' postcodes
+  // 4. Postcode district anomaly — job district not in trade's operating areas
+  //    and not matching the client's registered postcode district
   if (params.jobPostcode) {
-    const postcodesToCheck = [
-      params.jobPostcode,
-      params.tradeProfilePostcode,
-      params.clientProfilePostcode,
-    ].filter((p): p is string => Boolean(p))
+    const jobDistrict = extractOutcode(params.jobPostcode)
+    const clientDistrict = params.clientProfilePostcode
+      ? extractOutcode(params.clientProfilePostcode)
+      : null
 
-    try {
-      const res = await fetch('https://api.postcodes.io/postcodes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postcodes: postcodesToCheck }),
-        cache: 'no-store',
+    const inTradeAreas = params.tradeOperatingAreas.includes(jobDistrict)
+    const matchesClientDistrict = clientDistrict !== null && clientDistrict === jobDistrict
+
+    if (!inTradeAreas && !matchesClientDistrict) {
+      flags.push({
+        job_id: params.jobId,
+        flag_type: 'postcode_distance_anomaly',
+        details: `Job district ${jobDistrict} is not in trade's operating areas (${params.tradeOperatingAreas.join(', ') || 'none set'}) and does not match client's district (${clientDistrict ?? 'unknown'})`,
       })
-      if (res.ok) {
-        const data = (await res.json()) as { result: Array<{ query: string; result: { latitude: number; longitude: number } | null }> }
-        const coords = new Map<string, { lat: number; lon: number }>()
-        for (const item of data.result) {
-          if (item.result) {
-            coords.set(item.query.toUpperCase().replace(/\s+/g, ' '), {
-              lat: item.result.latitude,
-              lon: item.result.longitude,
-            })
-          }
-        }
-        const jobKey = params.jobPostcode.toUpperCase().replace(/\s+/g, ' ')
-        const jobCoords = coords.get(jobKey)
-        if (jobCoords) {
-          const tradeKey = params.tradeProfilePostcode?.toUpperCase().replace(/\s+/g, ' ')
-          const clientKey = params.clientProfilePostcode?.toUpperCase().replace(/\s+/g, ' ')
-          const tradeCoords = tradeKey ? coords.get(tradeKey) : undefined
-          const clientCoords = clientKey ? coords.get(clientKey) : undefined
-
-          const farFromTrade = tradeCoords
-            ? haversine(jobCoords.lat, jobCoords.lon, tradeCoords.lat, tradeCoords.lon) > 100
-            : true
-          const farFromClient = clientCoords
-            ? haversine(jobCoords.lat, jobCoords.lon, clientCoords.lat, clientCoords.lon) > 100
-            : true
-
-          if (farFromTrade && farFromClient) {
-            flags.push({
-              job_id: params.jobId,
-              flag_type: 'postcode_distance_anomaly',
-              details: `Job postcode ${params.jobPostcode} is more than 100 miles from both trade postcode (${params.tradeProfilePostcode ?? 'unknown'}) and client postcode (${params.clientProfilePostcode ?? 'unknown'})`,
-            })
-          }
-        }
-      }
-    } catch {
-      // Network failure — skip this check
     }
   }
 
@@ -261,7 +219,7 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
   let clientEmail: string | null = null
   let tradeUserCreatedAt: string | null = null
   let clientUserCreatedAt: string | null = null
-  let tradeProfilePostcode: string | null = null
+  let tradeOperatingAreas: string[] = []
   let clientProfilePostcode: string | null = null
 
   if (isClientInitiated) {
@@ -284,7 +242,7 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
     tradeUserId = user.id
     tradeEmail = userData.email
     tradeUserCreatedAt = userData.created_at
-    tradeProfilePostcode = tradeProfile.postcode
+    tradeOperatingAreas = (tradeProfile.operating_areas as string[]) ?? []
 
     if (job.client_profile_id) {
       const { data: cp } = await admin.from('client_profiles').select('*').eq('id', job.client_profile_id).single()
@@ -330,7 +288,7 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
           tradeEmail = tu.email
           tradeName = tp.company_name ?? tu.full_name
           tradeUserCreatedAt = tu.created_at
-          tradeProfilePostcode = tp.postcode
+          tradeOperatingAreas = (tp.operating_areas as string[]) ?? []
         }
       }
     }
@@ -472,7 +430,7 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
     confirmedFromUa: confirmed_from_user_agent,
     tradeUserCreatedAt,
     clientUserCreatedAt,
-    tradeProfilePostcode,
+    tradeOperatingAreas,
     clientProfilePostcode,
   })
 

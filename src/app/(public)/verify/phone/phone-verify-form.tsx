@@ -6,7 +6,7 @@ import { sendOTP, verifyOTP } from '@/actions/verify-phone'
 
 type Step = 'phone' | 'code'
 
-export function PhoneVerifyForm() {
+export function PhoneVerifyForm({ nextUrl }: { nextUrl?: string }) {
   const router = useRouter()
   const [step, setStep] = useState<Step>('phone')
   const [phone, setPhone] = useState('')
@@ -39,7 +39,7 @@ export function PhoneVerifyForm() {
     e.preventDefault()
     setError(null)
     startTransition(async () => {
-      const result = await verifyOTP(phone, code)
+      const result = await verifyOTP(phone, code, nextUrl ? { next: nextUrl } : undefined)
       if (result.success) {
         router.push(result.redirectTo)
       } else {

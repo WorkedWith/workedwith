@@ -6,13 +6,17 @@ export const metadata = {
   title: 'Verify your mobile | WorkedWith',
 }
 
-export default async function VerifyPhonePage() {
+type PageProps = { searchParams: Promise<{ claim_token?: string; seeded_token?: string; next?: string }> }
+
+export default async function VerifyPhonePage({ searchParams }: PageProps) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/')
   }
+
+  const { claim_token, seeded_token, next } = await searchParams
 
   const { data: profile } = await supabase
     .from('users')
@@ -21,7 +25,19 @@ export default async function VerifyPhonePage() {
     .single()
 
   if (profile?.phone_verified) {
+    if (next?.startsWith('/')) redirect(next)
+    if (seeded_token) redirect(`/onboarding/trade?seeded_token=${encodeURIComponent(seeded_token)}`)
+    if (claim_token) redirect(`/invite/claim/${claim_token}`)
     redirect('/dashboard')
+  }
+
+  let nextUrl: string | undefined
+  if (next?.startsWith('/')) {
+    nextUrl = next
+  } else if (seeded_token) {
+    nextUrl = `/onboarding/trade?seeded_token=${encodeURIComponent(seeded_token)}`
+  } else if (claim_token) {
+    nextUrl = `/invite/claim/${claim_token}`
   }
 
   return (
@@ -44,7 +60,7 @@ export default async function VerifyPhonePage() {
           </p>
         </div>
 
-        <PhoneVerifyForm />
+        <PhoneVerifyForm nextUrl={nextUrl} />
 
         <p className="mt-6 text-center text-xs text-white/40">
           Standard SMS rates may apply. UK mobiles only.

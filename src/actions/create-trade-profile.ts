@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TRADE_TYPES } from '@/lib/trade-types'
-
+import type { SeededProfile } from '@/types/database'
 
 export type CreateTradeProfileInput = {
   trade_type: string
@@ -11,6 +11,8 @@ export type CreateTradeProfileInput = {
   postcode: string
   bio: string
   username: string
+  operating_areas: string[]
+  seeded_token?: string
 }
 
 export type CreateTradeProfileResult =
@@ -44,6 +46,7 @@ export async function createTradeProfile(
   const postcode = input.postcode.trim().toUpperCase()
   const bio = input.bio.trim()
   const username = input.username.trim().toLowerCase()
+  const operating_areas = input.operating_areas.map(d => d.trim().toUpperCase())
 
   if (!(TRADE_TYPES as readonly string[]).includes(trade_type)) {
     return { success: false, error: 'Please select a valid trade type.', field: 'trade_type' }
@@ -80,6 +83,53 @@ export async function createTradeProfile(
     return { success: false, error: 'This username is already taken.', field: 'username' }
   }
 
+  // ── Seeded profile claim check ────────────────────────────────
+  let seededProfile: SeededProfile | null = null
+  if (input.seeded_token) {
+    const { data: raw } = await admin
+      .from('seeded_profiles')
+      .select('*')
+      .eq('claim_token', input.seeded_token)
+      .maybeSingle()
+
+    if (!raw) {
+      return { success: false, error: 'The seeded profile claim link is invalid or has expired.' }
+    }
+
+    const sp = raw as unknown as SeededProfile
+
+    if (sp.status !== 'unclaimed') {
+      return { success: false, error: 'This listing has already been claimed or removed.' }
+    }
+
+    if (new Date(sp.expires_at) < new Date()) {
+      return { success: false, error: 'This claim link has expired.' }
+    }
+
+    // Identity check: phone takes priority; fall back to email
+    const userPhone = userData.phone as string | null
+    const userPhoneVerified = userData.phone_verified as boolean
+    const userEmail = userData.email as string
+
+    if (sp.contact_phone) {
+      if (!userPhoneVerified || userPhone !== sp.contact_phone) {
+        return {
+          success: false,
+          error: 'Your verified phone number does not match this listing. Make sure you have verified the number on file for this business.',
+        }
+      }
+    } else if (sp.contact_email) {
+      if (userEmail.toLowerCase() !== sp.contact_email.toLowerCase()) {
+        return {
+          success: false,
+          error: 'Your account email does not match this listing. Sign in with the email address on file for this business.',
+        }
+      }
+    }
+
+    seededProfile = sp
+  }
+
   const { error: insertError } = await admin.from('trade_profiles').insert({
     user_id: user.id,
     trade_types: [trade_type],
@@ -87,6 +137,7 @@ export async function createTradeProfile(
     postcode,
     public_slug: username,
     bio: bio || null,
+    operating_areas,
   })
 
   if (insertError) {
@@ -106,6 +157,17 @@ export async function createTradeProfile(
       success: false,
       error: 'Profile created but account update failed. Please contact support.',
     }
+  }
+
+  // Mark seeded profile as claimed (non-fatal if it fails)
+  if (seededProfile) {
+    admin
+      .from('seeded_profiles')
+      .update({ status: 'claimed', claimed_by_user_id: user.id })
+      .eq('id', seededProfile.id)
+      .then(({ error }) => {
+        if (error) console.error('Failed to mark seeded profile claimed (non-fatal):', error)
+      })
   }
 
   return { success: true }

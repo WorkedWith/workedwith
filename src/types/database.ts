@@ -42,7 +42,11 @@ export interface TradeProfile {
   average_rating: number
   total_reviews: number
   years_experience: number | null
-  radius_miles: number
+  operating_areas: string[]
+  boosted_districts: string[]
+  boosted_district_addon_quantity: number
+  boosted_districts_updated_at: string | null
+  subscription_period_start_at: string | null
   is_searchable: boolean
   subscription_tier: SubscriptionTier
   billing_period: BillingPeriod
@@ -321,6 +325,28 @@ export interface Notification {
   created_at: string
 }
 
+// ── Pending invites (client-initiated trade claim flow) ───────
+
+export type PendingInviteStatus = 'sent' | 'expired' | 'claimed' | 'disputed'
+
+export interface PendingInvite {
+  id: string
+  inviting_client_id: string
+  trade_name: string
+  job_type: string
+  description: string | null
+  job_date: string
+  contact_phone: string | null
+  contact_email: string | null
+  status: PendingInviteStatus
+  claim_token: string
+  claimed_by_user_id: string | null
+  claimed_at: string | null
+  resulting_job_id: string | null
+  created_at: string
+  expires_at: string
+}
+
 // ── Search audit ─────────────────────────────────────────────
 
 export type SearchAuditResult = 'match_found' | 'no_match' | 'rate_limited'
@@ -391,6 +417,37 @@ export interface FeaturedJobImage {
   created_at: string
 }
 
+// ── Seeded profiles ───────────────────────────────────────────
+
+export type SeededProfileStatus = 'unclaimed' | 'claimed' | 'removed'
+
+export interface SeededProfile {
+  id: string
+  slug: string
+  business_name: string
+  trade_category: string
+  operating_areas: string[]
+  contact_phone: string | null
+  contact_email: string | null
+  source_note: string | null
+  status: SeededProfileStatus
+  claim_token: string
+  created_at: string
+  expires_at: string
+  claimed_by_user_id: string | null
+  reminder_21_sent_at: string | null
+  reminder_42_sent_at: string | null
+  reminder_56_sent_at: string | null
+}
+
+export interface DoNotReseed {
+  id: string
+  business_name_normalised: string
+  phone_hash: string | null
+  email_hash: string | null
+  created_at: string
+}
+
 // ── Supabase Database type ────────────────────────────────────
 // TypeScript interfaces don't satisfy Record<string, unknown> in conditional
 // type checks (no implicit index signature). WithIndex<T> adds one while
@@ -408,7 +465,7 @@ export interface Database {
       }
       trade_profiles: {
         Row: WithIndex<TradeProfile>
-        Insert: Omit<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'radius_miles' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'radius_miles' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
+        Insert: Omit<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
         Update: Partial<TradeProfile>
         Relationships: []
       }
@@ -525,6 +582,36 @@ export interface Database {
         Row: WithIndex<FeaturedJobImage>
         Insert: { featured_job_id: string; storage_path: string } & Partial<Omit<FeaturedJobImage, 'featured_job_id' | 'storage_path' | 'id' | 'created_at'>>
         Update: Partial<FeaturedJobImage>
+        Relationships: []
+      }
+      pending_invites: {
+        Row: WithIndex<PendingInvite>
+        Insert: {
+          inviting_client_id: string
+          trade_name: string
+          job_type: string
+          job_date: string
+          claim_token: string
+        } & Partial<Omit<PendingInvite, 'inviting_client_id' | 'trade_name' | 'job_type' | 'job_date' | 'claim_token' | 'id' | 'created_at' | 'expires_at' | 'status'>>
+        Update: Partial<PendingInvite>
+        Relationships: []
+      }
+      seeded_profiles: {
+        Row: WithIndex<SeededProfile>
+        Insert: {
+          slug: string
+          business_name: string
+          trade_category: string
+          claim_token: string
+          expires_at: string
+        } & Partial<Omit<SeededProfile, 'slug' | 'business_name' | 'trade_category' | 'claim_token' | 'expires_at' | 'id' | 'created_at' | 'status'>>
+        Update: Partial<SeededProfile>
+        Relationships: []
+      }
+      do_not_reseed: {
+        Row: WithIndex<DoNotReseed>
+        Insert: { business_name_normalised: string } & Partial<Omit<DoNotReseed, 'business_name_normalised' | 'id' | 'created_at'>>
+        Update: Partial<DoNotReseed>
         Relationships: []
       }
     }

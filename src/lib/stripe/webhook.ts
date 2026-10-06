@@ -11,16 +11,24 @@ const tierMap: Record<string, { tier: SubscriptionTier; period: BillingPeriod }>
   [process.env.STRIPE_PRO_ANNUAL_PRICE_ID!]:       { tier: 'pro',      period: 'annual'  },
 }
 
+const ADDON_PRICE_ID = process.env.STRIPE_PRO_ADDON_PRICE_ID!
+
 function activeTier(subscription: Stripe.Subscription): { tier: SubscriptionTier; billingPeriod: BillingPeriod } {
   if (subscription.status !== 'active' && subscription.status !== 'trialing') {
     return { tier: 'free', billingPeriod: 'monthly' }
   }
-  const priceId = subscription.items.data[0]?.price.id ?? ''
-  const match = tierMap[priceId]
+  // Search all items for the base plan — add-on items are not in tierMap
+  const baseItem = subscription.items.data.find(item => tierMap[item.price.id])
+  const match = baseItem ? tierMap[baseItem.price.id] : undefined
   return {
     tier: match?.tier ?? 'free',
     billingPeriod: match?.period ?? 'monthly',
   }
+}
+
+function addonQuantity(subscription: Stripe.Subscription): number {
+  const addonItem = subscription.items.data.find(item => item.price.id === ADDON_PRICE_ID)
+  return addonItem?.quantity ?? 0
 }
 
 export async function handleStripeWebhook(body: string, sig: string): Promise<void> {
@@ -47,8 +55,11 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
 
       const subscription = await stripe.subscriptions.retrieve(subscriptionId)
       const { tier, billingPeriod } = activeTier(subscription)
+      const addonQty = addonQuantity(subscription)
       const periodEndTs = subscription.items.data[0]?.current_period_end ?? null
       const currentPeriodEnd = periodEndTs ? new Date(periodEndTs * 1000).toISOString() : null
+      const periodStartTs = subscription.items.data[0]?.current_period_start ?? null
+      const currentPeriodStart = periodStartTs ? new Date(periodStartTs * 1000).toISOString() : null
 
       await admin
         .from('trade_profiles')
@@ -56,9 +67,11 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
           subscription_tier: tier,
           billing_period: billingPeriod,
           subscription_expires_at: currentPeriodEnd,
+          subscription_period_start_at: currentPeriodStart,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
           is_searchable: tier !== 'free',
+          boosted_district_addon_quantity: tier === 'pro' ? addonQty : 0,
         })
         .eq('user_id', userId)
 
@@ -69,8 +82,17 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
       const { tier, billingPeriod } = activeTier(subscription)
+      const addonQty = addonQuantity(subscription)
       const periodEndTs = subscription.items.data[0]?.current_period_end ?? null
       const currentPeriodEnd = periodEndTs ? new Date(periodEndTs * 1000).toISOString() : null
+      const periodStartTs = subscription.items.data[0]?.current_period_start ?? null
+      const currentPeriodStart = periodStartTs ? new Date(periodStartTs * 1000).toISOString() : null
+
+      // On downgrade away from Pro, clear all boost state so the subset constraint
+      // isn't circumvented and billing stops cleanly.
+      const boostClear = tier !== 'pro'
+        ? { boosted_districts: [], boosted_districts_updated_at: null }
+        : {}
 
       await admin
         .from('trade_profiles')
@@ -78,8 +100,11 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
           subscription_tier: tier,
           billing_period: billingPeriod,
           subscription_expires_at: currentPeriodEnd,
+          subscription_period_start_at: currentPeriodStart,
           stripe_subscription_id: subscription.id,
           is_searchable: tier !== 'free',
+          boosted_district_addon_quantity: tier === 'pro' ? addonQty : 0,
+          ...boostClear,
         })
         .eq('stripe_customer_id', customerId)
 
@@ -90,14 +115,19 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
 
+      // Clear boosted districts and add-on on lapse/cancel — no silent reinstatement on resubscribe
       await admin
         .from('trade_profiles')
         .update({
           subscription_tier: 'free',
           billing_period: 'monthly',
           subscription_expires_at: null,
+          subscription_period_start_at: null,
           stripe_subscription_id: null,
           is_searchable: false,
+          boosted_districts: [],
+          boosted_districts_updated_at: null,
+          boosted_district_addon_quantity: 0,
         })
         .eq('stripe_customer_id', customerId)
 

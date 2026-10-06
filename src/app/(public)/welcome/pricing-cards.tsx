@@ -19,8 +19,8 @@ const STANDARD_EXTRAS = [
 ]
 
 const PRO_EXTRAS = [
-  'Top of local search results (randomised rotation within Pro band)',
-  'Featured badge in search results',
+  'Boosted Districts — 3 included, additional districts £10/month each. Top-of-search placement in chosen postcode districts (randomised within boosted band)',
+  'Pro badge on your profile and in every search result where you appear',
   'Extended featured job images (5 jobs, up to 10 images each)',
   'Profile analytics (views and search appearances)',
   'Priority dispute resolution',

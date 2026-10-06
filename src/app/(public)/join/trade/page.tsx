@@ -1,9 +1,19 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { Suspense, useState, useTransition } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function JoinTradePage() {
+  return (
+    <Suspense>
+      <JoinTradeForm />
+    </Suspense>
+  )
+}
+
+function JoinTradeForm() {
+  const searchParams = useSearchParams()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -25,12 +35,23 @@ export default function JoinTradePage() {
 
     startTransition(async () => {
       const supabase = createClient()
+      const claimToken = searchParams.get('claim_token')
+      const seededToken = searchParams.get('seeded_token')
+
+      let verifyNext: string
+      if (seededToken) {
+        verifyNext = `/verify/phone?seeded_token=${encodeURIComponent(seededToken)}`
+      } else if (claimToken) {
+        verifyNext = `/verify/phone?claim_token=${encodeURIComponent(claimToken)}`
+      } else {
+        verifyNext = '/verify/phone'
+      }
       const { error: authError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
           data: { full_name: fullName.trim(), user_type: 'trade' },
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/verify/phone`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(verifyNext)}`,
         },
       })
 

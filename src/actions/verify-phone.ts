@@ -17,6 +17,9 @@ export type VerifyOTPResult =
   | { success: true; redirectTo: string }
   | { success: false; error: string }
 
+// nextUrl overrides the post-verify redirect (used by the claim flow)
+export type VerifyOTPOptions = { next?: string }
+
 // ── Helpers ──────────────────────────────────────────────────
 
 function normaliseUKPhone(phone: string): string {
@@ -106,7 +109,7 @@ export async function sendOTP(phone: string): Promise<SendOTPResult> {
   }
 }
 
-export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPResult> {
+export async function verifyOTP(phone: string, code: string, options?: VerifyOTPOptions): Promise<VerifyOTPResult> {
   const normalized = normaliseUKPhone(phone)
 
   if (!/^\d{6}$/.test(code.trim())) {
@@ -200,7 +203,9 @@ export async function verifyOTP(phone: string, code: string): Promise<VerifyOTPR
   // Resolve user_type: prefer existing DB value, fall back to signup metadata
   const userType = (current?.user_type ?? userTypeFromMeta) as string | null
 
-  if (userType === 'trade') {
+  if (options?.next) {
+    redirect(options.next)
+  } else if (userType === 'trade') {
     redirect('/onboarding/trade')
   } else if (userType === 'client_business') {
     redirect('/onboarding/business')

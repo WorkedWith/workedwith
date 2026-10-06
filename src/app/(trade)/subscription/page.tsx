@@ -5,6 +5,7 @@ import { getStripeClient } from '@/lib/stripe/client'
 import type { BillingPeriod, SubscriptionTier } from '@/types/database'
 import { ManageButton } from './subscription-buttons'
 import { SubscriptionTierCards } from './subscription-tier-cards'
+import { BoostedAddonManager } from './boosted-addon-manager'
 
 export const metadata = { title: 'Subscription | WorkedWith' }
 
@@ -19,8 +20,8 @@ const FEATURES: { label: string; free: boolean; standard: boolean; pro: boolean 
   { label: 'Full client reputation lookup',       free: false, standard: true,  pro: true  },
   { label: 'Verified badge on profile',           free: false, standard: true,  pro: true  },
   { label: 'Featured job images',                 free: false, standard: true,  pro: true  },
-  { label: 'Top of local search results',         free: false, standard: false, pro: true  },
-  { label: 'Featured badge in search',            free: false, standard: false, pro: true  },
+  { label: 'Boosted Districts — 3 included, additional districts £10/month each', free: false, standard: false, pro: true },
+  { label: 'Pro badge on profile and in search',  free: false, standard: false, pro: true  },
   { label: 'Extended featured job images',        free: false, standard: false, pro: true  },
   { label: 'Profile analytics',                   free: false, standard: false, pro: true  },
   { label: 'Priority dispute resolution',         free: false, standard: false, pro: true  },
@@ -63,6 +64,40 @@ export default async function SubscriptionPage() {
   const currentBillingPeriod = (tradeProfile?.billing_period as BillingPeriod | null | undefined) ?? 'monthly'
   const subscriptionId = tradeProfile?.stripe_subscription_id as string | null | undefined
   const isPaid = currentTier === 'standard' || currentTier === 'pro'
+  const isPro = currentTier === 'pro'
+
+  // ── Boosted add-on props (Pro only) ───────────────────────────
+  const addonQty = (tradeProfile?.boosted_district_addon_quantity as number | null | undefined) ?? 0
+  const activeBoostedCount = ((tradeProfile?.boosted_districts as string[] | null | undefined) ?? []).length
+
+  // Compute cooldown for decrease — mirrors update-boosted-addon-quantity action logic
+  let canDecrease = true
+  let cooldownMessage: string | null = null
+
+  if (isPro) {
+    const updatedAt = tradeProfile?.boosted_districts_updated_at as string | null | undefined
+    if (updatedAt) {
+      const updatedDate = new Date(updatedAt)
+      const isAnnual = currentBillingPeriod === 'annual'
+      if (isAnnual) {
+        const availableAt = new Date(updatedDate.getTime() + 30 * 24 * 60 * 60 * 1000)
+        if (new Date() < availableAt) {
+          canDecrease = false
+          cooldownMessage = `Available from ${availableAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} (30-day cooldown).`
+        }
+      } else {
+        const periodStart = tradeProfile?.subscription_period_start_at as string | null | undefined
+        if (periodStart && updatedDate >= new Date(periodStart)) {
+          canDecrease = false
+          const expiresAt = tradeProfile?.subscription_expires_at as string | null | undefined
+          const renewalFmt = expiresAt
+            ? new Date(expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+            : 'your next renewal'
+          cooldownMessage = `Available from ${renewalFmt} (one change per billing cycle).`
+        }
+      }
+    }
+  }
 
   let nextBillingDate: string | null = null
   if (subscriptionId) {
@@ -119,6 +154,16 @@ export default async function SubscriptionPage() {
             </div>
           )}
         </div>
+
+        {/* Boosted District add-on management (Pro only) */}
+        {isPro && subscriptionId && (
+          <BoostedAddonManager
+            currentAddonQty={addonQty}
+            activeBoostedCount={activeBoostedCount}
+            canDecrease={canDecrease}
+            cooldownMessage={cooldownMessage}
+          />
+        )}
 
         {/* Tier cards with period toggle */}
         <SubscriptionTierCards
