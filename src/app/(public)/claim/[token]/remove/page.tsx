@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { removeSeededProfile } from '@/actions/remove-seeded-profile'
 import type { SeededProfile } from '@/types/database'
+
+export const metadata: Metadata = { robots: { index: false } }
 
 type Props = {
   params: Promise<{ token: string }>

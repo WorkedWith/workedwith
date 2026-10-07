@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { IdentityUploadForm } from './identity-upload-form'
 import type { User } from '@/types/database'
 
-export const metadata: Metadata = { title: 'Verify Your Identity — WorkedWith' }
+export const metadata: Metadata = { title: 'Verify Your Identity — WorkedWith', robots: { index: false } }
 
 export default async function VerifyIdentityPage() {
   const supabase = await createClient()

@@ -11,7 +11,7 @@ import { getProfileAnalytics } from '@/actions/get-profile-analytics'
 import type { ProfileAnalytics } from '@/actions/get-profile-analytics'
 import type { User, Notification, SubscriptionTier } from '@/types/database'
 
-export const metadata = { title: 'Dashboard — WorkedWith' }
+export const metadata = { title: 'Dashboard — WorkedWith', robots: { index: false } }
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -24,7 +24,7 @@ export default async function DashboardPage() {
 
   const { verification_tier, user_type, full_name, phone_verified, id_verification_status, profile_photo_url } = userData as unknown as User
   if (verification_tier === 'unverified') redirect('/verify/phone')
-  if (!user_type) redirect('/verify/phone')
+  if (!user_type) redirect('/join')
 
   const isTrade = user_type === 'trade' || user_type === 'both'
   const isBoth = user_type === 'both'

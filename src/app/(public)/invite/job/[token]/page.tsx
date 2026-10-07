@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Job, JobInvite } from '@/types/database'
 
-export const metadata = { title: 'You have a job to confirm — WorkedWith' }
+export const metadata = { title: 'You have a job to confirm — WorkedWith', robots: { index: false } }
 
 type InviteRow = Pick<JobInvite, 'id' | 'job_id' | 'inviter_id' | 'status' | 'expires_at' | 'invite_token'>
 type JobRow = Pick<Job, 'id' | 'job_type' | 'backdated_period' | 'started_at' | 'initiated_by' | 'trade_profile_id' | 'client_profile_id'>

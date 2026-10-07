@@ -74,7 +74,7 @@ export default function ForClientsPage() {
 
           {/* Search bar */}
           <div className="mt-12 mx-auto max-w-3xl w-full rounded-2xl bg-white/10 backdrop-blur-sm p-5 shadow-xl ring-1 ring-white/20">
-            <form method="GET" action="/find" className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1.5fr_1fr_auto] sm:items-center">
+            <form method="GET" action="/find" className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1.5fr_auto] sm:items-center">
               <select
                 name="trade"
                 required
@@ -91,16 +91,6 @@ export default function ForClientsPage() {
                 autoComplete="postal-code"
                 className="h-12 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-brand-navy placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber uppercase"
               />
-              <select
-                name="radius"
-                defaultValue="10"
-                className="h-12 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
-              >
-                <option value="5">5 miles</option>
-                <option value="10">10 miles</option>
-                <option value="25">25 miles</option>
-                <option value="50">50 miles</option>
-              </select>
               <button
                 type="submit"
                 className="h-12 w-full rounded-lg bg-brand-amber px-6 text-sm font-bold text-brand-navy whitespace-nowrap hover:bg-amber-400 transition-colors"

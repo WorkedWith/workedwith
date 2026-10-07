@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { UserMenu } from '@/components/user-menu'
 import { SettingsContent } from './settings-content'
 
-export const metadata = { title: 'Settings — WorkedWith' }
+export const metadata = { title: 'Settings — WorkedWith', robots: { index: false } }
 
 export default async function SettingsPage() {
   const supabase = await createClient()

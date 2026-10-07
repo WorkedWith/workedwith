@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { confirmJob } from '@/actions/confirm-job'
 
-export const metadata = { title: 'Confirm job | WorkedWith' }
+export const metadata = { title: 'Confirm job | WorkedWith', robots: { index: false } }
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (

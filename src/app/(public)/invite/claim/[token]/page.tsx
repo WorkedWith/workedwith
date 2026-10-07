@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { claimTradeInvite } from '@/actions/claim-trade-invite'
 import type { PendingInvite } from '@/types/database'
 
-export const metadata = { title: 'Claim your job invite — WorkedWith' }
+export const metadata = { title: 'Claim your job invite — WorkedWith', robots: { index: false } }
 
 type PageProps = { params: Promise<{ token: string }> }
 

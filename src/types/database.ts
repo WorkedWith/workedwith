@@ -417,6 +417,14 @@ export interface FeaturedJobImage {
   created_at: string
 }
 
+// ── Rate limit events ─────────────────────────────────────────
+
+export interface RateLimitEvent {
+  id: string
+  key: string
+  created_at: string
+}
+
 // ── Seeded profiles ───────────────────────────────────────────
 
 export type SeededProfileStatus = 'unclaimed' | 'claimed' | 'removed'
@@ -613,6 +621,12 @@ export interface Database {
         Row: WithIndex<DoNotReseed>
         Insert: { business_name_normalised: string } & Partial<Omit<DoNotReseed, 'business_name_normalised' | 'id' | 'created_at'>>
         Update: Partial<DoNotReseed>
+        Relationships: []
+      }
+      rate_limit_events: {
+        Row: WithIndex<RateLimitEvent>
+        Insert: { key: string } & Partial<Pick<RateLimitEvent, 'id' | 'created_at'>>
+        Update: Partial<RateLimitEvent>
         Relationships: []
       }
     }

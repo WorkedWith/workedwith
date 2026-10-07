@@ -15,8 +15,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Missing required fields.' }, { status: 400 })
     }
 
-    // Verify the seeded profile and that the phone matches
     const admin = createAdminClient()
+
+    const tenMinsAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+
+    // Fail closed: if count query errors, block the attempt
+    const { count: attemptCount, error: countErr } = await admin
+      .from('rate_limit_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('key', `otp_verify:token:${token}`)
+      .gte('created_at', tenMinsAgo)
+
+    if (countErr) {
+      console.error('verify-otp rate-limit read error:', countErr)
+      return NextResponse.json(
+        { success: false, error: 'Verification failed. Please try again.' },
+        { status: 500 },
+      )
+    }
+
+    if ((attemptCount ?? 0) >= 5) {
+      return NextResponse.json(
+        { success: false, error: 'Too many verification attempts. Please request a new code.' },
+        { status: 429 },
+      )
+    }
+
+    // Record attempt BEFORE calling Twilio so wrong codes and retries count
+    const { error: insertErr } = await admin
+      .from('rate_limit_events')
+      .insert({ key: `otp_verify:token:${token}` })
+
+    if (insertErr) {
+      console.error('verify-otp rate-limit insert error:', insertErr)
+      return NextResponse.json(
+        { success: false, error: 'Verification failed. Please try again.' },
+        { status: 500 },
+      )
+    }
+
     const { data: raw } = await admin
       .from('seeded_profiles')
       .select('*')
@@ -41,7 +78,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Phone number does not match this listing.' }, { status: 400 })
     }
 
-    // Check OTP with Twilio
     const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
     const check = await client.verify.v2
       .services(process.env.TWILIO_VERIFY_SERVICE_SID!)

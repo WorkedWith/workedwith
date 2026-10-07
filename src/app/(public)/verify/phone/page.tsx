@@ -4,6 +4,7 @@ import { PhoneVerifyForm } from './phone-verify-form'
 
 export const metadata = {
   title: 'Verify your mobile | WorkedWith',
+  robots: { index: false },
 }
 
 type PageProps = { searchParams: Promise<{ claim_token?: string; seeded_token?: string; next?: string }> }

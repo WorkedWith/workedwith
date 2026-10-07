@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { acceptInvite } from '@/actions/accept-invite'
 
-export const metadata = { title: 'Accept invitation | WorkedWith' }
+export const metadata = { title: 'Accept invitation | WorkedWith', robots: { index: false } }
 
 // ── Small presentational components ──────────────────────────
 

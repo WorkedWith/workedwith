@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { PricingCards } from './pricing-cards'
 import type { User } from '@/types/database'
 
-export const metadata = { title: 'Welcome to WorkedWith' }
+export const metadata = { title: 'Welcome to WorkedWith', robots: { index: false } }
 
 export default async function WelcomePage() {
   const supabase = await createClient()

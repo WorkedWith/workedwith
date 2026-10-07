@@ -1,5 +1,6 @@
 'use server'
 
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { ModerationStatus } from '@/types/database'
 
@@ -11,9 +12,18 @@ export async function moderateFeaturedImage(
   imageId: string,
   status: 'approved' | 'rejected',
 ): Promise<ModerateFeaturedImageResult> {
-  const admin = createAdminClient()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated.' }
 
-  // Fetch image + owning trade profile + user for notification
+  const admin = createAdminClient()
+  const { data: caller } = await admin
+    .from('users')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+  if (!caller?.is_admin) return { success: false, error: 'Admin access required.' }
+
   const { data: image } = await admin
     .from('featured_job_images')
     .select('id, featured_job_id, storage_path, caption')
@@ -30,7 +40,6 @@ export async function moderateFeaturedImage(
 
   if (error) return { success: false, error: 'Failed to update moderation status.' }
 
-  // Notify the tradesperson on rejection
   if (status === 'rejected') {
     const { data: featuredJob } = await admin
       .from('featured_jobs')

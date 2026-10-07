@@ -141,5 +141,16 @@ export async function GET(request: Request) {
     results.seededReminders = { day0: day0Sent, day21: reminders21, day42: reminders42, day56: reminders56 }
   }
 
+  // ── 3. Rate limit event cleanup (> 24 hours) ─────────────────
+  {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const { data: deleted } = await admin
+      .from('rate_limit_events')
+      .delete()
+      .lt('created_at', cutoff)
+      .select('id')
+    results.rateLimitRowsDeleted = deleted?.length ?? 0
+  }
+
   return NextResponse.json(results)
 }

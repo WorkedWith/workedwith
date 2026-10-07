@@ -1,9 +1,21 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { Suspense, useState, useTransition } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function JoinClientBusinessPage() {
+  return (
+    <Suspense>
+      <JoinForm />
+    </Suspense>
+  )
+}
+
+function JoinForm() {
+  const searchParams = useSearchParams()
+  const inviteToken = searchParams.get('token')
+
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -25,12 +37,18 @@ export default function JoinClientBusinessPage() {
 
     startTransition(async () => {
       const supabase = createClient()
+
+      // If an org invite token is present, return the user to /invite/accept after verification
+      const next = inviteToken
+        ? `/verify/phone?next=${encodeURIComponent(`/invite/accept/${inviteToken}`)}`
+        : '/verify/phone'
+
       const { error: authError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
           data: { full_name: fullName.trim(), user_type: 'client_business' },
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/verify/phone`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next)}`,
         },
       })
 
@@ -121,7 +139,7 @@ export default function JoinClientBusinessPage() {
         </form>
 
         <p className="mt-4 text-center text-sm text-white/50">
-          <a href="/join/client" className="hover:text-white transition-colors">← Back</a>
+          <a href={inviteToken ? `/join/client?token=${inviteToken}` : '/join/client'} className="hover:text-white transition-colors">← Back</a>
         </p>
         <p className="mt-2 text-center text-sm text-white/50">
           Already have an account?{' '}

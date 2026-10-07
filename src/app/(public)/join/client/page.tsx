@@ -1,4 +1,9 @@
-export default function JoinClientPage() {
+type Props = { searchParams: Promise<{ token?: string }> }
+
+export default async function JoinClientPage({ searchParams }: Props) {
+  const { token } = await searchParams
+  const q = token ? `?token=${encodeURIComponent(token)}` : ''
+
   return (
     <main className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-lg">
@@ -17,7 +22,7 @@ export default function JoinClientPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <a
-            href="/join/client/individual"
+            href={`/join/client/individual${q}`}
             className="group flex flex-col gap-3 rounded-2xl border-2 border-white/20 bg-white/5 p-7 hover:border-brand-amber hover:bg-white/10 transition-all"
           >
             <span className="text-3xl" aria-hidden>🏠</span>
@@ -33,7 +38,7 @@ export default function JoinClientPage() {
           </a>
 
           <a
-            href="/join/client/business"
+            href={`/join/client/business${q}`}
             className="group flex flex-col gap-3 rounded-2xl border-2 border-white/20 bg-white/5 p-7 hover:border-brand-amber hover:bg-white/10 transition-all"
           >
             <span className="text-3xl" aria-hidden>🏢</span>
