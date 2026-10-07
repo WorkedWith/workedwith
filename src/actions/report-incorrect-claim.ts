@@ -1,7 +1,7 @@
 'use server'
 
-import { APP_URL } from '@/lib/app-url'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/email/send'
+import { adminIncorrectClaim } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { PendingInvite } from '@/types/database'
@@ -58,21 +58,12 @@ export async function reportIncorrectClaim(jobId: string): Promise<ReportIncorre
 
   // Alert admin by email — the null-user_id notification row is not surfaced
   // in any bell, so Resend is the only proactive signal here.
-  try {
-    const resend = new Resend(process.env.RESEND_API_KEY)
-    await resend.emails.send({
-      from: 'WorkedWith <hello@workedwith.co.uk>',
-      to: 'hello@workedwith.co.uk',
-      subject: 'Incorrect claim reported: action required',
-      html: `<p>An incorrect claim has been reported.</p>
-<ul>
-  <li><strong>Pending invite:</strong> ${invite.id}</li>
-  <li><strong>Job:</strong> ${jobId}</li>
-  <li><strong>Reported by:</strong> ${isInvitingClient ? 'inviting client' : 'claiming trade'} (user ${user.id})</li>
-</ul>
-<p><a href="${APP_URL}/admin/pending-invites">Review in admin &rarr;</a></p>`,
-    })
-  } catch { /* non-fatal */ }
+  const alert = await sendEmail('hello@workedwith.co.uk', adminIncorrectClaim({
+    reportedBy: isInvitingClient ? 'the inviting client' : 'the claiming tradesperson',
+    inviteId: String(invite.id),
+    jobId: String(jobId),
+  }))
+  if (!alert.ok) console.error('Admin alert email failed (non-fatal):', alert.error)
 
   return { success: true }
 }

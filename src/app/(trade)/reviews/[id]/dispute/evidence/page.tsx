@@ -54,7 +54,7 @@ export default async function EvidencePage({ params }: { params: { id: string } 
             </div>
             <h2 className="text-lg font-semibold text-brand-navy">Evidence already submitted</h2>
             <p className="mt-2 text-sm text-gray-600">
-              You have already submitted your evidence for this dispute. WorkedWith admin will review and reach a decision within 14 days.
+              You have already submitted your evidence for this dispute. WorkedWith admin will review and reach a decision within 21 days.
             </p>
             <a
               href="/dashboard"

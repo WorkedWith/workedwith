@@ -199,6 +199,7 @@ export interface ReviewWindow {
   window_opened_at: string
   window_closes_at: string | null
   blind_window_closes_at: string
+  reminder_4_sent_at: string | null
   reminder_7_sent_at: string | null
   reminder_14_sent_at: string | null
   both_submitted_at: string | null

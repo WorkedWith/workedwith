@@ -3,7 +3,9 @@
 import { APP_URL } from '@/lib/app-url'
 import { randomBytes } from 'crypto'
 import twilio from 'twilio'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/email/send'
+import { tradeInviteFromClient } from '@/lib/email/templates'
+import { tradeInviteSms } from '@/lib/sms-copy'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TRADE_TYPES } from '@/lib/trade-types'
@@ -32,50 +34,6 @@ function normalizeUKMobile(raw: string): string | null {
   if (/^\+447\d{9}$/.test(c)) return c
   if (/^07\d{9}$/.test(c)) return '+44' + c.slice(1)
   return null
-}
-
-// ── Email template ────────────────────────────────────────────
-
-function emailShell(body: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
-<tr><td align="center">
-<table width="100%" style="max-width:480px;background:#fff;border-radius:16px;overflow:hidden;">
-<tr><td style="background:#0F1F3D;padding:24px;text-align:center;">
-  <span style="font-size:22px;font-weight:700;color:#fff;">Worked<span style="color:#F59E0B;">With</span></span>
-</td></tr>
-<tr><td style="padding:32px 28px;">${body}</td></tr>
-<tr><td style="padding:16px 28px;border-top:1px solid #F3F4F6;">
-  <p style="margin:0;font-size:11px;color:#D1D5DB;text-align:center;">WorkedWith &bull; hello@workedwith.co.uk</p>
-</td></tr>
-</table>
-</td></tr>
-</table>
-</body></html>`
-}
-
-function claimInviteHtml(p: {
-  callerName: string
-  jobType: string
-  jobDate: string
-  claimUrl: string
-}): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">${p.callerName} worked with you</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      <strong>${p.callerName}</strong> has logged a <strong>${p.jobType}</strong> job with you
-      in <strong>${p.jobDate}</strong> on WorkedWith.
-    </p>
-    <p style="margin:0 0 16px;font-size:14px;color:#6B7280;line-height:1.6;">
-      WorkedWith is a trust and review platform for the UK trades industry. Claim this job to confirm it
-      happened and leave mutual verified reviews. Nothing is published until you verify.
-    </p>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center">
-      <a href="${p.claimUrl}" style="display:inline-block;background:#F59E0B;color:#0F1F3D;font-weight:600;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">Claim this job</a>
-    </td></tr></table>
-    <p style="margin:0;font-size:12px;color:#9CA3AF;">This invitation expires in 60 days. If you don&apos;t recognise this, you can safely ignore it &mdash; nothing will be published.</p>
-  `)
 }
 
 // ── Action ────────────────────────────────────────────────────
@@ -221,7 +179,6 @@ export async function inviteTrade(input: InviteTradeInput): Promise<InviteTradeR
     (clientProfile as { display_name: string | null; company_name: string | null }).display_name ??
     (clientProfile as { display_name: string | null; company_name: string | null }).company_name ??
     userData.full_name
-  const resend = new Resend(process.env.RESEND_API_KEY)
   const sends: Promise<unknown>[] = []
   let smsFailed = false
 
@@ -231,7 +188,7 @@ export async function inviteTrade(input: InviteTradeInput): Promise<InviteTradeR
       sends.push(
         tw.messages
           .create({
-            body: `WorkedWith: ${callerName} has logged a ${job_type} job with you. Claim it (expires 60 days): ${claimUrl}`,
+            body: tradeInviteSms({ callerName, jobType: job_type, token: invite.claim_token as string, days: 60 }),
             messagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID,
             to: contact_phone,
           })
@@ -251,14 +208,9 @@ export async function inviteTrade(input: InviteTradeInput): Promise<InviteTradeR
 
   if (contact_email && !emailStacked) {
     sends.push(
-      resend.emails
-        .send({
-          from: 'WorkedWith <hello@workedwith.co.uk>',
-          to: contact_email,
-          subject: `${callerName} has logged a job with you on WorkedWith`,
-          html: claimInviteHtml({ callerName, jobType: job_type, jobDate: job_date, claimUrl }),
-        })
-        .catch((e: unknown) => console.error('Email send failed (non-fatal):', e)),
+      sendEmail(contact_email, tradeInviteFromClient({ callerName, jobType: job_type, jobDate: job_date, claimUrl, days: 60 })).then(r => {
+        if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
+      }),
     )
   }
 

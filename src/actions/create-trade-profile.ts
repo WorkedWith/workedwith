@@ -1,5 +1,7 @@
 'use server'
 
+import { sendEmail } from '@/lib/email/send'
+import { welcomeTrade } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TRADE_TYPES } from '@/lib/trade-types'
@@ -184,6 +186,11 @@ export async function createTradeProfile(
       .then(({ error }) => {
         if (error) console.error('Failed to mark seeded profile claimed (non-fatal):', error)
       })
+  }
+
+  if (user.email) {
+    const r = await sendEmail(user.email, welcomeTrade())
+    if (!r.ok) console.error('Welcome email failed (non-fatal):', r.error)
   }
 
   return { success: true }

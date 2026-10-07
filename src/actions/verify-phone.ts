@@ -1,6 +1,7 @@
 'use server'
 
 import twilio from 'twilio'
+import { OTP_ERROR } from '@/lib/sms-copy'
 import { createHash } from 'crypto'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -104,8 +105,7 @@ export async function sendOTP(phone: string): Promise<SendOTPResult> {
     return { success: true }
   } catch (error) {
     console.error('Twilio error full:', JSON.stringify(error, null, 2))
-    const e = error as { code?: number; message?: string; status?: number }
-    return { success: false, error: `SMS failed to send. Error code: ${e.code ?? 'unknown'}` }
+    return { success: false, error: OTP_ERROR }
   }
 }
 

@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { createHash } from 'crypto'
+import { sendEmail } from '@/lib/email/send'
+import { accountDeleted } from '@/lib/email/templates'
 
 export async function deleteAccount(): Promise<{ error?: string }> {
   const supabase = await createClient()
@@ -11,6 +13,7 @@ export async function deleteAccount(): Promise<{ error?: string }> {
   if (!user) return { error: 'You must be signed in.' }
 
   const admin = createAdminClient()
+  const emailBeforeDelete = user.email ?? null
 
   // Record the phone number as deactivated BEFORE anything is deleted, so it can
   // never be used to open a new account. Fail closed: if this cannot be written,
@@ -46,6 +49,11 @@ export async function deleteAccount(): Promise<{ error?: string }> {
 
   const { error } = await admin.auth.admin.deleteUser(user.id)
   if (error) return { error: 'Failed to delete account. Please contact support.' }
+
+  if (emailBeforeDelete) {
+    const r = await sendEmail(emailBeforeDelete, accountDeleted())
+    if (!r.ok) console.error('Account deleted email failed (non-fatal):', r.error)
+  }
 
   redirect('/')
 }

@@ -1,6 +1,7 @@
-import { APP_URL } from '@/lib/app-url'
 import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
+import { formatDateLong } from '@/lib/email/format'
+import { sendEmail } from '@/lib/email/send'
+import { bothReviewsLive, reviewReminder, theirReviewLive, yourReviewLive } from '@/lib/email/templates'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { ReviewWindow, Job, User, TradeProfile, ClientProfile } from '@/types/database'
 
@@ -16,60 +17,8 @@ function round1(n: number): number {
   return Math.round(n * 10) / 10
 }
 
-// ── Email templates ───────────────────────────────────────────
-
-function emailShell(body: string): string {
-  return `<!DOCTYPE html><html lang="en"><body style="margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;"><tr><td align="center">
-<table width="100%" style="max-width:480px;background:#fff;border-radius:16px;overflow:hidden;">
-<tr><td style="background:#0F1F3D;padding:24px;text-align:center;">
-  <span style="font-size:22px;font-weight:700;color:#fff;">Worked<span style="color:#F59E0B;">With</span></span>
-</td></tr>
-<tr><td style="padding:32px 28px;">${body}</td></tr>
-<tr><td style="padding:16px 28px;border-top:1px solid #F3F4F6;">
-  <p style="margin:0;font-size:11px;color:#D1D5DB;text-align:center;">WorkedWith &bull; hello@workedwith.co.uk</p>
-</td></tr>
-</table></td></tr></table>
-</body></html>`
-}
-
-function cta(label: string, href: string): string {
-  return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center">
-  <a href="${href}" style="display:inline-block;background:#F59E0B;color:#0F1F3D;font-weight:600;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">${label}</a>
-</td></tr></table>`
-}
-
-function publishedBothHtml(p: { otherName: string; jobUrl: string }): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">Your reviews are live</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      Both reviews are now live on WorkedWith. See what <strong>${p.otherName}</strong> said about you.
-    </p>
-    ${cta('View reviews', p.jobUrl)}
-  `)
-}
-
-function publishedAloneReviewerHtml(p: { revieweeName: string; jobUrl: string }): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">Your review is now live</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      Your review of <strong>${p.revieweeName}</strong> is now live on their WorkedWith profile.
-      ${p.revieweeName} did not submit their review within the 7&#8209;day window.
-    </p>
-    ${cta('View job', p.jobUrl)}
-  `)
-}
-
-function missedWindowHtml(p: { reviewerName: string; jobUrl: string }): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">You missed your review window</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      <strong>${p.reviewerName}</strong> reviewed your job. You had 7 days to submit yours.
-      Your window has now closed and their review is live on your profile.
-      You can no longer submit a review for this job.
-    </p>
-    ${cta('View job', p.jobUrl)}
-  `)
+function logSend(r: { ok: boolean; error?: string }) {
+  if (!r.ok) console.error('cron: email send failed (non-fatal):', r.error)
 }
 
 // ── Route ─────────────────────────────────────────────────────
@@ -81,7 +30,6 @@ export async function GET(request: Request) {
   }
 
   const admin = createAdminClient()
-  const resend = new Resend(process.env.RESEND_API_KEY)
   const now = new Date()
   const nowIso = now.toISOString()
 
@@ -100,14 +48,89 @@ export async function GET(request: Request) {
 
   for (const window of windows) {
     try {
-      await processWindow(window, admin, resend, nowIso)
+      await processWindow(window, admin, nowIso)
       processed++
     } catch (err) {
       console.error(`cron: failed processing review_window ${window.id}:`, err)
     }
   }
 
-  return NextResponse.json({ processed })
+  const reminders = await sendDayFourReminders(admin, now)
+
+  return NextResponse.json({ processed, reminders })
+}
+
+// ── Day 4 reminder ────────────────────────────────────────────
+
+async function sendDayFourReminders(
+  admin: ReturnType<typeof createAdminClient>,
+  now: Date,
+): Promise<number> {
+  const fourDaysAgo = new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000).toISOString()
+  const { data: rawWindows } = await admin
+    .from('review_windows')
+    .select('*')
+    .gt('blind_window_closes_at', now.toISOString())
+    .lte('window_opened_at', fourDaysAgo)
+    .is('reminder_4_sent_at', null)
+    .is('both_submitted_at', null)
+
+  const windows = (rawWindows ?? []) as unknown as ReviewWindow[]
+  let sent = 0
+
+  for (const w of windows) {
+    try {
+      // Claim the reminder first so a re-run cannot send it twice
+      await admin.from('review_windows').update({ reminder_4_sent_at: now.toISOString() }).eq('id', w.id)
+      if (w.trade_review_submitted && w.client_review_submitted) continue
+
+      const { data: rawJob } = await admin.from('jobs').select('*').eq('id', w.job_id).single()
+      if (!rawJob) continue
+      const job = rawJob as unknown as Job
+
+      const [{ data: rawTrade }, { data: rawClient }] = await Promise.all([
+        job.trade_profile_id
+          ? admin.from('trade_profiles').select('*').eq('id', job.trade_profile_id as string).single()
+          : { data: null },
+        job.client_profile_id
+          ? admin.from('client_profiles').select('*').eq('id', job.client_profile_id as string).single()
+          : { data: null },
+      ])
+      const tradeProfile = rawTrade as unknown as TradeProfile | null
+      const clientProfile = rawClient as unknown as ClientProfile | null
+      const ids = [tradeProfile?.user_id, clientProfile?.user_id].filter((id): id is string => !!id)
+      if (ids.length === 0) continue
+      const { data: rawUsers } = await admin.from('users').select('*').in('id', ids)
+      const users = (rawUsers ?? []) as unknown as User[]
+      const tradeUser = users.find(u => u.id === tradeProfile?.user_id) ?? null
+      const clientUser = users.find(u => u.id === clientProfile?.user_id) ?? null
+      const tradeName = tradeProfile?.company_name ?? tradeUser?.full_name ?? 'the tradesperson'
+      const clientName = clientProfile?.display_name ?? clientUser?.full_name ?? 'the client'
+
+      const goesLiveOn = formatDateLong(w.blind_window_closes_at) ?? 'the end of the 7 day window'
+      const daysLeft = Math.max(1, Math.ceil((new Date(w.blind_window_closes_at).getTime() - now.getTime()) / (24 * 60 * 60 * 1000)))
+
+      const targets: { user: User | null; otherName: string }[] = []
+      if (!w.trade_review_submitted) targets.push({ user: tradeUser, otherName: clientName })
+      if (!w.client_review_submitted) targets.push({ user: clientUser, otherName: tradeName })
+
+      for (const t of targets) {
+        if (!t.user?.email) continue
+        const r = await sendEmail(t.user.email, reviewReminder({
+          otherName: t.otherName,
+          jobType: job.job_type,
+          daysLeft,
+          goesLiveOn,
+          jobId: w.job_id,
+        }))
+        logSend(r)
+        if (r.ok) sent++
+      }
+    } catch (err) {
+      console.error(`cron: day 4 reminder failed for review_window ${w.id}:`, err)
+    }
+  }
+  return sent
 }
 
 // ── Per-window logic ──────────────────────────────────────────
@@ -115,7 +138,6 @@ export async function GET(request: Request) {
 async function processWindow(
   window: ReviewWindow,
   admin: ReturnType<typeof createAdminClient>,
-  resend: Resend,
   nowIso: string,
 ): Promise<void> {
   const { job_id, trade_review_submitted, client_review_submitted } = window
@@ -158,12 +180,11 @@ async function processWindow(
 
   const tradeName = (tradeProfile?.company_name ?? tradeUser?.full_name) ?? 'the tradesperson'
   const clientName = (clientProfile?.display_name ?? clientUser?.full_name) ?? 'the client'
-  const jobUrl = `${APP_URL}/jobs/${job_id}`
 
   const bothSubmitted = trade_review_submitted && client_review_submitted
 
   if (bothSubmitted) {
-    await publishBoth({ admin, resend, job, job_id, tradeUserId, clientUserId, tradeUser, clientUser, tradeName, clientName, jobUrl, nowIso })
+    await publishBoth({ admin, job, job_id, tradeUserId, clientUserId, tradeUser, clientUser, tradeName, clientName, nowIso })
     return
   }
 
@@ -217,16 +238,12 @@ async function processWindow(
     promises.push(admin.from('notifications').insert({
       user_id: reviewerUserId, type: 'reviews_published',
       title: 'Your review is now live',
-      body: `Your review of ${nonSubmitterName} is live. They did not submit their review within the 7-day window.`,
+      body: `Your review of ${nonSubmitterName} is live. They did not submit their review within the 7 day window.`,
       link: `/jobs/${job_id}`,
     }))
   }
   if (reviewerUser?.email) {
-    promises.push(resend.emails.send({
-      from: 'WorkedWith <hello@workedwith.co.uk>', to: reviewerUser.email,
-      subject: 'Your review is now live on WorkedWith',
-      html: publishedAloneReviewerHtml({ revieweeName: nonSubmitterName, jobUrl }),
-    }))
+    promises.push(sendEmail(reviewerUser.email, yourReviewLive({ otherName: nonSubmitterName, jobId: job_id })).then(logSend))
   }
   if (nonSubmitterUserId) {
     promises.push(admin.from('notifications').insert({
@@ -237,11 +254,7 @@ async function processWindow(
     }))
   }
   if (nonSubmitterEmail) {
-    promises.push(resend.emails.send({
-      from: 'WorkedWith <hello@workedwith.co.uk>', to: nonSubmitterEmail,
-      subject: `You missed your review window: ${reviewerName}'s review of you is now live`,
-      html: missedWindowHtml({ reviewerName, jobUrl }),
-    }))
+    promises.push(sendEmail(nonSubmitterEmail, theirReviewLive({ reviewerName, jobType: job.job_type, jobId: job_id, canReviewUntil: formatDateLong(window.window_closes_at) })).then(logSend))
   }
 
   await Promise.all(promises)
@@ -251,7 +264,6 @@ async function processWindow(
 
 async function publishBoth(p: {
   admin: ReturnType<typeof createAdminClient>
-  resend: Resend
   job: Job
   job_id: string
   tradeUserId: string | null
@@ -260,10 +272,9 @@ async function publishBoth(p: {
   clientUser: User | null
   tradeName: string
   clientName: string
-  jobUrl: string
   nowIso: string
 }): Promise<void> {
-  const { admin, resend, job, job_id, tradeUserId, clientUserId, tradeUser, clientUser, tradeName, clientName, jobUrl } = p
+  const { admin, job, job_id, tradeUserId, clientUserId, tradeUser, clientUser, tradeName, clientName } = p
 
   await admin.from('reviews').update({ is_visible: true }).eq('job_id', job_id)
 
@@ -304,11 +315,7 @@ async function publishBoth(p: {
     }))
   }
   if (tradeUser?.email) {
-    promises.push(resend.emails.send({
-      from: 'WorkedWith <hello@workedwith.co.uk>', to: tradeUser.email,
-      subject: `Your WorkedWith reviews are now live: see what ${clientName} said about you`,
-      html: publishedBothHtml({ otherName: clientName, jobUrl }),
-    }))
+    promises.push(sendEmail(tradeUser.email, bothReviewsLive({ otherName: clientName, jobType: job.job_type, jobId: job_id })).then(logSend))
   }
   if (clientUserId) {
     promises.push(admin.from('notifications').insert({
@@ -319,11 +326,7 @@ async function publishBoth(p: {
     }))
   }
   if (clientUser?.email) {
-    promises.push(resend.emails.send({
-      from: 'WorkedWith <hello@workedwith.co.uk>', to: clientUser.email,
-      subject: `Your WorkedWith reviews are now live: see what ${tradeName} said about you`,
-      html: publishedBothHtml({ otherName: tradeName, jobUrl }),
-    }))
+    promises.push(sendEmail(clientUser.email, bothReviewsLive({ otherName: tradeName, jobType: job.job_type, jobId: job_id })).then(logSend))
   }
   await Promise.all(promises)
 }

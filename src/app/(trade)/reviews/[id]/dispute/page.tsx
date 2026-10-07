@@ -73,9 +73,15 @@ export default async function DisputePage({ params }: { params: { id: string } }
   } else if ((review.dispute_status as string) !== 'none') {
     ineligibleMessage = 'A dispute has already been raised for this review. Each review can only have one dispute.'
   } else {
+    const { data: liveWindow } = await admin
+      .from('review_windows')
+      .select('both_submitted_at')
+      .eq('job_id', reviewJobId)
+      .maybeSingle()
+    const liveSince = (liveWindow?.both_submitted_at as string | null | undefined) ?? (review.submitted_at as string)
     const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000
-    if (Date.now() - new Date(review.submitted_at as string).getTime() > fourteenDaysMs) {
-      ineligibleMessage = 'The 14-day dispute window for this review has closed. Disputes must be raised within 14 days of a review being published.'
+    if (Date.now() - new Date(liveSince).getTime() > fourteenDaysMs) {
+      ineligibleMessage = 'The 14 day dispute window for this review has closed. Disputes must be raised within 14 days of a review being published.'
     }
   }
 

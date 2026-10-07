@@ -1,7 +1,8 @@
 'use server'
 
-import { APP_URL } from '@/lib/app-url'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/email/send'
+import { disputeRaised } from '@/lib/email/templates'
+import { formatDateLong } from '@/lib/email/format'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { DisputeReason } from '@/types/database'
@@ -12,57 +13,6 @@ import { getUserTier, isProTier } from '@/lib/stripe/get-tier'
 export type RaiseDisputeResult =
   | { success: true; disputeId: string }
   | { success: false; error: string; field?: 'reason' | 'details' }
-
-// ── Email template ────────────────────────────────────────────
-
-function emailShell(body: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
-<tr><td align="center">
-<table width="100%" style="max-width:480px;background:#fff;border-radius:16px;overflow:hidden;">
-<tr><td style="background:#0F1F3D;padding:24px;text-align:center;">
-  <span style="font-size:22px;font-weight:700;color:#fff;">Worked<span style="color:#F59E0B;">With</span></span>
-</td></tr>
-<tr><td style="padding:32px 28px;">${body}</td></tr>
-<tr><td style="padding:16px 28px;border-top:1px solid #F3F4F6;">
-  <p style="margin:0;font-size:11px;color:#D1D5DB;text-align:center;">WorkedWith &bull; hello@workedwith.co.uk</p>
-</td></tr>
-</table>
-</td></tr>
-</table>
-</body></html>`
-}
-
-function cta(label: string, href: string): string {
-  return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center">
-  <a href="${href}" style="display:inline-block;background:#F59E0B;color:#0F1F3D;font-weight:600;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">${label}</a>
-</td></tr></table>`
-}
-
-function disputeRaisedHtml(p: {
-  raiserName: string
-  evidenceDeadline: string
-  evidenceUrl: string
-}): string {
-  const deadline = new Date(p.evidenceDeadline).toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  })
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">A dispute has been raised on your review</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      <strong>${p.raiserName}</strong> has raised a dispute on the WorkedWith review you left for them.
-    </p>
-    <p style="margin:0 0 16px;font-size:14px;color:#6B7280;line-height:1.6;">
-      You have until <strong>${deadline}</strong> to submit your evidence. WorkedWith admin will then review both sides and make a decision within 21 days.
-    </p>
-    <p style="margin:0 0 16px;font-size:14px;color:#6B7280;line-height:1.6;">
-      The review remains visible and is labelled &apos;Under dispute&apos; during this time.
-    </p>
-    ${cta('Submit your evidence', p.evidenceUrl)}
-    <p style="margin:0;font-size:12px;color:#9CA3AF;">If you do not respond by the deadline, the dispute will be reviewed based on the available information.</p>
-  `)
-}
 
 // ── Action ────────────────────────────────────────────────────
 
@@ -107,10 +57,16 @@ export async function raiseDispute(
     return { success: false, error: 'A dispute has already been raised for this review.' }
   }
 
-  // 14-day window from submission
+  // 14 day window runs from when the review went live (falls back to submission)
+  const { data: reviewWindow } = await admin
+    .from('review_windows')
+    .select('both_submitted_at')
+    .eq('job_id', review.job_id as string)
+    .maybeSingle()
+  const liveSince = (reviewWindow?.both_submitted_at as string | null | undefined) ?? (review.submitted_at as string)
   const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000
-  if (Date.now() - new Date(review.submitted_at as string).getTime() > fourteenDaysMs) {
-    return { success: false, error: 'The 14-day dispute window for this review has closed.' }
+  if (Date.now() - new Date(liveSince).getTime() > fourteenDaysMs) {
+    return { success: false, error: 'The 14 day dispute window for this review has closed.' }
   }
 
   const respondentId = review.reviewer_id as string | null
@@ -153,9 +109,7 @@ export async function raiseDispute(
 
   const raiserName = (raiserUser?.full_name as string | null | undefined) ?? 'The other party'
   const evidenceDeadline = dispute.evidence_deadline as string
-  const evidenceUrl = `${APP_URL}/reviews/${reviewId}/dispute/evidence`
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
   const tasks: PromiseLike<unknown>[] = [
     admin.from('notifications').insert({
       user_id: respondentId,
@@ -168,13 +122,12 @@ export async function raiseDispute(
 
   if (respondentUser?.email) {
     tasks.push(
-      resend.emails.send({
-        from: 'WorkedWith <hello@workedwith.co.uk>',
-        to: respondentUser.email as string,
-        subject: 'A dispute has been raised on your WorkedWith review, you have 7 days to submit evidence',
-        html: disputeRaisedHtml({ raiserName, evidenceDeadline, evidenceUrl }),
-      }).catch((emailError: unknown) => {
-        console.error('Email send failed (non-fatal):', emailError)
+      sendEmail(respondentUser.email as string, disputeRaised({
+        raiserName,
+        deadline: formatDateLong(evidenceDeadline) ?? evidenceDeadline,
+        reviewId,
+      })).then(r => {
+        if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
       })
     )
   }

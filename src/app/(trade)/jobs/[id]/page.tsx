@@ -165,7 +165,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
               Mark as complete
             </button>
             <p className="mt-2 text-xs text-center text-gray-400">
-              This opens a 30-day review window for both you and your client.
+              You will both be asked for a review. Reviews stay hidden until you have both submitted, or for 7 days.
             </p>
           </form>
         )}

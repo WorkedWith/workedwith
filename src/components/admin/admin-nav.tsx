@@ -13,6 +13,7 @@ const links = [
   { href: '/admin/integrity', label: 'Integrity', icon: ShieldIcon },
   { href: '/admin/users', label: 'Users', icon: UsersIcon },
   { href: '/admin/search-audit', label: 'Search Audit', icon: SearchIcon },
+  { href: '/admin/email-preview', label: 'Emails and texts', icon: InboxIcon },
 ]
 
 function isActive(href: string, pathname: string) {

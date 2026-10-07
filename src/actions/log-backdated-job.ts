@@ -1,8 +1,8 @@
 'use server'
 
-import { APP_URL } from '@/lib/app-url'
 import { headers } from 'next/headers'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/email/send'
+import { pastJobExisting, pastJobNew } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TRADE_TYPES } from '@/lib/trade-types'
@@ -54,65 +54,6 @@ function normalizeUKMobile(raw: string): string | null {
   if (/^\+447\d{9}$/.test(c)) return c
   if (/^07\d{9}$/.test(c)) return '+44' + c.slice(1)
   return null
-}
-
-// ── Email templates ───────────────────────────────────────────
-
-function emailShell(body: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
-<tr><td align="center">
-<table width="100%" style="max-width:480px;background:#fff;border-radius:16px;overflow:hidden;">
-<tr><td style="background:#0F1F3D;padding:24px;text-align:center;">
-  <span style="font-size:22px;font-weight:700;color:#fff;">Worked<span style="color:#F59E0B;">With</span></span>
-</td></tr>
-<tr><td style="padding:32px 28px;">${body}</td></tr>
-<tr><td style="padding:16px 28px;border-top:1px solid #F3F4F6;">
-  <p style="margin:0;font-size:11px;color:#D1D5DB;text-align:center;">WorkedWith &bull; hello@workedwith.co.uk</p>
-</td></tr>
-</table>
-</td></tr>
-</table>
-</body></html>`
-}
-
-function cta(label: string, href: string): string {
-  return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center">
-  <a href="${href}" style="display:inline-block;background:#F59E0B;color:#0F1F3D;font-weight:600;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">${label}</a>
-</td></tr></table>`
-}
-
-type BackdatedEmailParams = {
-  callerName: string
-  jobType: string
-  backdatedPeriod: string
-  confirmUrl: string
-}
-
-function existingUserBackdatedHtml(p: BackdatedEmailParams): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">A past job to confirm</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      <strong>${p.callerName}</strong> worked with you as a <strong>${p.jobType}</strong> in <strong>${p.backdatedPeriod}</strong>. Confirm it on WorkedWith to leave mutual reviews.
-    </p>
-    ${cta('Confirm this past job', p.confirmUrl)}
-    <p style="margin:0;font-size:12px;color:#9CA3AF;">This invitation expires in 14 days. If you weren&apos;t expecting this, you can safely ignore it.</p>
-  `)
-}
-
-function newUserBackdatedHtml(p: BackdatedEmailParams): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">${p.callerName} worked with you</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      <strong>${p.callerName}</strong> worked with you as a <strong>${p.jobType}</strong> in <strong>${p.backdatedPeriod}</strong> and has logged this on WorkedWith.
-    </p>
-    <p style="margin:0 0 16px;font-size:14px;color:#6B7280;line-height:1.6;">
-      WorkedWith is a trust and review platform for the UK trades industry. Create a free account to confirm this past job and leave mutual verified reviews.
-    </p>
-    ${cta('Join WorkedWith and confirm', p.confirmUrl)}
-    <p style="margin:0;font-size:12px;color:#9CA3AF;">This invitation expires in 14 days. If you weren&apos;t expecting this, you can safely ignore it.</p>
-  `)
 }
 
 // ── Action ────────────────────────────────────────────────────
@@ -279,7 +220,7 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
       is_visible: false,
     })
     if (!reviewErr) {
-      const blindWindowCloses = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      const blindWindowCloses = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       await admin.from('review_windows').insert({
         job_id: job.id,
         window_opened_at: new Date().toISOString(),
@@ -294,48 +235,27 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
   const inviteToken = invite.invite_token ?? ''
   const emailTo = invitee_email ?? existingUser?.email ?? null
   const inviteeSentTo = invitee_email ?? invitee_phone ?? ''
-  const resend = new Resend(process.env.RESEND_API_KEY)
 
   if (emailTo) {
+    const period = backdated_period
     if (existingUser) {
       // Existing user: send straight to the confirm page
-      const emailParams: BackdatedEmailParams = {
-        callerName, jobType: job_type, backdatedPeriod: backdated_period,
-        confirmUrl: `${APP_URL}/jobs/confirm/${inviteToken}`,
-      }
       await Promise.all([
         admin.from('notifications').insert({
           user_id: existingUser.id,
           type: 'job_invite',
           title: 'Past job to confirm',
-          body: `${callerName} worked with you as a ${job_type} in ${backdated_period}. Confirm it on WorkedWith to leave mutual reviews.`,
+          body: `${callerName} says you worked together on a ${job_type} job in ${period}. Confirm it to leave reviews.`,
           link: `/jobs/confirm/${inviteToken}`,
         }),
-        resend.emails.send({
-          from: 'WorkedWith <hello@workedwith.co.uk>',
-          to: emailTo,
-          subject: `${callerName} has logged a past job you worked on together`,
-          html: existingUserBackdatedHtml(emailParams),
-        }).catch((emailError: unknown) => {
-          console.error('Email send failed (non-fatal):', emailError)
+        sendEmail(emailTo, pastJobExisting({ callerName, jobType: job_type, period, token: inviteToken })).then(r => {
+          if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
         }),
       ])
     } else {
       // New user: send to the branded invite landing page
-      const emailParams: BackdatedEmailParams = {
-        callerName, jobType: job_type, backdatedPeriod: backdated_period,
-        confirmUrl: `${APP_URL}/invite/job/${inviteToken}`,
-      }
-      try {
-        await resend.emails.send({
-          from: 'WorkedWith <hello@workedwith.co.uk>',
-          to: emailTo,
-          subject: `${callerName} worked with you: join WorkedWith to confirm it`,
-          html: newUserBackdatedHtml(emailParams),
-        })
-      } catch (emailError) {
-        console.error('Email send failed (non-fatal):', emailError)
-      }
+      const r = await sendEmail(emailTo, pastJobNew({ callerName, jobType: job_type, period, token: inviteToken }))
+      if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
     }
   }
 

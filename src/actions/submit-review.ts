@@ -1,7 +1,8 @@
 'use server'
 
-import { APP_URL } from '@/lib/app-url'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/email/send'
+import { bothReviewsLive, reviewSaved, reviewWaitingOnYou, theirReviewLive, yourReviewLive } from '@/lib/email/templates'
+import { formatDateLong } from '@/lib/email/format'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { ReviewerType, RedFlagReason } from '@/types/database'
@@ -41,86 +42,6 @@ function avg(vals: (number | null | undefined)[]): number {
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10
-}
-
-// ── Email templates ───────────────────────────────────────────
-
-function emailShell(body: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
-<tr><td align="center">
-<table width="100%" style="max-width:480px;background:#fff;border-radius:16px;overflow:hidden;">
-<tr><td style="background:#0F1F3D;padding:24px;text-align:center;">
-  <span style="font-size:22px;font-weight:700;color:#fff;">Worked<span style="color:#F59E0B;">With</span></span>
-</td></tr>
-<tr><td style="padding:32px 28px;">${body}</td></tr>
-<tr><td style="padding:16px 28px;border-top:1px solid #F3F4F6;">
-  <p style="margin:0;font-size:11px;color:#D1D5DB;text-align:center;">WorkedWith &bull; hello@workedwith.co.uk</p>
-</td></tr>
-</table>
-</td></tr>
-</table>
-</body></html>`
-}
-
-function cta(label: string, href: string): string {
-  return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center">
-  <a href="${href}" style="display:inline-block;background:#F59E0B;color:#0F1F3D;font-weight:600;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">${label}</a>
-</td></tr></table>`
-}
-
-function waitingHtml(p: { revieweeName: string; jobUrl: string }): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">Review saved</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      Your review for <strong>${p.revieweeName}</strong> is saved. We&apos;ll notify you as soon as they submit theirs, and both reviews will go live together.
-    </p>
-    ${cta('View job', p.jobUrl)}
-  `)
-}
-
-function nudgeHtml(p: { reviewerName: string; jobUrl: string; windowCloses: string }): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">Don&apos;t forget</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      <strong>${p.reviewerName}</strong> has reviewed your job on WorkedWith. Leave yours before the window closes on <strong>${new Date(p.windowCloses).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
-    </p>
-    ${cta('Leave your review now', p.jobUrl)}
-  `)
-}
-
-function publishedHtml(p: { otherPartyName: string; jobUrl: string }): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">Your reviews are live</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      Both reviews have been submitted and are now live on WorkedWith. See what <strong>${p.otherPartyName}</strong> said about you.
-    </p>
-    ${cta('View reviews', p.jobUrl)}
-  `)
-}
-
-function publishedAloneReviewerHtml(p: { revieweeName: string; jobUrl: string }): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">Your review is now live</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      Your review of <strong>${p.revieweeName}</strong> is now live on their WorkedWith profile.
-      ${p.revieweeName} did not submit their review within the 7&#8209;day window.
-    </p>
-    ${cta('View job', p.jobUrl)}
-  `)
-}
-
-function missedWindowHtml(p: { reviewerName: string; jobUrl: string }): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">You missed your review window</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      <strong>${p.reviewerName}</strong> reviewed your job. You had 7 days to submit yours.
-      Your window has now closed and their review is live on your profile.
-      You can no longer submit a review for this job.
-    </p>
-    ${cta('View job', p.jobUrl)}
-  `)
 }
 
 // ── Action ────────────────────────────────────────────────────
@@ -280,9 +201,9 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
       ? new Date(updatedWindow.blind_window_closes_at) <= new Date()
       : false
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
-  const jobUrl = `${APP_URL}/jobs/${input.job_id}`
-  const reviewUrl = `${APP_URL}/jobs/${input.job_id}/review`
+  const reviewUrl = `/jobs/${input.job_id}/review`
+  const goesLiveOn = formatDateLong(updatedWindow?.blind_window_closes_at) ?? 'the end of the 7 day window'
+  const logSend = (r: { ok: boolean; error?: string }) => { if (!r.ok) console.error('Email send failed (non-fatal):', r.error) }
   const now = new Date().toISOString()
 
   // ── Blind window still open and only one side has reviewed — hold ──
@@ -295,26 +216,18 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
         user_id: user.id,
         type: 'new_review',
         title: 'Review saved',
-        body: `Your review for ${revieweeName} is saved. It will go live as soon as they have submitted theirs, or after the 7-day window closes.`,
+        body: `Your review for ${revieweeName} is saved. It will go live as soon as they have submitted theirs, or after the 7 day window closes.`,
         link: `/jobs/${input.job_id}`,
       })
     )
     holdPromises.push(
-      resend.emails.send({
-        from: 'WorkedWith <hello@workedwith.co.uk>',
-        to: userData.email,
-        subject: `Your review for ${revieweeName} is saved`,
-        html: waitingHtml({ revieweeName, jobUrl }),
-      }).catch((emailError: unknown) => {
-        console.error('Email send failed (non-fatal):', emailError)
-      })
+      sendEmail(userData.email, reviewSaved({ otherName: revieweeName, goesLiveOn, jobId: input.job_id })).then(logSend)
     )
 
     // Nudge the non-submitter only if they haven't submitted yet
     if (!bothSubmitted) {
       const nonSubmitterUserId = reviewerType === 'trade' ? clientUserId : tradeUserId
       const nonSubmitterEmail = reviewerType === 'trade' ? clientUser?.email : tradeUser?.email
-      const windowCloses = updatedWindow?.window_closes_at ?? null
 
       if (nonSubmitterUserId) {
         holdPromises.push(
@@ -322,21 +235,14 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
             user_id: nonSubmitterUserId,
             type: 'review_reminder',
             title: "Don't forget: leave your review",
-            body: `${reviewerName} has reviewed your ${job.job_type} job. Leave yours before the window closes.`,
+            body: `${reviewerName} has reviewed your ${job.job_type} job. Leave yours before it goes live without it.`,
             link: reviewUrl,
           })
         )
       }
-      if (nonSubmitterEmail && windowCloses) {
+      if (nonSubmitterEmail) {
         holdPromises.push(
-          resend.emails.send({
-            from: 'WorkedWith <hello@workedwith.co.uk>',
-            to: nonSubmitterEmail,
-            subject: `Don't forget: ${reviewerName} has reviewed your job`,
-            html: nudgeHtml({ reviewerName, jobUrl: reviewUrl, windowCloses }),
-          }).catch((emailError: unknown) => {
-            console.error('Email send failed (non-fatal):', emailError)
-          })
+          sendEmail(nonSubmitterEmail, reviewWaitingOnYou({ reviewerName, jobType: job.job_type, goesLiveOn, jobId: input.job_id })).then(logSend)
         )
       }
     }
@@ -393,13 +299,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
       }))
     }
     if (tradeUser?.email) {
-      publishedPromises.push(resend.emails.send({
-        from: 'WorkedWith <hello@workedwith.co.uk>', to: tradeUser.email,
-        subject: `Your WorkedWith reviews are now live: see what ${clientName} said about you`,
-        html: publishedHtml({ otherPartyName: clientName, jobUrl }),
-      }).catch((emailError: unknown) => {
-        console.error('Email send failed (non-fatal):', emailError)
-      }))
+      publishedPromises.push(sendEmail(tradeUser.email, bothReviewsLive({ otherName: clientName, jobType: job.job_type, jobId: input.job_id })).then(logSend))
     }
     if (clientUserId) {
       publishedPromises.push(admin.from('notifications').insert({
@@ -410,13 +310,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
       }))
     }
     if (clientUser?.email) {
-      publishedPromises.push(resend.emails.send({
-        from: 'WorkedWith <hello@workedwith.co.uk>', to: clientUser.email,
-        subject: `Your WorkedWith reviews are now live: see what ${tradeName} said about you`,
-        html: publishedHtml({ otherPartyName: tradeName, jobUrl }),
-      }).catch((emailError: unknown) => {
-        console.error('Email send failed (non-fatal):', emailError)
-      }))
+      publishedPromises.push(sendEmail(clientUser.email, bothReviewsLive({ otherName: tradeName, jobType: job.job_type, jobId: input.job_id })).then(logSend))
     }
     await Promise.all(publishedPromises)
     return { success: true, bothSubmitted: true }
@@ -465,16 +359,10 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   singlePromises.push(admin.from('notifications').insert({
     user_id: user.id, type: 'reviews_published',
     title: 'Your review is now live',
-    body: `Your review of ${revieweeName} is live. They did not submit their review within the 7-day window.`,
+    body: `Your review of ${revieweeName} is live. They did not submit their review within the 7 day window.`,
     link: `/jobs/${input.job_id}`,
   }))
-  singlePromises.push(resend.emails.send({
-    from: 'WorkedWith <hello@workedwith.co.uk>', to: userData.email,
-    subject: 'Your review is now live on WorkedWith',
-    html: publishedAloneReviewerHtml({ revieweeName, jobUrl }),
-  }).catch((emailError: unknown) => {
-    console.error('Email send failed (non-fatal):', emailError)
-  }))
+  singlePromises.push(sendEmail(userData.email, yourReviewLive({ otherName: revieweeName, jobId: input.job_id })).then(logSend))
 
   if (nonSubmitterUserId) {
     singlePromises.push(admin.from('notifications').insert({
@@ -485,13 +373,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
     }))
   }
   if (nonSubmitterEmail) {
-    singlePromises.push(resend.emails.send({
-      from: 'WorkedWith <hello@workedwith.co.uk>', to: nonSubmitterEmail,
-      subject: `You missed your review window: ${reviewerName}'s review of you is now live`,
-      html: missedWindowHtml({ reviewerName: reviewerName, jobUrl }),
-    }).catch((emailError: unknown) => {
-      console.error('Email send failed (non-fatal):', emailError)
-    }))
+    singlePromises.push(sendEmail(nonSubmitterEmail, theirReviewLive({ reviewerName, jobType: job.job_type, jobId: input.job_id, canReviewUntil: formatDateLong(updatedWindow?.window_closes_at) })).then(logSend))
   }
 
   await Promise.all(singlePromises)

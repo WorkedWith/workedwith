@@ -63,7 +63,7 @@ export async function submitDisputeEvidence(
     user_id: raiserId,
     type: 'dispute_evidence_due',
     title: 'Dispute evidence received',
-    body: 'The other party has submitted their evidence. WorkedWith admin will review and reach a decision within 14 days.',
+    body: 'The other party has submitted their evidence. WorkedWith admin will review and reach a decision within 21 days.',
     link: `/reviews/${reviewId}/dispute`,
   })
 

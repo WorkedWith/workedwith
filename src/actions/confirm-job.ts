@@ -1,8 +1,8 @@
 'use server'
 
-import { APP_URL } from '@/lib/app-url'
 import { headers } from 'next/headers'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/email/send'
+import { jobConfirmed, pastJobConfirmed } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -23,61 +23,6 @@ export type ConfirmJobResult =
         | 'server_error'
     }
 
-// ── Email templates ───────────────────────────────────────────
-
-function emailShell(body: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
-<tr><td align="center">
-<table width="100%" style="max-width:480px;background:#fff;border-radius:16px;overflow:hidden;">
-<tr><td style="background:#0F1F3D;padding:24px;text-align:center;">
-  <span style="font-size:22px;font-weight:700;color:#fff;">Worked<span style="color:#F59E0B;">With</span></span>
-</td></tr>
-<tr><td style="padding:32px 28px;">${body}</td></tr>
-<tr><td style="padding:16px 28px;border-top:1px solid #F3F4F6;">
-  <p style="margin:0;font-size:11px;color:#D1D5DB;text-align:center;">WorkedWith &bull; hello@workedwith.co.uk</p>
-</td></tr>
-</table>
-</td></tr>
-</table>
-</body></html>`
-}
-
-function cta(label: string, href: string): string {
-  return `<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center">
-  <a href="${href}" style="display:inline-block;background:#F59E0B;color:#0F1F3D;font-weight:600;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">${label}</a>
-</td></tr></table>`
-}
-
-function jobConfirmedHtml(p: { clientName: string; jobType: string; postcode: string; jobUrl: string }): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">Job confirmed</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      <strong>${p.clientName}</strong> has confirmed your <strong>${p.jobType}</strong> job at <strong>${p.postcode}</strong> on WorkedWith.
-    </p>
-    <p style="margin:0 0 4px;font-size:14px;color:#6B7280;line-height:1.6;">
-      You&apos;ll both be asked to leave a review once you mark the job as complete.
-    </p>
-    ${cta('View job details', p.jobUrl)}
-  `)
-}
-
-function reviewRequestHtml(p: { otherPartyName: string; jobType: string; backdatedPeriod: string; jobUrl: string }): string {
-  return emailShell(`
-    <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">Leave your review now</h1>
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-      Your past <strong>${p.jobType}</strong> job in <strong>${p.backdatedPeriod}</strong> with <strong>${p.otherPartyName}</strong> has been confirmed on WorkedWith.
-    </p>
-    <p style="margin:0 0 16px;font-size:14px;color:#6B7280;line-height:1.6;">
-      You now both have 30 days to leave your reviews. Reviews are published together once both sides are submitted.
-    </p>
-    ${cta('Leave your review', p.jobUrl)}
-  `)
-}
-
-// Extract the outward code (district) from a full UK postcode
-// e.g. "M20 1AA" → "M20", "SW1A 1AA" → "SW1A"
 function extractOutcode(postcode: string): string {
   return postcode.trim().toUpperCase().replace(/\s+/g, '').slice(0, -3)
 }
@@ -321,8 +266,6 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
     return { success: false, error: 'Failed to confirm the job. Please try again.', code: 'server_error' }
   }
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
-  const jobUrl = `${APP_URL}/jobs/${job.id}`
 
   if (job.is_backdated) {
     const windowCloses = new Date(nowDate.getTime() + 30 * 24 * 60 * 60 * 1000)
@@ -343,25 +286,15 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
           user_id: tradeUserId,
           type: 'review_window_opened',
           title: 'Past job confirmed: leave your review',
-          body: `Your ${job.job_type} job in ${job.backdated_period ?? 'the past'} with ${clientName} has been confirmed.`,
+          body: `Your ${job.job_type} job in ${job.backdated_period ?? 'the past'} with ${clientName} has been confirmed. Reviews stay hidden until you have both submitted, or for 7 days.`,
           link: `/jobs/${job.id}`,
         })
       )
     }
     if (tradeEmail) {
       reviewPromises.push(
-        resend.emails.send({
-          from: 'WorkedWith <hello@workedwith.co.uk>',
-          to: tradeEmail,
-          subject: `${clientName} confirmed your past job: leave your reviews now`,
-          html: reviewRequestHtml({
-            otherPartyName: clientName,
-            jobType: job.job_type,
-            backdatedPeriod: job.backdated_period ?? '',
-            jobUrl,
-          }),
-        }).catch((emailError: unknown) => {
-          console.error('Email send failed (non-fatal):', emailError)
+        sendEmail(tradeEmail, pastJobConfirmed({ otherName: clientName, jobType: job.job_type, period: job.backdated_period ?? 'the past', jobId: job.id })).then(r => {
+          if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
         })
       )
     }
@@ -372,25 +305,15 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
           user_id: clientUserId,
           type: 'review_window_opened',
           title: 'Past job confirmed: leave your review',
-          body: `Your ${job.job_type} job in ${job.backdated_period ?? 'the past'} with ${tradeName} has been confirmed.`,
+          body: `Your ${job.job_type} job in ${job.backdated_period ?? 'the past'} with ${tradeName} has been confirmed. Reviews stay hidden until you have both submitted, or for 7 days.`,
           link: `/jobs/${job.id}`,
         })
       )
     }
     if (clientEmail) {
       reviewPromises.push(
-        resend.emails.send({
-          from: 'WorkedWith <hello@workedwith.co.uk>',
-          to: clientEmail,
-          subject: `${tradeName} confirmed your past job: leave your reviews now`,
-          html: reviewRequestHtml({
-            otherPartyName: tradeName,
-            jobType: job.job_type,
-            backdatedPeriod: job.backdated_period ?? '',
-            jobUrl,
-          }),
-        }).catch((emailError: unknown) => {
-          console.error('Email send failed (non-fatal):', emailError)
+        sendEmail(clientEmail, pastJobConfirmed({ otherName: tradeName, jobType: job.job_type, period: job.backdated_period ?? 'the past', jobId: job.id })).then(r => {
+          if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
         })
       )
     }
@@ -408,13 +331,8 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
           link: `/jobs/${job.id}`,
         }),
         ...(tradeEmail
-          ? [resend.emails.send({
-              from: 'WorkedWith <hello@workedwith.co.uk>',
-              to: tradeEmail,
-              subject: `${clientName} has confirmed your job on WorkedWith`,
-              html: jobConfirmedHtml({ clientName, jobType: job.job_type, postcode: job.postcode ?? '', jobUrl }),
-            }).catch((emailError: unknown) => {
-              console.error('Email send failed (non-fatal):', emailError)
+          ? [sendEmail(tradeEmail, jobConfirmed({ clientName, jobType: job.job_type, postcode: job.postcode ?? '', jobId: job.id })).then(r => {
+              if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
             })]
           : []),
       ])

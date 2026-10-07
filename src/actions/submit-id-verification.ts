@@ -1,7 +1,7 @@
 'use server'
 
-import { APP_URL } from '@/lib/app-url'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/email/send'
+import { adminIdSubmitted } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { User } from '@/types/database'
@@ -89,17 +89,8 @@ export async function submitIdVerification(formData: FormData): Promise<SubmitId
     return { success: false, error: `Failed to update verification status. Please try again. (${statusErr.message})` }
   }
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
-  try {
-    await resend.emails.send({
-      from: 'WorkedWith <hello@workedwith.co.uk>',
-      to: 'hello@workedwith.co.uk',
-      subject: `New ID verification submitted by ${full_name} (${email})`,
-      html: `<p><strong>${full_name}</strong> (${email}) has submitted an ID document for review.</p><p>Log in to the <a href="${APP_URL}/admin/verification">admin verification queue</a> to review it.</p>`,
-    })
-  } catch (emailError) {
-    console.error('Admin notification email failed (non-fatal):', emailError)
-  }
+  const alert = await sendEmail('hello@workedwith.co.uk', adminIdSubmitted({ name: full_name, email }))
+  if (!alert.ok) console.error('Admin notification email failed (non-fatal):', alert.error)
 
   return { success: true }
 }

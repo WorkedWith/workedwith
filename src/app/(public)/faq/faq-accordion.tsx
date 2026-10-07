@@ -5,11 +5,11 @@ import { useState } from 'react'
 const FAQS: { q: string; a: string }[] = [
   {
     q: 'How do reviews work?',
-    a: 'Both the tradesperson and the client submit their reviews privately. Neither can see what the other has written. Reviews go live after a short window. If one party does not submit, the other\'s review still publishes.',
+    a: 'Both the tradesperson and the client submit their reviews privately. Neither can see what the other has written. Reviews go live after a 7 day window. If one party does not submit, the other\'s review still publishes.',
   },
   {
     q: 'Is WorkedWith free to join?',
-    a: 'Yes. The free tier is unlimited. You can log jobs, receive reviews and build your profile at no cost. Pro is £9.99 per month and unlocks full client profiles on lookup and visibility in search results.',
+    a: 'Yes. The free plan has no time limit and no caps. You can log unlimited jobs, receive and respond to reviews, build your public profile and appear in search results at no cost. Paid plans add more tools: Standard is £9.99 per month and Pro is £39.99 per month.',
   },
   {
     q: 'Do clients pay anything?',
@@ -28,8 +28,8 @@ const FAQS: { q: string; a: string }[] = [
     a: 'Yes. Use the Add a past job feature to log historical work and invite the other party to confirm it. This lets you build your profile from day one.',
   },
   {
-    q: 'What is the Pro tier?',
-    a: 'Pro is £9.99 per month. It unlocks the full client profile on lookup including payment reliability scores, red flag history and written review excerpts from other tradespeople. It also makes your profile appear in client search results.',
+    q: 'What do the paid plans include?',
+    a: 'Standard is £9.99 per month. It unlocks the full client profile on lookup, including payment reliability scores, red flag history and written review excerpts from other tradespeople, plus a verified badge and featured job photos. Pro is £39.99 per month. It adds Boosted Districts for top of search placement (3 included, extra districts £10 per month each), a Pro badge, more featured photos, profile analytics and priority dispute resolution.',
   },
   {
     q: 'What happens if someone leaves an unfair review?',

@@ -1,7 +1,7 @@
 'use server'
 
-import { APP_URL } from '@/lib/app-url'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/email/send'
+import { teamInvite } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { OrganisationInviteRole } from '@/types/database'
@@ -9,72 +9,6 @@ import type { OrganisationInviteRole } from '@/types/database'
 export type InviteMemberResult =
   | { success: true; email: string }
   | { success: false; error: string }
-
-function inviteEmailHtml({
-  orgName,
-  role,
-  inviteUrl,
-}: {
-  orgName: string
-  role: OrganisationInviteRole
-  inviteUrl: string
-}): string {
-  const roleLabel = role === 'admin' ? 'an Admin' : 'a Member'
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /></head>
-<body style="margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
-    <tr><td align="center">
-      <table width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;">
-        <!-- Header -->
-        <tr>
-          <td style="background:#0F1F3D;padding:24px;text-align:center;">
-            <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">
-              Worked<span style="color:#F59E0B;">With</span>
-            </span>
-          </td>
-        </tr>
-        <!-- Body -->
-        <tr>
-          <td style="padding:32px 28px;">
-            <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">You&apos;ve been invited</h1>
-            <p style="margin:0 0 8px;font-size:15px;color:#374151;line-height:1.6;">
-              <strong>${orgName}</strong> has invited you to join their WorkedWith account as ${roleLabel}.
-            </p>
-            <p style="margin:0 0 28px;font-size:14px;color:#6B7280;line-height:1.6;">
-              WorkedWith is a trust and review platform for the UK trades industry.
-            </p>
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td align="center">
-                  <a href="${inviteUrl}"
-                     style="display:inline-block;background:#F59E0B;color:#0F1F3D;font-weight:600;
-                            font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">
-                    Accept invitation
-                  </a>
-                </td>
-              </tr>
-            </table>
-            <p style="margin:28px 0 0;font-size:12px;color:#9CA3AF;line-height:1.6;">
-              This invitation expires in 7&nbsp;days. If you weren&apos;t expecting this, you can safely ignore this email.
-            </p>
-          </td>
-        </tr>
-        <!-- Footer -->
-        <tr>
-          <td style="padding:16px 28px;border-top:1px solid #F3F4F6;">
-            <p style="margin:0;font-size:11px;color:#D1D5DB;text-align:center;">
-              WorkedWith &bull; hello@workedwith.co.uk
-            </p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
-}
 
 export async function inviteOrgMember(
   email: string,
@@ -181,16 +115,18 @@ export async function inviteOrgMember(
     return { success: false, error: 'Failed to create the invitation. Please try again.' }
   }
 
-  // Send invite email via Resend
-  const inviteUrl = `${APP_URL}/invite/accept/${invite.invite_token}`
-  const resend = new Resend(process.env.RESEND_API_KEY)
-
-  const { error: emailError } = await resend.emails.send({
-    from: 'WorkedWith <hello@workedwith.co.uk>',
-    to: normalizedEmail,
-    subject: `${org.company_name} has invited you to join their WorkedWith account`,
-    html: inviteEmailHtml({ orgName: org.company_name, role, inviteUrl }),
-  })
+  // Send invite email
+  const { data: inviter } = await admin.from('users').select('full_name').eq('id', user.id).maybeSingle()
+  const sent = await sendEmail(
+    normalizedEmail,
+    teamInvite({
+      inviterName: (inviter?.full_name as string | null | undefined) ?? null,
+      orgName: org.company_name,
+      role,
+      token: invite.invite_token as string,
+    }),
+  )
+  const emailError = sent.ok ? null : sent.error
 
   if (emailError) {
     // Invite row created but email failed — clean up to allow retry

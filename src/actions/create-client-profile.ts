@@ -1,5 +1,7 @@
 'use server'
 
+import { sendEmail } from '@/lib/email/send'
+import { welcomeClient } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateUsername } from '@/lib/username'
@@ -100,6 +102,11 @@ export async function createClientProfile(
       success: false,
       error: 'Profile created but account update failed. Please contact support.',
     }
+  }
+
+  if (user.email) {
+    const r = await sendEmail(user.email, welcomeClient({ username: uname.value }))
+    if (!r.ok) console.error('Welcome email failed (non-fatal):', r.error)
   }
 
   return { success: true }

@@ -49,7 +49,7 @@ export function EvidenceForm({ disputeId, disputeReason, disputeDetails, evidenc
         </div>
         <h2 className="text-xl font-semibold text-brand-navy">Evidence submitted</h2>
         <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-          WorkedWith admin will review both sides and reach a decision within 14 days.
+          WorkedWith admin will review both sides and reach a decision within 21 days.
         </p>
         <a
           href="/dashboard"

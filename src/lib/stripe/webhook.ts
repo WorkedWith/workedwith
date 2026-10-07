@@ -1,6 +1,8 @@
-import { APP_URL } from '@/lib/app-url'
 import type Stripe from 'stripe'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/email/send'
+import { paymentFailed, planCancelled, planChanged, planStarted } from '@/lib/email/templates'
+import { formatDateLong } from '@/lib/email/format'
+import type { EmailContent } from '@/lib/email/layout'
 import { getStripeClient } from './client'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { BillingPeriod, SubscriptionTier } from '@/types/database'
@@ -10,6 +12,18 @@ const tierMap: Record<string, { tier: SubscriptionTier; period: BillingPeriod }>
   [process.env.STRIPE_STANDARD_ANNUAL_PRICE_ID!]:  { tier: 'standard', period: 'annual'  },
   [process.env.STRIPE_PRO_MONTHLY_PRICE_ID!]:      { tier: 'pro',      period: 'monthly' },
   [process.env.STRIPE_PRO_ANNUAL_PRICE_ID!]:       { tier: 'pro',      period: 'annual'  },
+}
+
+const PLAN_LABEL: Record<string, string> = { free: 'Free', standard: 'Standard', pro: 'Pro' }
+
+type AdminClient = ReturnType<typeof createAdminClient>
+
+async function emailUser(admin: AdminClient, userId: string, content: EmailContent): Promise<void> {
+  const { data } = await admin.from('users').select('email').eq('id', userId).maybeSingle()
+  const to = data?.email as string | undefined
+  if (!to) return
+  const r = await sendEmail(to, content)
+  if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
 }
 
 const ADDON_PRICE_IDS = [process.env.STRIPE_PRO_ADDON_PRICE_ID].filter((id): id is string => !!id)
@@ -77,6 +91,11 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
         })
         .eq('user_id', userId)
 
+      await emailUser(admin, userId, planStarted({
+        plan: PLAN_LABEL[tier] ?? tier,
+        trialEnds: subscription.trial_end ? formatDateLong(new Date(subscription.trial_end * 1000)) : null,
+      }))
+
       break
     }
 
@@ -100,7 +119,7 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
       // A new period start means renewal: paid slots reset to what was actually billed.
       const { data: existing } = await admin
         .from('trade_profiles')
-        .select('subscription_period_start_at, boosted_district_addon_paid_quantity')
+        .select('user_id, subscription_tier, subscription_period_start_at, boosted_district_addon_paid_quantity')
         .eq('stripe_customer_id', customerId)
         .maybeSingle()
 
@@ -124,6 +143,25 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
           ...boostClear,
         })
         .eq('stripe_customer_id', customerId)
+
+      // Customer emails: only on a real change, never on routine renewals
+      const existingUserId = (existing?.user_id as string | null) ?? null
+      const previous = (event.data as { previous_attributes?: Partial<Stripe.Subscription> }).previous_attributes
+      if (existingUserId) {
+        if (subscription.cancel_at_period_end && previous && previous.cancel_at_period_end === false) {
+          await emailUser(admin, existingUserId, planCancelled({
+            plan: PLAN_LABEL[tier] ?? tier,
+            endsOn: formatDateLong(currentPeriodEnd) ?? 'the end of this billing period',
+          }))
+        } else if (
+          existing?.subscription_tier &&
+          existing.subscription_tier !== 'free' &&
+          tier !== 'free' &&
+          existing.subscription_tier !== tier
+        ) {
+          await emailUser(admin, existingUserId, planChanged({ plan: PLAN_LABEL[tier] ?? tier }))
+        }
+      }
 
       break
     }
@@ -185,50 +223,11 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
       })
 
       if (userData?.email) {
-        const resend = new Resend(process.env.RESEND_API_KEY)
-        try {
-          await resend.emails.send({
-            from: 'WorkedWith <hello@workedwith.co.uk>',
-            to: userData.email as string,
-            subject: 'Action required: Your WorkedWith payment failed',
-            html: paymentFailedHtml(),
-          })
-        } catch (emailError) {
-          console.error('Email send failed (non-fatal):', emailError)
-        }
+        const r = await sendEmail(userData.email as string, paymentFailed())
+        if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
       }
 
       break
     }
   }
-}
-
-function paymentFailedHtml(): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/></head>
-<body style="margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
-<tr><td align="center">
-<table width="100%" style="max-width:480px;background:#fff;border-radius:16px;overflow:hidden;">
-<tr><td style="background:#0F1F3D;padding:24px;text-align:center;">
-  <span style="font-size:22px;font-weight:700;color:#fff;">Worked<span style="color:#F59E0B;">With</span></span>
-</td></tr>
-<tr><td style="padding:32px 28px;">
-  <h1 style="margin:0 0 12px;font-size:20px;color:#0F1F3D;">Payment failed</h1>
-  <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
-    We were unable to process your WorkedWith subscription payment. Stripe will retry automatically, but please update your payment method to avoid any interruption to your service.
-  </p>
-  <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center">
-    <a href="${APP_URL}/subscription" style="display:inline-block;background:#F59E0B;color:#0F1F3D;font-weight:600;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">
-      Update payment method
-    </a>
-  </td></tr></table>
-  <p style="margin:0;font-size:12px;color:#9CA3AF;">Your subscription remains active while Stripe retries. If payment continues to fail, your account will be downgraded automatically.</p>
-</td></tr>
-<tr><td style="padding:16px 28px;border-top:1px solid #F3F4F6;">
-  <p style="margin:0;font-size:11px;color:#D1D5DB;text-align:center;">WorkedWith &bull; hello@workedwith.co.uk</p>
-</td></tr>
-</table>
-</td></tr>
-</table>
-</body></html>`
 }
