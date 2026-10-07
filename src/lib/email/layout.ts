@@ -17,6 +17,10 @@ export type EmailContent = {
   preheader?: string
   heading: string
   paragraphs: string[]
+  /** Optional tick list shown after the paragraphs. */
+  list?: string[]
+  /** Paragraphs shown after the list. */
+  closing?: string[]
   /** Highlighted quote box, for example a reason typed by an admin. */
   quote?: { label: string; text: string }
   button?: EmailButton
@@ -60,6 +64,22 @@ export function renderEmail(c: EmailContent): RenderedEmail {
   const terms = `${APP_URL}/terms`
 
   const paragraphs = c.paragraphs
+    .map(
+      p =>
+        `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#374151;">${rich(p)}</p>`,
+    )
+    .join('')
+
+  const list = c.list?.length
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px;">${c.list
+        .map(
+          item =>
+            `<tr><td valign="top" style="padding:0 10px 8px 0;font-size:15px;line-height:1.5;color:${AMBER};font-weight:700;">&#10003;</td><td style="padding:0 0 8px;font-size:15px;line-height:1.5;color:#374151;">${rich(item)}</td></tr>`,
+        )
+        .join('')}</table>`
+    : ''
+
+  const closing = (c.closing ?? [])
     .map(
       p =>
         `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#374151;">${rich(p)}</p>`,
@@ -123,8 +143,8 @@ ${c.preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0
   <span style="font-size:22px;font-weight:700;color:#ffffff;">Worked<span style="color:${AMBER};">With</span></span>
 </td></tr>
 <tr><td style="padding:30px 28px 22px;">
-  <h1 style="margin:0 0 16px;font-size:20px;line-height:1.3;color:${NAVY};">${esc(c.heading)}</h1>
-  ${paragraphs}${quote}${button}${small}${strangerHtml}
+  <h1 style="margin:0 0 16px;font-size:20px;line-height:1.3;color:${NAVY};text-align:center;">${esc(c.heading)}</h1>
+  ${paragraphs}${list}${closing}${quote}${button}${small}${strangerHtml}
 </td></tr>
 ${footer}
 </table>
@@ -132,6 +152,8 @@ ${footer}
 </body></html>`
 
   const textParts: string[] = [c.heading, '', ...c.paragraphs.map(plain)]
+  if (c.list?.length) textParts.push('', ...c.list.map(i => `* ${plain(i)}`))
+  if (c.closing?.length) textParts.push('', ...c.closing.map(plain))
   if (c.quote) textParts.push('', `${c.quote.label}: ${c.quote.text}`)
   if (c.button) textParts.push('', `${c.button.label}: ${c.button.url}`)
   if (smallLines.length) textParts.push('', ...smallLines.map(plain))

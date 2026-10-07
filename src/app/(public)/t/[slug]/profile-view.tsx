@@ -1,4 +1,5 @@
 import { SiteHeader } from '@/components/site-header'
+import { Avatar } from '@/components/avatar'
 import { formatAreas } from '@/lib/format-areas'
 import { APP_HOST, APP_URL } from '@/lib/app-url'
 import { notFound } from 'next/navigation'
@@ -179,6 +180,19 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
   return (
     <>
       {!preview && <SiteHeader />}
+      {!preview && currentUser?.id === (tradeProfile.user_id as string) && (
+        <div className="border-b border-gray-200 bg-white">
+          <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+            <p className="text-sm text-gray-600">This is how clients see you.</p>
+            <a
+              href="/profile/edit"
+              className="shrink-0 rounded-lg bg-brand-navy px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+            >
+              Edit profile
+            </a>
+          </div>
+        </div>
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -189,14 +203,13 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
         <header className={preview ? 'mx-auto max-w-2xl px-4 pt-2 sm:px-6' : 'bg-brand-navy px-4 pb-8 pt-10 sm:px-6'}>
           <div className={preview ? 'rounded-2xl bg-brand-navy px-6 pb-7 pt-7' : 'mx-auto max-w-2xl'}>
             <div className="flex items-center gap-4">
-              {typeof tradeUser.profile_photo_url === 'string' && tradeUser.profile_photo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={tradeUser.profile_photo_url}
-                  alt={`${displayName} profile photo`}
-                  className="h-20 w-20 shrink-0 rounded-full border-2 border-white/20 object-cover"
-                />
-              ) : null}
+              <Avatar
+                name={displayName}
+                photoUrl={typeof tradeUser.profile_photo_url === 'string' ? tradeUser.profile_photo_url : null}
+                sizeClass="h-20 w-20"
+                textClass="text-2xl"
+                ringClass="border-2 border-white/20"
+              />
               <div className="min-w-0">
                 <h1 className="text-3xl font-bold text-white sm:text-4xl">{displayName}</h1>
                 {tradeProfile.company_name && (tradeUser.full_name as string) !== displayName && (

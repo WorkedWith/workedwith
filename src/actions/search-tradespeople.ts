@@ -20,6 +20,7 @@ export type TradesearchResult = {
   id: string
   user_id: string
   full_name: string
+  photo_url: string | null
   company_name: string | null
   trade_types: string[]
   operating_areas: string[]
@@ -107,7 +108,7 @@ export async function searchTradespeople(
     const userIds = rawProfiles.map(p => p.user_id as string)
     const { data: rawUsers } = await admin
       .from('users')
-      .select('id, full_name, verification_tier')
+      .select('id, full_name, verification_tier, profile_photo_url')
       .in('id', userIds)
 
     const userMap = new Map(
@@ -121,6 +122,7 @@ export async function searchTradespeople(
         id: profile.id as string,
         user_id: profile.user_id as string,
         full_name: user.full_name as string,
+        photo_url: (user.profile_photo_url as string | null) ?? null,
         company_name: (profile.company_name as string | null) ?? null,
         trade_types: profile.trade_types as string[],
         operating_areas: (profile.operating_areas as string[]) ?? [],

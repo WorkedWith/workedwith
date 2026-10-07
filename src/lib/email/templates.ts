@@ -8,8 +8,9 @@ import type { EmailContent } from '@/lib/email/layout'
  */
 
 export const REVIEW_RULE =
-  'Reviews stay hidden until you have both submitted, or for 7 days, whichever comes first. Then they go live.'
+  'Neither review is shown until you have both submitted, or 7 days have passed, whichever comes first. Then they go live.'
 
+const lc = (value: string) => value.toLowerCase()
 const job = (id: string) => `${APP_URL}/jobs/${id}`
 
 // ── Job logging and confirmation ───────────────────────────────
@@ -23,10 +24,10 @@ export function jobToConfirmExisting(p: {
 }): EmailContent {
   return {
     subject: `${p.tradeName} has logged a job with you`,
-    preheader: `Confirm the ${p.jobType} job. It takes a few seconds.`,
-    heading: `Confirm your ${p.jobType} job`,
+    preheader: `Confirm the ${lc(p.jobType)} job. It takes a few seconds.`,
+    heading: `Confirm your ${lc(p.jobType)} job`,
     paragraphs: [
-      `**${p.tradeName}** has logged a ${p.jobType} job at ${p.postcode}${p.startDate ? `, starting around ${p.startDate}` : ''}, and asked you to confirm it. It takes a few seconds.`,
+      `**${p.tradeName}** has logged a ${lc(p.jobType)} job at ${p.postcode}${p.startDate ? `, starting around ${p.startDate}` : ''}, and asked you to confirm it. It takes a few seconds.`,
       `When the work is done you will each review the other. ${REVIEW_RULE}`,
     ],
     button: { label: 'Confirm the job', url: `${APP_URL}/jobs/confirm/${p.token}` },
@@ -44,11 +45,11 @@ export function jobInviteNewClient(p: {
   return {
     subject: `${p.tradeName} has logged a job with you on WorkedWith`,
     preheader: 'Free for clients, always. Confirm the job to continue.',
-    heading: `${p.tradeName} has listed you as their client`,
+    heading: `${p.tradeName} is working with you through WorkedWith`,
     paragraphs: [
-      `**${p.tradeName}** logged a ${p.jobType} job in ${p.district}${p.startDate ? `, starting around ${p.startDate}` : ''} and gave us your email address so you can confirm it.`,
-      'WorkedWith is where tradespeople and clients review each other after a job, so both have a reputation to protect. It is free for clients, always.',
-      'Confirm the job and, once the work is done, you will each leave a review.',
+      `**${p.tradeName}** has logged a ${lc(p.jobType)} job in ${p.district}${p.startDate ? `, starting around ${p.startDate}` : ''} and asked you to confirm it.`,
+      `${p.tradeName} is on WorkedWith, where tradespeople build a record of verified reviews, so they take care to protect their reputation. It is free for clients, always.`,
+      'Confirm the job and, when the work is done, you will each review the other. Neither review shows until both are in.',
     ],
     button: { label: 'See the job and confirm', url: `${APP_URL}/invite/job/${p.token}` },
     small: ['The invite expires in 7 days.'],
@@ -67,7 +68,7 @@ export function pastJobExisting(p: {
     preheader: 'Confirm it and you can each leave a review.',
     heading: 'Confirm a past job',
     paragraphs: [
-      `**${p.callerName}** says you worked together on a ${p.jobType} job in ${p.period}. If that is right, confirm it and you can each leave a review.`,
+      `**${p.callerName}** says you worked together on a ${lc(p.jobType)} job in ${p.period}. If that is right, confirm it and you can each leave a review.`,
       REVIEW_RULE,
     ],
     button: { label: 'Confirm the past job', url: `${APP_URL}/jobs/confirm/${p.token}` },
@@ -86,7 +87,7 @@ export function pastJobNew(p: {
     preheader: 'Free to join. Confirm the job to leave a review.',
     heading: `${p.callerName} says you worked together`,
     paragraphs: [
-      `**${p.callerName}** logged a ${p.jobType} job from ${p.period} and gave us your email address so you can confirm it.`,
+      `**${p.callerName}** logged a ${lc(p.jobType)} job from ${p.period} and gave us your email address so you can confirm it.`,
       'WorkedWith is where tradespeople and clients review each other, so both have a reputation to protect. It is free for clients, always.',
     ],
     button: { label: 'See the job and confirm', url: `${APP_URL}/invite/job/${p.token}` },
@@ -105,7 +106,7 @@ export function jobConfirmed(p: {
     subject: `${p.clientName} has confirmed your job`,
     heading: 'Job confirmed',
     paragraphs: [
-      `**${p.clientName}** has confirmed your ${p.jobType} job at ${p.postcode}.`,
+      `**${p.clientName}** has confirmed your ${lc(p.jobType)} job at ${p.postcode}.`,
       'When the work is finished, mark it complete and you will both be asked for a review.',
     ],
     button: { label: 'View the job', url: job(p.jobId) },
@@ -122,7 +123,7 @@ export function pastJobConfirmed(p: {
     subject: `${p.otherName} has confirmed your past job`,
     heading: 'Leave your review',
     paragraphs: [
-      `**${p.otherName}** confirmed your ${p.jobType} job from ${p.period}. You can both leave a review now.`,
+      `**${p.otherName}** confirmed your ${lc(p.jobType)} job from ${p.period}. You can both leave a review now.`,
       REVIEW_RULE,
     ],
     button: { label: 'Leave your review', url: job(p.jobId) },
@@ -131,10 +132,10 @@ export function pastJobConfirmed(p: {
 
 export function jobCancelled(p: { otherName: string; jobType: string; jobId: string }): EmailContent {
   return {
-    subject: `Your ${p.jobType} job with ${p.otherName} was cancelled`,
+    subject: `Your ${lc(p.jobType)} job with ${p.otherName} was cancelled`,
     heading: 'Job cancelled',
     paragraphs: [
-      `**${p.otherName}** has cancelled the ${p.jobType} job you had logged together.`,
+      `**${p.otherName}** has cancelled the ${lc(p.jobType)} job you had logged together.`,
       'No reviews are created for a cancelled job. If this is a mistake, log the job again.',
     ],
     button: { label: 'View the job', url: job(p.jobId) },
@@ -148,7 +149,7 @@ export function reviewSaved(p: { otherName: string; goesLiveOn: string; jobId: s
     subject: `Your review of ${p.otherName} is saved`,
     heading: 'Review saved',
     paragraphs: [
-      `Your review is saved and hidden for now. It goes live alongside ${p.otherName}'s as soon as they submit theirs.`,
+      `Your review is saved, and nobody can see it yet. It goes live alongside ${p.otherName}'s as soon as they submit theirs.`,
       `If they have not by ${p.goesLiveOn}, yours goes live on its own.`,
     ],
     button: { label: 'View the job', url: job(p.jobId) },
@@ -166,8 +167,8 @@ export function reviewWaitingOnYou(p: {
     preheader: 'You cannot see it yet. Leave yours and both go live together.',
     heading: 'Have your say',
     paragraphs: [
-      `**${p.reviewerName}** has left a review of your ${p.jobType} job. You cannot see it yet.`,
-      `It goes live when you submit yours, or on ${p.goesLiveOn} if you do not. Leave yours first and the two are published together.`,
+      `**${p.reviewerName}** has left a review of your ${lc(p.jobType)} job. You cannot see it yet.`,
+      `Leave yours and both reviews go live together straight away. If you do not, theirs goes live on ${p.goesLiveOn}.`,
     ],
     button: { label: 'Leave your review', url: `${APP_URL}/jobs/${p.jobId}/review` },
   }
@@ -184,7 +185,7 @@ export function reviewReminder(p: {
     subject: `${p.daysLeft} days left to review ${p.otherName}`,
     heading: 'Your review is still to do',
     paragraphs: [
-      `You have not yet reviewed ${p.otherName} for the ${p.jobType} job. You have ${p.daysLeft} days left.`,
+      `You have not yet reviewed ${p.otherName} for the ${lc(p.jobType)} job. You have ${p.daysLeft} days left.`,
       `Reviews stay hidden until you have both submitted, or until ${p.goesLiveOn}. After that, anything already submitted goes live without yours.`,
     ],
     button: { label: 'Leave your review', url: `${APP_URL}/jobs/${p.jobId}/review` },
@@ -196,7 +197,7 @@ export function bothReviewsLive(p: { otherName: string; jobType: string; jobId: 
     subject: `Both reviews are live: see what ${p.otherName} said`,
     heading: 'Your reviews are live',
     paragraphs: [
-      `You and **${p.otherName}** have both reviewed the ${p.jobType} job, and the reviews are now public. See what they said about you.`,
+      `You and **${p.otherName}** have both reviewed the ${lc(p.jobType)} job, and the reviews are now public. See what they said about you.`,
     ],
     button: { label: 'View the reviews', url: job(p.jobId) },
   }
@@ -223,7 +224,7 @@ export function theirReviewLive(p: {
     subject: `${p.reviewerName}'s review of you is live`,
     heading: 'A review of you has gone live',
     paragraphs: [
-      `**${p.reviewerName}** reviewed your ${p.jobType} job. You did not submit one within 7 days, so their review is now on your profile.`,
+      `**${p.reviewerName}** reviewed your ${lc(p.jobType)} job. You did not submit one within 7 days, so their review is now on your profile.`,
       p.canReviewUntil
         ? `You can still add your own review until ${p.canReviewUntil}.`
         : 'You can no longer add a review for this job.',
@@ -292,7 +293,7 @@ export function idVerified(p: { name: string; isTrade: boolean }): EmailContent 
       p.isTrade
         ? 'Your profile now shows the Verified badge, which helps clients trust you before they get in touch.'
         : 'Your profile now shows the Verified badge, so tradespeople can see you are who you say you are.',
-      'We have deleted the photo of your ID. We only keep a one way code that proves it was checked.',
+      'We have deleted the photo of your ID. We only keep a record that it was checked.',
     ],
     button: { label: 'Go to your dashboard', url: `${APP_URL}/dashboard` },
   }
@@ -326,8 +327,8 @@ export function tradeInviteFromClient(p: {
     preheader: 'Claim it and you will each review the other.',
     heading: `${p.callerName} says you did a job for them`,
     paragraphs: [
-      `**${p.callerName}** logged a ${p.jobType} job from ${p.jobDate} and gave us your contact details.`,
-      'If it is right, claim it and you will each review the other. That puts a verified job on your own WorkedWith profile, which is free for tradespeople. Nothing is published unless you claim it.',
+      `**${p.callerName}** logged a ${lc(p.jobType)} job from ${p.jobDate} and gave us your contact details. WorkedWith is the directory for tradespeople who want to stand out from the noise.`,
+      'If that is right, claim it and you will each review the other. The job then shows as verified on your own free profile, and you can **check a client\'s record before you take the next job on**. Nothing is published unless you claim it.',
     ],
     button: { label: 'See the job and claim it', url: p.claimUrl },
     small: [`The invite expires in ${p.days} days.`],
@@ -345,7 +346,7 @@ export function inviteClaimed(p: {
     subject: `${p.tradeName} has claimed your job`,
     heading: 'Your job has been claimed',
     paragraphs: [
-      `**${p.tradeName}** has claimed the ${p.jobType} job you logged for ${p.jobDate}. You can now each leave a review.`,
+      `**${p.tradeName}** has claimed the ${lc(p.jobType)} job you logged for ${p.jobDate}. You can now each leave a review.`,
       REVIEW_RULE,
     ],
     button: { label: 'View the job and leave a review', url: job(p.jobId) },
@@ -379,11 +380,13 @@ export function welcomeTrade(): EmailContent {
     subject: 'Welcome to WorkedWith',
     heading: 'Welcome to WorkedWith',
     paragraphs: [
-      'Your account is ready. Three things get you going:',
+      'Your account is ready. WorkedWith is the directory for tradespeople who want to stand out from the noise, and you can check a client\'s record before you take a job on.',
+      'A few things to get you going:',
       '1. Add the areas you cover, so clients can find you.',
       '2. Log a job, or add a past job to build your record straight away.',
-      '3. Verify your phone, then your ID, to earn the Verified badge.',
-      'Reviews stay hidden until you have both submitted, so nobody can review in revenge. Free accounts get unlimited jobs and reviews.',
+      '3. Check a client\'s record before you take on your next job.',
+      '4. Verify your phone, then your ID, to earn the Verified badge.',
+      'Neither side sees the other\'s review until both are in, so nobody can review in revenge. Free accounts get unlimited jobs and reviews.',
     ],
     button: { label: 'Go to your dashboard', url: `${APP_URL}/dashboard` },
   }
@@ -396,7 +399,7 @@ export function welcomeClient(p: { username: string }): EmailContent {
     paragraphs: [
       'Your account is ready, and it is free for clients, always.',
       `Your username is **${p.username}**. Keep hold of it. Give it to a tradesperson before a job and they can look you up and see your record. You can find it any time on your dashboard.`,
-      'After each job you and the tradesperson review each other. Reviews stay hidden until you have both submitted, so neither side can review in revenge.',
+      'Tradespeople on WorkedWith are the ones keen to impress and protect their reputation, so ask whoever you hire to log the job here. After each job you and the tradesperson review each other, and neither review shows until both are in.',
     ],
     button: { label: 'Go to your dashboard', url: `${APP_URL}/dashboard` },
   }
@@ -507,12 +510,24 @@ export function seededOutreach(p: {
   switch (p.day) {
     case 'day0':
       return {
-        subject: `${p.name} has a free page on WorkedWith`,
-        preheader: 'Claim it, or remove it. Either takes a minute.',
-        heading: `A free page for ${p.name}`,
+        subject: `A free WorkedWith page for ${p.name}`,
+        preheader: 'Verified reviews from real jobs, for tradespeople who want to stand out.',
+        heading: `${p.name} is on WorkedWith`,
         paragraphs: [
-          `We have set up a basic page for **${p.name}** on WorkedWith, where tradespeople build a record of verified jobs and clients and tradespeople review each other after the work.`,
-          'Claiming it is free. You can add your own details and photos and start collecting reviews from real jobs. If you would rather not be listed, you can remove the page in one tap.',
+          'Hello,',
+          `We have set up a free page for **${p.name}** on WorkedWith, the directory for tradespeople who want to stand out from the noise.`,
+          'You review your clients too, so you can **check a client\'s record before you take the job on** and steer clear of non payers and difficult customers.',
+          'Every review is tied to a real job that both sides confirmed, so it is genuine and stays on your page for good. Neither side sees the other\'s review until both are in.',
+          'Claim your page and you can:',
+        ],
+        list: [
+          'Show verified reviews from real jobs',
+          'Be found by clients searching your trade and area, on any plan',
+          'Add past jobs, so you start with a track record',
+          'Share your page link anywhere, including local groups',
+        ],
+        closing: [
+          'It is free, with unlimited jobs and reviews, and takes a few minutes.',
         ],
         button,
         small: [`If nobody claims it, the page is removed on ${p.removesOn}.`],
@@ -521,10 +536,11 @@ export function seededOutreach(p: {
     case 'day21':
       return {
         subject: `Your free WorkedWith page for ${p.name}`,
-        heading: 'A reminder about your page',
+        heading: 'Your page is still unclaimed',
         paragraphs: [
           `We set up a free page for **${p.name}** on WorkedWith on ${p.sentOn}. It has not been claimed yet.`,
-          'If you want it, claiming takes a few minutes. If you do not, there is nothing to do.',
+          'Once it is, you can **check a client\'s record before you take the job on**, show verified reviews from real jobs, and be found by clients searching your trade and area.',
+          'It is free and takes a few minutes. If you do not want it, there is nothing to do.',
         ],
         button,
         small: [`If nobody claims it, the page is removed on ${p.removesOn}.`],
@@ -536,7 +552,7 @@ export function seededOutreach(p: {
         heading: `Your page is removed on ${p.removesOn}`,
         paragraphs: [
           `The free page for **${p.name}** has not been claimed, so it will be removed on ${p.removesOn}.`,
-          'Claim it before then if you want to keep it. Once claimed it stays, and you can build up verified reviews.',
+          'Claim it before then and you can check a client\'s record before you take the job on, and build up verified reviews that win you work.',
         ],
         button,
         stranger,
@@ -548,6 +564,7 @@ export function seededOutreach(p: {
         heading: 'This is our last message',
         paragraphs: [
           `The free page for **${p.name}** is removed on ${p.removesOn} unless you claim it. We will not email you again about it.`,
+          'If you want to check a client\'s record before you take the job on, claim it before then.',
         ],
         button,
         stranger,

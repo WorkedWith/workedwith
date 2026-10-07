@@ -1,3 +1,4 @@
+import { Avatar } from '@/components/avatar'
 import { formatAreas } from '@/lib/format-areas'
 import type { Metadata } from 'next'
 import { FindForm } from './find-form'
@@ -184,7 +185,8 @@ function ResultCard({ result }: { result: TradesearchResult }) {
   return (
     <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <Avatar name={result.company_name || result.full_name} photoUrl={result.photo_url} sizeClass="h-12 w-12" textClass="text-base" />
+        <div className="min-w-0 flex-1">
           <h2 className="text-lg font-bold text-brand-navy leading-snug">{result.company_name || result.full_name}</h2>
           {result.company_name && result.company_name !== result.full_name && (
             <p className="text-sm text-gray-500">{result.full_name}</p>
