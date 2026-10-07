@@ -26,7 +26,7 @@ export function InviteTradeForm() {
   const [contactPhone, setContactPhone] = useState('')
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<{ inviteId: string; stackedCount: number } | null>(null)
+  const [success, setSuccess] = useState<{ inviteId: string; stackedCount: number; warning?: string } | null>(null)
 
   const currentYear = new Date().getFullYear()
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
@@ -58,7 +58,7 @@ export function InviteTradeForm() {
       })
 
       if (result.success) {
-        setSuccess({ inviteId: result.inviteId, stackedCount: result.stackedCount })
+        setSuccess({ inviteId: result.inviteId, stackedCount: result.stackedCount, warning: result.warning })
       } else {
         if (result.field) {
           setFieldErrors({ [result.field]: result.error })
@@ -85,6 +85,11 @@ export function InviteTradeForm() {
             ? `This tradesperson already has ${success.stackedCount} pending invite${success.stackedCount === 1 ? '' : 's'} from you. This job has been added and they'll claim everything in one go.`
             : 'The tradesperson will receive an invite to verify and claim this job. Nothing is published until they do.'}
         </p>
+        {success.warning && (
+          <p className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {success.warning}
+          </p>
+        )}
         <div className="mt-6 flex flex-col gap-3">
           <a
             href="/dashboard"

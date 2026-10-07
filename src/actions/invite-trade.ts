@@ -19,7 +19,7 @@ export type InviteTradeInput = {
 }
 
 export type InviteTradeResult =
-  | { success: true; inviteId: string; stackedCount: number }
+  | { success: true; inviteId: string; stackedCount: number; warning?: string }
   | { success: false; error: string; field?: keyof InviteTradeInput }
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -216,6 +216,7 @@ export async function inviteTrade(input: InviteTradeInput): Promise<InviteTradeR
     userData.full_name
   const resend = new Resend(process.env.RESEND_API_KEY)
   const sends: Promise<unknown>[] = []
+  let smsFailed = false
 
   if (contact_phone && process.env.TWILIO_MESSAGING_SERVICE_SID) {
     try {
@@ -227,13 +228,18 @@ export async function inviteTrade(input: InviteTradeInput): Promise<InviteTradeR
             messagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID,
             to: contact_phone,
           })
-          .catch((e: unknown) => console.error('SMS send failed (non-fatal):', e)),
+          .catch((e: unknown) => {
+            smsFailed = true
+            console.error('SMS send failed (non-fatal):', e)
+          }),
       )
     } catch (e) {
+      smsFailed = true
       console.error('Twilio init failed:', e)
     }
   } else if (contact_phone) {
-    console.warn('TWILIO_MESSAGING_SERVICE_SID not configured — skipping invite SMS')
+    smsFailed = true
+    console.warn('TWILIO_MESSAGING_SERVICE_SID not configured, skipping invite SMS')
   }
 
   if (contact_email) {
@@ -251,5 +257,11 @@ export async function inviteTrade(input: InviteTradeInput): Promise<InviteTradeR
 
   await Promise.all(sends)
 
-  return { success: true, inviteId: invite.id, stackedCount: 0 }
+  const warning = smsFailed
+    ? contact_email
+      ? 'The invite was saved and emailed, but the text message could not be sent.'
+      : 'The invite was saved, but the text message could not be sent. Please try again or add an email address.'
+    : undefined
+
+  return { success: true, inviteId: invite.id, stackedCount: 0, warning }
 }

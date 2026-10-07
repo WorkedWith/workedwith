@@ -284,8 +284,9 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   const reviewUrl = `https://workedwith.co.uk/jobs/${input.job_id}/review`
   const now = new Date().toISOString()
 
-  // ── Blind window still open — hold all reviews ────────────────
-  if (!blindWindowClosed) {
+  // ── Blind window still open and only one side has reviewed — hold ──
+  // Once both sides have submitted, reviews publish together immediately.
+  if (!blindWindowClosed && !bothSubmitted) {
     const holdPromises: PromiseLike<unknown>[] = []
 
     holdPromises.push(
@@ -293,7 +294,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
         user_id: user.id,
         type: 'new_review',
         title: 'Review saved',
-        body: `Your review for ${revieweeName} is saved. It will be published after the 7-day window closes.`,
+        body: `Your review for ${revieweeName} is saved. It will go live as soon as they have submitted theirs, or after the 7-day window closes.`,
         link: `/jobs/${input.job_id}`,
       })
     )
