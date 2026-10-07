@@ -67,6 +67,56 @@ export default async function ProfilePage() {
             } : null}
           />
         </div>
+
+        {tradeProfile && (
+          <>
+            <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="mb-3 flex items-center justify-between gap-4">
+                <h2 className="text-base font-semibold text-brand-navy">Where you work</h2>
+                <a
+                  href="/profile/areas"
+                  className="rounded-lg border border-brand-navy px-3 py-1.5 text-sm font-semibold text-brand-navy hover:bg-gray-50"
+                >
+                  Edit areas
+                </a>
+              </div>
+              {(tradeProfile.operating_areas ?? []).length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {(tradeProfile.operating_areas ?? []).map(district => (
+                    <span
+                      key={district}
+                      className="rounded-full bg-brand-navy/10 px-3 py-1 text-sm font-medium text-brand-navy"
+                    >
+                      {district}
+                      {(tradeProfile.boosted_districts ?? []).includes(district) ? ' (boosted)' : ''}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No areas yet. Add the postcode districts you cover so clients can find you.
+                </p>
+              )}
+            </section>
+
+            <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-semibold text-brand-navy">Your plan</h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Current plan: <span className="font-medium capitalize text-gray-700">{tradeProfile.subscription_tier ?? 'free'}</span>
+                  </p>
+                </div>
+                <a
+                  href="/subscription"
+                  className="rounded-lg bg-brand-amber px-3 py-1.5 text-sm font-bold text-brand-navy hover:bg-amber-400"
+                >
+                  Manage plan
+                </a>
+              </div>
+            </section>
+          </>
+        )}
       </div>
     </main>
   )

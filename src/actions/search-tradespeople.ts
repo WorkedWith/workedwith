@@ -89,11 +89,11 @@ export async function searchTradespeople(
 
   const admin = createAdminClient()
 
-  // Fetch real searchable trade profiles
+  // Fetch real trade profiles. Every tier appears in search (PRD 5.2/5.3);
+  // subscription only affects boosted placement, not whether a trade is listed.
   const { data: rawProfiles } = await admin
     .from('trade_profiles')
     .select('id, user_id, trade_types, postcode, operating_areas, boosted_districts, public_slug, average_rating, total_reviews, total_jobs, subscription_tier')
-    .eq('is_searchable', true)
     .contains('trade_types', [tradeType])
     .contains('operating_areas', [district])
 

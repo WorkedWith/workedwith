@@ -225,8 +225,8 @@ export default async function DashboardPage() {
             {tradeProfile && !hasOperatingAreas && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 flex items-center justify-between gap-4">
                 <p className="text-sm text-amber-800">
-                  <span className="font-semibold">Your profile isn&apos;t appearing in search yet</span>
-                  {' '}— add at least one operating area to be discoverable.
+                  <span className="font-semibold">Your profile isn&apos;t appearing in search yet.</span>
+                  {' '}Add at least one operating area to be discoverable.
                 </p>
                 <a
                   href="/profile/areas"
