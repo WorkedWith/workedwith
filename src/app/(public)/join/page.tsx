@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
+import { SiteHeader } from '@/components/site-header'
 
 export const metadata: Metadata = {
   title: 'Join WorkedWith',
 }
 
-export default function JoinPage({
+export default async function JoinPage({
   searchParams,
 }: {
   searchParams: { next?: string }
@@ -19,11 +20,7 @@ export default function JoinPage({
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="px-4 py-6 text-center sm:px-6">
-        <a href="/" className="text-2xl font-bold tracking-tight text-brand-navy">
-          Worked<span className="text-brand-amber">With</span>
-        </a>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6">
         <h1 className="text-center text-3xl font-bold text-brand-navy sm:text-4xl">

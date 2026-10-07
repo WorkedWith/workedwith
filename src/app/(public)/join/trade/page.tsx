@@ -4,6 +4,7 @@ import { APP_URL } from '@/lib/app-url'
 import { Suspense, useState, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { PublicTopBar } from '@/components/public-top-bar'
 
 export default function JoinTradePage() {
   return (
@@ -66,13 +67,12 @@ function JoinTradeForm() {
   }
 
   return (
-    <main className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-4">
+    <>
+    <PublicTopBar />
+    <main className="min-h-[calc(100vh-61px)] bg-brand-navy flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Wordmark */}
         <div className="text-center mb-8">
-          <a href="/" className="text-2xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </a>
           <h1 className="mt-4 text-2xl sm:text-3xl font-bold text-white">
             Join as a Tradesperson
           </h1>
@@ -163,5 +163,6 @@ function JoinTradeForm() {
         </p>
       </div>
     </main>
+    </>
   )
 }

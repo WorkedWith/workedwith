@@ -1,3 +1,4 @@
+import { SiteHeader } from '@/components/site-header'
 import { formatAreas } from '@/lib/format-areas'
 import { APP_HOST, APP_URL } from '@/lib/app-url'
 import { notFound } from 'next/navigation'
@@ -13,10 +14,6 @@ function SeededProfilePage({ profile }: { profile: SeededProfile; slug: string }
     <main className="min-h-screen bg-gray-50">
       <header className="bg-brand-navy px-4 pb-8 pt-10 sm:px-6">
         <div className="mx-auto max-w-2xl">
-          <p className="mb-6 text-sm font-bold tracking-tight text-white/60">
-            Worked<span className="text-brand-amber">With</span>
-          </p>
-
           {/* "Not yet on WorkedWith" — prominent, always visible */}
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-semibold text-white/80 ring-1 ring-white/20">
             <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
@@ -105,7 +102,12 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
       .maybeSingle()
 
     if (rawSeeded) {
-      return <SeededProfilePage profile={rawSeeded as unknown as SeededProfile} slug={slug} />
+      return (
+        <>
+          <SiteHeader />
+          <SeededProfilePage profile={rawSeeded as unknown as SeededProfile} slug={slug} />
+        </>
+      )
     }
 
     notFound()
@@ -176,22 +178,16 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
 
   return (
     <>
+      {!preview && <SiteHeader />}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <main className="min-h-screen bg-gray-50">
+      <main className={preview ? 'bg-gray-50' : 'min-h-screen bg-gray-50'}>
         {/* ── Header ─────────────────────────────────────────── */}
-        <header className="bg-brand-navy px-4 pb-8 pt-10 sm:px-6">
-          <div className="mx-auto max-w-2xl">
-            {/* WorkedWith wordmark */}
-            {!preview && (
-              <p className="mb-6 text-sm font-bold tracking-tight text-white/60">
-                Worked<span className="text-brand-amber">With</span>
-              </p>
-            )}
-
+        <header className={preview ? 'mx-auto max-w-2xl px-4 pt-2 sm:px-6' : 'bg-brand-navy px-4 pb-8 pt-10 sm:px-6'}>
+          <div className={preview ? 'rounded-2xl bg-brand-navy px-6 pb-7 pt-7' : 'mx-auto max-w-2xl'}>
             <div className="flex items-center gap-4">
               {typeof tradeUser.profile_photo_url === 'string' && tradeUser.profile_photo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element

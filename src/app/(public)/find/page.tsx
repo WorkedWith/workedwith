@@ -6,6 +6,7 @@ import type { TradesearchResult, SeededSearchResult } from '@/actions/search-tra
 import { createClient } from '@/lib/supabase/server'
 import { DEMO_TRADE_PROFILES } from '@/lib/demo-data'
 import { DemoProfileCard } from '@/components/demo/demo-profile-card'
+import { SiteHeader } from '@/components/site-header'
 
 export const metadata: Metadata = {
   title: 'Find a Tradesperson | WorkedWith',
@@ -43,13 +44,11 @@ export default async function FindPage({ searchParams }: PageProps) {
 
   return (
     <div className="min-h-screen bg-white">
+      <SiteHeader />
 
       {/* ── Navy header with embedded search ─────────────────── */}
       <header className="bg-brand-navy px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-4xl">
-          <a href="/" className="text-lg font-bold tracking-tight text-white/70 hover:text-white transition-colors">
-            Worked<span className="text-brand-amber">With</span>
-          </a>
           <h1 className="mt-4 text-4xl font-bold text-white sm:text-5xl">
             Find a tradesperson
           </h1>

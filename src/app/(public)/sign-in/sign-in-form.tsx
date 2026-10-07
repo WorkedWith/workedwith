@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { PublicTopBar } from '@/components/public-top-bar'
 
 export function SignInForm({ message, next }: { message?: string; next?: string }) {
   const [email, setEmail] = useState('')
@@ -81,13 +82,12 @@ export function SignInForm({ message, next }: { message?: string; next?: string 
   }
 
   return (
-    <main className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-4">
+    <>
+    <PublicTopBar />
+    <main className="min-h-[calc(100vh-61px)] bg-brand-navy flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Wordmark */}
         <div className="text-center mb-8">
-          <a href="/" className="text-2xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </a>
           <h1 className="mt-4 text-2xl sm:text-3xl font-bold text-white">
             Welcome back
           </h1>
@@ -210,5 +210,6 @@ export function SignInForm({ message, next }: { message?: string; next?: string 
         </div>
       </div>
     </main>
+    </>
   )
 }

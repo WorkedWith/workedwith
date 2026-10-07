@@ -17,7 +17,7 @@ type Props = {
   unavailableNote: string | null
 }
 
-type Step = 'menu' | 'swap' | 'confirm'
+type Step = 'menu' | 'swap' | 'swapfrom' | 'confirm'
 
 function fmtDate(iso: string | null): string {
   if (!iso) return 'your next renewal'
@@ -30,6 +30,7 @@ export function BoostPanel({ areaCodes, summary, onSummary, extraDistrictsAvaila
   const [step, setStep] = useState<Step>('menu')
   const [extraSlots, setExtraSlots] = useState(1)
   const [swapTarget, setSwapTarget] = useState('')
+  const [swapSource, setSwapSource] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const boosted = summary.boosted.filter(c => areaCodes.includes(c))
@@ -42,6 +43,7 @@ export function BoostPanel({ areaCodes, summary, onSummary, extraDistrictsAvaila
     setSelected(null)
     setStep('menu')
     setSwapTarget('')
+    setSwapSource('')
     setError(null)
   }
 
@@ -58,6 +60,7 @@ export function BoostPanel({ areaCodes, summary, onSummary, extraDistrictsAvaila
     setSelected(code)
     setStep('menu')
     setSwapTarget('')
+    setSwapSource('')
     setError(null)
   }
 
@@ -101,6 +104,15 @@ export function BoostPanel({ areaCodes, summary, onSummary, extraDistrictsAvaila
     setError(null)
     startTransition(async () => {
       handle(await swapDistrictBoost(from, swapTarget))
+    })
+  }
+
+  function swapIn() {
+    if (!selected || !swapSource) return
+    const to = selected
+    setError(null)
+    startTransition(async () => {
+      handle(await swapDistrictBoost(swapSource, to))
     })
   }
 
@@ -195,12 +207,17 @@ export function BoostPanel({ areaCodes, summary, onSummary, extraDistrictsAvaila
 
             {step === 'menu' && !isOn && (
               <div className="mt-4 space-y-3">
+                {boosted.length > 0 && (
+                  <p className="text-sm font-medium text-brand-navy">
+                    You already boost {boosted.join(', ')}. What would you like to do with {selected}?
+                  </p>
+                )}
                 <p className="text-sm text-gray-600">
                   {!atFreeLimit
                     ? unusedPaid > 0 && boosted.length >= INCLUDED_BOOSTS
-                      ? `This uses a slot you have already paid for, so it costs nothing extra until ${fmtDate(summary.renewsOn)}.`
-                      : 'This uses one of your included boosts. No extra cost.'
-                    : `This adds a paid slot at ${ADDON_PRICE_TEXT}. You will see the exact charge before anything is taken.`}
+                      ? `Adding it uses a slot you have already paid for, so it costs nothing extra until ${fmtDate(summary.renewsOn)}.`
+                      : 'Adding it uses one of your included boosts. No extra cost.'
+                    : `Adding it takes a paid slot at ${ADDON_PRICE_TEXT}. You will see the exact charge before anything is taken.`}
                 </p>
                 <button
                   type="button"
@@ -208,8 +225,52 @@ export function BoostPanel({ areaCodes, summary, onSummary, extraDistrictsAvaila
                   onClick={() => boost(false)}
                   className="min-h-[48px] w-full rounded-xl bg-brand-amber px-4 text-base font-semibold text-brand-navy disabled:opacity-40"
                 >
-                  {isPending ? 'Working…' : 'Boost this district'}
+                  {isPending ? 'Working…' : boosted.length > 0 ? `Add ${selected} as an extra boost` : 'Boost this district'}
                 </button>
+                {boosted.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setStep('swapfrom')}
+                    className="min-h-[48px] w-full rounded-xl border-2 border-brand-navy px-4 text-base font-semibold text-brand-navy"
+                  >
+                    Swap with a boosted district instead
+                  </button>
+                )}
+              </div>
+            )}
+
+            {step === 'swapfrom' && (
+              <div className="mt-4 space-y-3">
+                <p className="text-sm text-gray-600">
+                  Boost {selected} and stop boosting one of your current districts. No change to your bill.
+                </p>
+                <select
+                  value={swapSource}
+                  onChange={e => setSwapSource(e.target.value)}
+                  className="min-h-[48px] w-full rounded-lg border border-gray-300 bg-white px-3 text-base"
+                >
+                  <option value="">Which boost should it replace?</option>
+                  {boosted.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={!swapSource || isPending}
+                    onClick={swapIn}
+                    className="min-h-[48px] flex-1 rounded-xl bg-brand-navy px-4 text-base font-semibold text-white disabled:opacity-40"
+                  >
+                    {isPending ? 'Working…' : 'Swap boost'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep('menu')}
+                    className="min-h-[48px] rounded-xl border border-gray-300 px-4 text-base font-medium text-gray-700"
+                  >
+                    Back
+                  </button>
+                </div>
               </div>
             )}
 

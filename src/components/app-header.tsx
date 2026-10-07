@@ -43,7 +43,7 @@ export async function AppHeader() {
 
   return (
     <header className="sticky top-0 z-40 bg-brand-navy">
-      <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3 sm:px-6">
         <a href="/dashboard" className="text-xl font-bold tracking-tight text-white">
           Worked<span className="text-brand-amber">With</span>
         </a>

@@ -1,3 +1,4 @@
+import { PublicTopBar } from '@/components/public-top-bar'
 type Props = { searchParams: Promise<{ token?: string }> }
 
 export default async function JoinClientPage({ searchParams }: Props) {
@@ -5,13 +6,12 @@ export default async function JoinClientPage({ searchParams }: Props) {
   const q = token ? `?token=${encodeURIComponent(token)}` : ''
 
   return (
-    <main className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-4">
+    <>
+    <PublicTopBar />
+    <main className="min-h-[calc(100vh-61px)] bg-brand-navy flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-lg">
         {/* Wordmark */}
         <div className="text-center mb-10">
-          <a href="/" className="text-2xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </a>
           <h1 className="mt-4 text-2xl sm:text-3xl font-bold text-white">
             Join as a Client
           </h1>
@@ -68,5 +68,6 @@ export default async function JoinClientPage({ searchParams }: Props) {
         </p>
       </div>
     </main>
+    </>
   )
 }

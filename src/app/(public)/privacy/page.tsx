@@ -1,18 +1,18 @@
 import type { Metadata } from 'next'
+import { SiteHeader } from '@/components/site-header'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | WorkedWith',
   description: 'How WorkedWith collects, uses and protects your personal data.',
 }
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-gray-50">
+    <>
+    <SiteHeader />
+    <main className="bg-gray-50">
       <header className="bg-brand-navy px-4 pb-12 pt-10 sm:px-6">
         <div className="mx-auto max-w-3xl">
-          <a href="/" className="text-xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </a>
           <h1 className="mt-8 text-3xl font-bold text-white sm:text-4xl">Privacy Policy</h1>
           <p className="mt-2 text-sm text-white/50">Last updated: June 2026</p>
         </div>
@@ -68,6 +68,7 @@ export default function PrivacyPage() {
         </div>
       </div>
     </main>
+    </>
   )
 }
 

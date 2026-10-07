@@ -34,32 +34,22 @@ export default async function ProfilePage() {
 
   if (isTrade && tradeProfile) {
     return (
-      <main className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50">
         <AppHeader />
-        <div className="mx-auto max-w-2xl px-4 pt-6 sm:px-6">
-          <div className="rounded-2xl border border-brand-amber/50 bg-amber-50 p-5">
-            <h1 className="text-lg font-bold text-brand-navy">This is how clients see your profile</h1>
-            <p className="mt-1 text-sm text-amber-900">
-              Keep it complete. Profiles with a photo, a short bio and your work on show get more attention.
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-              <a href="/profile/edit" className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-brand-amber px-4 text-sm font-semibold text-brand-navy hover:bg-amber-400">
-                Edit details
-              </a>
-              <a href="/profile/areas" className="inline-flex min-h-[44px] items-center justify-center rounded-lg border-2 border-brand-navy px-4 text-sm font-semibold text-brand-navy hover:bg-white">
-                Edit areas
-              </a>
-              <a href="/profile/featured-jobs" className="inline-flex min-h-[44px] items-center justify-center rounded-lg border-2 border-brand-navy px-4 text-sm font-semibold text-brand-navy hover:bg-white">
-                Photos of your work
-              </a>
-              <a href={`/t/${tradeProfile.public_slug}`} className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-white">
-                Open public page
-              </a>
-            </div>
-          </div>
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 pt-6 sm:px-6">
+          <h1 className="text-xl font-bold text-brand-navy">My profile</h1>
+          <a
+            href="/profile/edit"
+            className="inline-flex min-h-[44px] items-center rounded-lg bg-brand-amber px-5 text-sm font-semibold text-brand-navy hover:bg-amber-400"
+          >
+            Edit profile
+          </a>
         </div>
+        <p className="mx-auto max-w-2xl px-4 pb-4 pt-1 text-sm text-gray-500 sm:px-6">
+          This is how clients see you.
+        </p>
         <TradeProfileView slug={tradeProfile.public_slug} preview />
-      </main>
+      </div>
     )
   }
 

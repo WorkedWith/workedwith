@@ -175,15 +175,19 @@ export default async function DashboardPage() {
             {/* 0. Why WorkedWith */}
             <section className="rounded-xl border border-brand-navy/10 bg-brand-navy/5 p-5">
               <p className="text-sm font-semibold text-brand-navy">Why WorkedWith?</p>
-              <p className="mt-1 text-sm text-gray-600 leading-relaxed">
-                Every job you log here ends with two verified reviews: one for you, one for your client.
-                Neither is shown until both are in, so nobody can review in revenge. Good work builds
-                your public profile, and you can see how a client has treated other trades before you
-                take the job on.
-              </p>
-              <p className="mt-2 text-xs text-gray-500">
-                Log a job, invite your client, get reviewed. Past jobs count too.
-              </p>
+              <ul className="mt-3 space-y-2">
+                {[
+                  'Check a client\'s record before you take the job on',
+                  'Build a profile of verified reviews that wins you work',
+                  'Fair reviews: neither side sees the other\'s until both are in',
+                  'Free to start, with unlimited jobs and reviews',
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-2 text-sm text-gray-700">
+                    <span className="mt-0.5 font-bold text-brand-amber" aria-hidden="true">✓</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </section>
 
             {/* 1. Profile summary card */}
