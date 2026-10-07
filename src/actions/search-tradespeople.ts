@@ -75,8 +75,11 @@ export async function searchTradespeople(
       `https://api.postcodes.io/postcodes/${encodeURIComponent(clean)}`,
       { cache: 'no-store' },
     )
+    if (res.status === 404) {
+      return { success: false, error: 'We could not find that postcode. Please check it and try again.' }
+    }
     if (!res.ok) {
-      return { success: false, error: 'Could not look up that postcode. Please check and try again.' }
+      return { success: false, error: 'The postcode lookup is not responding right now. Please try again in a moment.' }
     }
     const data = (await res.json()) as SingleResponse
     if (!data.result?.outcode) {

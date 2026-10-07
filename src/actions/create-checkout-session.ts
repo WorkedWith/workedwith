@@ -74,7 +74,6 @@ export async function createCheckoutSession(
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
-        trial_period_days: 14,
         metadata: { user_id: user.id },
       },
       success_url: `${BASE_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,

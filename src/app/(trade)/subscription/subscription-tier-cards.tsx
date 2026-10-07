@@ -68,7 +68,7 @@ export function SubscriptionTierCards({ currentTier, currentBillingPeriod }: Pro
               <UpgradeButton
                 tier="standard"
                 period={period}
-                label="Start 14-day free trial"
+                label="Choose Standard"
                 className="w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy transition-opacity hover:opacity-90"
               />
             ) : null
@@ -97,7 +97,7 @@ export function SubscriptionTierCards({ currentTier, currentBillingPeriod }: Pro
               <UpgradeButton
                 tier="pro"
                 period={period}
-                label="Start 14-day free trial"
+                label="Choose Pro"
                 className="w-full rounded-lg bg-brand-navy px-4 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90"
               />
             )
