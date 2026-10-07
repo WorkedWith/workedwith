@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { AreasForm } from './areas-form'
 import type { DistrictEntry } from '@/actions/resolve-district'
 import type { BoostSummary } from '@/lib/boost-types'
+import { BackLink } from '@/components/back-link'
 
 export const metadata: Metadata = { title: 'Operating Areas | WorkedWith' }
 
@@ -46,10 +47,8 @@ export default async function OperatingAreasPage() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
       <div className="mb-6">
-        <a href="/dashboard" className="text-sm text-brand-amber hover:underline">
-          ← Dashboard
-        </a>
-        <h1 className="mt-4 text-2xl font-bold text-brand-navy">Operating Areas</h1>
+        <BackLink href="/profile" label="Back to profile" />
+        <h1 className="mt-1 text-2xl font-bold text-brand-navy">Operating Areas</h1>
         <p className="mt-2 text-sm text-gray-600">
           Add the postcode districts where you work, up to 20. Clients searching in these areas
           will find your profile. Type a postcode, district code (e.g. M20), or place name.

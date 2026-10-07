@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getUserTier, isStandardOrAbove } from '@/lib/stripe/get-tier'
 import { FeaturedJobsClient } from './featured-jobs-client'
 import type { ModerationStatus, SubscriptionTier } from '@/types/database'
+import { BackLink } from '@/components/back-link'
 
 export const metadata = { title: 'Featured jobs | WorkedWith' }
 
@@ -114,18 +115,8 @@ export default async function FeaturedJobsPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <header className="bg-brand-navy px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <span className="text-xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </span>
-          <a href="/dashboard" className="text-sm text-white/60 hover:text-white transition-colors">
-            ← Dashboard
-          </a>
-        </div>
-      </header>
-
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+        <BackLink href="/profile" label="Back to profile" />
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-brand-navy">Featured jobs</h1>
           <p className="mt-1 text-sm text-gray-500">

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { InviteForm } from './members-client'
 import type { User, OrganisationMember, OrganisationInvite, OrganisationMemberRole } from '@/types/database'
+import { BackLink } from '@/components/back-link'
 
 export const metadata = { title: 'Team members | WorkedWith' }
 
@@ -98,19 +99,8 @@ export default async function MembersPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-brand-navy px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <span className="text-xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </span>
-          <a href="/dashboard" className="text-sm text-white/60 hover:text-white transition-colors">
-            ← Dashboard
-          </a>
-        </div>
-      </header>
-
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 space-y-6">
+        <BackLink href="/dashboard" label="Back to dashboard" />
         <div>
           <h1 className="text-2xl font-bold text-brand-navy">{org?.company_name}</h1>
           <p className="mt-0.5 text-sm text-gray-500">Team members</p>

@@ -1,3 +1,5 @@
+import { AppHeader } from '@/components/app-header'
+import { BackLink } from '@/components/back-link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -25,7 +27,9 @@ export default async function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
+      <AppHeader />
+      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+        <BackLink href="/dashboard" label="Back to dashboard" />
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>

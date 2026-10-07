@@ -20,8 +20,8 @@ export type TradesearchResult = {
   id: string
   user_id: string
   full_name: string
+  company_name: string | null
   trade_types: string[]
-  postcode: string
   operating_areas: string[]
   boosted_districts: string[]
   public_slug: string
@@ -96,7 +96,7 @@ export async function searchTradespeople(
   // subscription only affects boosted placement, not whether a trade is listed.
   const { data: rawProfiles } = await admin
     .from('trade_profiles')
-    .select('id, user_id, trade_types, postcode, operating_areas, boosted_districts, public_slug, average_rating, total_reviews, total_jobs, subscription_tier')
+    .select('id, user_id, trade_types, company_name, operating_areas, boosted_districts, public_slug, average_rating, total_reviews, total_jobs, subscription_tier')
     .contains('trade_types', [tradeType])
     .contains('operating_areas', [district])
 
@@ -121,8 +121,8 @@ export async function searchTradespeople(
         id: profile.id as string,
         user_id: profile.user_id as string,
         full_name: user.full_name as string,
+        company_name: (profile.company_name as string | null) ?? null,
         trade_types: profile.trade_types as string[],
-        postcode: profile.postcode as string,
         operating_areas: (profile.operating_areas as string[]) ?? [],
         boosted_districts: (profile.boosted_districts as string[]) ?? [],
         public_slug: profile.public_slug as string,

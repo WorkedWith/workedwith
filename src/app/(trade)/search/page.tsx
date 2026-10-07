@@ -2,7 +2,8 @@ import { APP_URL } from '@/lib/app-url'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getClientProfileByUsername } from '@/actions/get-client-profile-by-username'
+import { getClientProfileByIdentifier } from '@/actions/get-client-profile-by-username'
+import { DAILY_LOOKUP_LIMIT } from '@/lib/lookup'
 import type { ClientProfileResult } from '@/actions/get-client-profile'
 import type { VerificationTier } from '@/types/database'
 
@@ -38,29 +39,18 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
   let result: ClientProfileResult | null = null
   if (username) {
-    result = await getClientProfileByUsername(username)
+    result = await getClientProfileByIdentifier(username)
   }
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <header className="bg-brand-navy px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <span className="text-xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </span>
-          <a href="/dashboard" className="text-sm text-white/60 hover:text-white transition-colors">
-            ← Dashboard
-          </a>
-        </div>
-      </header>
-
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-brand-navy">Client lookup</h1>
           <p className="mt-1 text-sm text-gray-500">
             {subscriptionTier === 'free'
-              ? 'Search any client by username to see their overall rating and member since date. Upgrade to Standard for full scores and written reviews.'
-              : 'Search any client by username to view their full reputation profile.'}
+              ? 'Find a client by their WorkedWith username, email address or mobile number to see their overall rating and member since date. Upgrade to Standard for full scores and written reviews.'
+              : 'Find a client by their WorkedWith username, email address or mobile number to view their full reputation profile.'}
           </p>
         </div>
 
@@ -69,7 +59,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
           <form method="GET" action="/search" className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Client username
+                Client username, email or mobile
               </label>
               <input
                 id="username"
@@ -77,7 +67,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                 type="text"
                 required
                 defaultValue={username ?? ''}
-                placeholder="Enter their WorkedWith username"
+                placeholder="Username, email address or mobile number"
                 autoComplete="off"
                 className="w-full h-11 rounded-lg border border-gray-300 px-4 text-sm text-brand-navy placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
               />
@@ -96,7 +86,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
           <p className="text-xs text-gray-500">
             <strong className="font-medium text-gray-700">Privacy notice:</strong>{' '}
             Searches are logged and audited. Results are only returned for users who have a WorkedWith client profile.
-            Searches are limited to 20 per day.
+            Searches are limited to {DAILY_LOOKUP_LIMIT} per day.
           </p>
         </div>
 
@@ -115,7 +105,10 @@ function SearchResult({ result }: { result: ClientProfileResult }) {
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
         <p className="text-sm font-semibold text-amber-900">Daily search limit reached</p>
         <p className="mt-1 text-sm text-amber-700">
-          You have reached your daily search limit of 20 searches. Try again tomorrow.
+          You have used all {DAILY_LOOKUP_LIMIT} client lookups for today. This limit protects client privacy.{' '}
+          {result.resets_at
+            ? `You can search again from ${new Date(result.resets_at).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}.`
+            : 'Try again tomorrow.'}
         </p>
       </div>
     )
@@ -129,12 +122,12 @@ function SearchResult({ result }: { result: ClientProfileResult }) {
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
           </svg>
         </div>
-        <p className="text-sm font-semibold text-gray-700">No client found with that username</p>
+        <p className="text-sm font-semibold text-gray-700">No client found</p>
         <p className="mt-1 text-sm text-gray-500">
-          They may not have a WorkedWith account yet.
+          They may not have a WorkedWith client account yet, or those details may be different.
         </p>
         <a
-          href={`mailto:?subject=Join me on WorkedWith&body=Hi, I use WorkedWith to verify my jobs and reviews. You can create a free client account at ${APP_URL}/join/client - it only takes a minute!`}
+          href={`mailto:?subject=Join me on WorkedWith&body=Hi, I use WorkedWith to verify my jobs and reviews. You can create a free client account at ${APP_URL}/join/client It only takes a minute.`}
           className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-brand-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy/90 transition-colors"
         >
           Invite them to join

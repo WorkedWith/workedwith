@@ -1,12 +1,13 @@
 'use server'
 
+import { suggestUsername } from '@/lib/username'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TRADE_TYPES } from '@/lib/trade-types'
 import type { CreateTradeProfileInput, CreateTradeProfileResult } from './create-trade-profile'
 
-const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}$/i
+const UK_DISTRICT_RE = /^[A-Z]{1,2}\d[A-Z0-9]?$/i
 const USERNAME_RE = /^[a-z0-9-]{3,30}$/
 
 // ── Add trade role (client → both) ────────────────────────────
@@ -32,7 +33,6 @@ export async function addTradeRole(
 
   const trade_type = input.trade_type.trim()
   const company_name = input.company_name.trim()
-  const postcode = input.postcode.trim().toUpperCase()
   const bio = input.bio.trim()
   const username = input.username.trim().toLowerCase()
   const operating_areas = input.operating_areas.map(d => d.trim().toUpperCase())
@@ -40,8 +40,8 @@ export async function addTradeRole(
   if (!(TRADE_TYPES as readonly string[]).includes(trade_type)) {
     return { success: false, error: 'Please select a valid trade type.', field: 'trade_type' }
   }
-  if (!postcode || !UK_POSTCODE_RE.test(postcode)) {
-    return { success: false, error: 'Please enter a valid UK postcode.', field: 'postcode' }
+  if (operating_areas.length === 0 || !operating_areas.every(d => UK_DISTRICT_RE.test(d))) {
+    return { success: false, error: 'Please add at least one postcode district where you work.', field: 'operating_areas' }
   }
   if (bio.length > 300) {
     return { success: false, error: 'Bio must be 300 characters or fewer.', field: 'bio' }
@@ -68,7 +68,6 @@ export async function addTradeRole(
     user_id: user.id,
     trade_types: [trade_type],
     company_name: company_name || null,
-    postcode,
     public_slug: username,
     bio: bio || null,
     operating_areas,
@@ -109,18 +108,15 @@ export async function addClientRole(): Promise<{ error?: string }> {
     return { error: 'This action is only available to trade accounts.' }
   }
 
-  // Borrow postcode from the trade profile so client_profiles.postcode is non-empty
-  const { data: tradeProfile } = await admin
-    .from('trade_profiles')
-    .select('postcode')
-    .eq('user_id', user.id)
-    .maybeSingle()
+  // Tradespeople no longer have a postcode on file, so the client postcode starts empty
+  const postcode = ''
 
-  const postcode = (tradeProfile?.postcode as string | undefined) ?? ''
-
+  const baseName = suggestUsername(String(rawUser.full_name ?? '')).replace(/\./g, '').slice(0, 14) || 'client'
+  const autoUsername = `${baseName}${Math.random().toString(36).slice(2, 6)}`
   const { error: insertError } = await admin.from('client_profiles').insert({
     user_id: user.id,
     postcode,
+    username: autoUsername,
   })
 
   if (insertError) {

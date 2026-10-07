@@ -18,7 +18,7 @@ export type RecentReview = {
 
 export type ClientProfileResult =
   | { status: 'not_found' }
-  | { status: 'rate_limited' }
+  | { status: 'rate_limited'; resets_at?: string }
   | { status: 'unauthorized' }
   | { status: 'unverified' }
   | {

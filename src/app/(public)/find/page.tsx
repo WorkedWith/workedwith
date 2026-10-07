@@ -1,3 +1,4 @@
+import { formatAreas } from '@/lib/format-areas'
 import type { Metadata } from 'next'
 import { FindForm } from './find-form'
 import { searchTradespeople } from '@/actions/search-tradespeople'
@@ -185,7 +186,10 @@ function ResultCard({ result }: { result: TradesearchResult }) {
     <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-lg font-bold text-brand-navy leading-snug">{result.full_name}</h2>
+          <h2 className="text-lg font-bold text-brand-navy leading-snug">{result.company_name || result.full_name}</h2>
+          {result.company_name && result.company_name !== result.full_name && (
+            <p className="text-sm text-gray-500">{result.full_name}</p>
+          )}
           {result.verification_tier === 'fully_verified' && (
             <span className="mt-1.5 inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
               ID Verified
@@ -237,7 +241,9 @@ function ResultCard({ result }: { result: TradesearchResult }) {
         ) : (
           <span className="text-sm text-gray-400">No reviews yet</span>
         )}
-        <span className="text-sm text-gray-400">📍 {result.postcode}</span>
+        {formatAreas(result.operating_areas) && (
+          <span className="text-sm text-gray-400">📍 {formatAreas(result.operating_areas)}</span>
+        )}
       </div>
 
       <div className="mt-5 flex justify-end">

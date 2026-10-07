@@ -9,8 +9,8 @@ import type { User, TradeProfile, ClientProfile } from '@/types/database'
 
 type Props = {
   user: Pick<User, 'full_name' | 'email' | 'phone' | 'phone_verified' | 'user_type' | 'profile_photo_url'>
-  tradeProfile: Pick<TradeProfile, 'postcode' | 'trade_types' | 'bio' | 'years_experience' | 'public_slug'> | null
-  clientProfile: Pick<ClientProfile, 'postcode' | 'display_name'> | null
+  tradeProfile: Pick<TradeProfile, 'company_name' | 'trade_types' | 'bio' | 'years_experience' | 'public_slug'> | null
+  clientProfile: Pick<ClientProfile, 'postcode' | 'display_name' | 'username'> | null
 }
 
 export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
@@ -44,15 +44,15 @@ export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
   }
 
   const [fullName, setFullName] = useState(user.full_name)
-  const [postcode, setPostcode] = useState(
-    (isTrade ? tradeProfile?.postcode : clientProfile?.postcode) ?? ''
-  )
+  const [postcode, setPostcode] = useState(clientProfile?.postcode ?? '')
+  const [companyName, setCompanyName] = useState(tradeProfile?.company_name ?? '')
   const [bio, setBio] = useState(tradeProfile?.bio ?? '')
   const [tradeTypes, setTradeTypes] = useState<string[]>(tradeProfile?.trade_types ?? [])
   const [yearsExp, setYearsExp] = useState(
     tradeProfile?.years_experience != null ? String(tradeProfile.years_experience) : ''
   )
   const [displayName, setDisplayName] = useState(clientProfile?.display_name ?? '')
+  const [username, setUsername] = useState(clientProfile?.username ?? '')
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -72,10 +72,9 @@ export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
     startTransition(async () => {
       const result = await updateProfile({
         full_name: fullName,
-        postcode,
         ...(isTrade
-          ? { bio, trade_types: tradeTypes, years_experience }
-          : { display_name: displayName }),
+          ? { company_name: companyName, bio, trade_types: tradeTypes, years_experience }
+          : { postcode, display_name: displayName, ...(clientProfile?.username !== undefined ? { username } : {}) }),
       })
       if (result.success) {
         setSuccess(true)
@@ -155,7 +154,8 @@ export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
         </div>
       </div>
 
-      {/* Postcode */}
+      {/* Client only: postcode */}
+      {!isTrade && (
       <div>
         <label htmlFor="postcode" className="block text-sm font-medium text-gray-700 mb-1.5">
           Postcode
@@ -171,6 +171,7 @@ export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
           className="w-full min-h-[44px] rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 uppercase focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
         />
       </div>
+      )}
 
       {/* Client only: display name */}
       {!isTrade && (
@@ -189,9 +190,45 @@ export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
         </div>
       )}
 
+      {/* Client only: username */}
+      {!isTrade && clientProfile && clientProfile.username !== null && (
+        <div>
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1.5">
+            WorkedWith username
+          </label>
+          <input
+            id="username"
+            type="text"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            className="w-full min-h-[44px] rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Tradespeople use this to find your profile. If you change it, tell anyone you have already given it to.
+          </p>
+        </div>
+      )}
+
       {/* Trade only fields */}
       {isTrade && (
         <>
+          <div>
+            <label htmlFor="company_name" className="block text-sm font-medium text-gray-700 mb-1.5">
+              Company or trading name <span className="font-normal text-gray-400">(optional)</span>
+            </label>
+            <input
+              id="company_name"
+              type="text"
+              value={companyName}
+              onChange={e => setCompanyName(e.target.value)}
+              placeholder="Shown as your profile heading if you add one"
+              className="w-full min-h-[44px] rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+            />
+          </div>
+
           <div>
             <p className="block text-sm font-medium text-gray-700 mb-2">Trade types</p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

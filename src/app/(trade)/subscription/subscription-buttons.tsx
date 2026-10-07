@@ -81,3 +81,36 @@ export function ManageButton({ currentTier }: { currentTier: SubscriptionTier })
     </div>
   )
 }
+
+// ── Downgrade button (opens the same secure Stripe page) ──────
+
+export function DowngradeButton({ label }: { label: string }) {
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  function handleClick() {
+    setError(null)
+    startTransition(async () => {
+      const result = await createPortalSession()
+      if ('url' in result) {
+        window.location.href = result.url
+      } else {
+        setError(result.error)
+      }
+    })
+  }
+
+  return (
+    <div>
+      <button
+        onClick={handleClick}
+        disabled={isPending}
+        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-700
+          transition-colors hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {isPending ? 'Opening…' : label}
+      </button>
+      {error && <p className="mt-2 text-xs text-red-600 text-center">{error}</p>}
+    </div>
+  )
+}

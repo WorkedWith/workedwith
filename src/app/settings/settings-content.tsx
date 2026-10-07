@@ -48,6 +48,22 @@ export function SettingsContent({ email, userType }: { email: string; userType: 
   return (
     <div className="space-y-6">
 
+      {/* Plan and billing (trades only) */}
+      {(userType === 'trade' || userType === 'both') && (
+        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-1 text-base font-semibold text-brand-navy">Subscription</h2>
+          <p className="mb-4 text-sm text-gray-500">
+            See your plan, upgrade, downgrade or manage billing.
+          </p>
+          <a
+            href="/subscription"
+            className="inline-flex min-h-[44px] items-center rounded-xl bg-brand-amber px-5 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
+          >
+            Manage your plan
+          </a>
+        </section>
+      )}
+
       {/* Change password */}
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-base font-semibold text-brand-navy">Change password</h2>

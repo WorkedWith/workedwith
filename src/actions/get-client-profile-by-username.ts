@@ -5,6 +5,7 @@ import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUserTier, isStandardOrAbove } from '@/lib/stripe/get-tier'
+import { DAILY_LOOKUP_LIMIT, classifyIdentifier } from '@/lib/lookup'
 import type { ClientProfileResult } from './get-client-profile'
 import type { VerificationTier } from '@/types/database'
 
@@ -23,7 +24,7 @@ type ClientProfileRow = {
   red_flag_count: number
 }
 
-export async function getClientProfileByUsername(username: string): Promise<ClientProfileResult> {
+export async function getClientProfileByIdentifier(rawInput: string): Promise<ClientProfileResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { status: 'unauthorized' }
@@ -45,49 +46,49 @@ export async function getClientProfileByUsername(username: string): Promise<Clie
 
   const h = headers()
   const ip = h.get('x-forwarded-for') ?? h.get('x-real-ip') ?? null
-  const identifierHash = sha256(username.trim().toLowerCase())
+  const identifier = classifyIdentifier(rawInput)
+  if (!identifier.value) return { status: 'not_found' }
+  const identifierHash = sha256(`${identifier.kind}:${identifier.value.toLowerCase()}`)
 
-  // Rate limit: max 20 searches per 24 hours
+  // Rate limit: DAILY_LOOKUP_LIMIT lookups per rolling 24 hours (blocked attempts do not count)
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   const { data: recentSearches } = await admin
     .from('search_audit_log')
-    .select('id')
+    .select('searched_at')
     .eq('searcher_id', user.id)
+    .neq('result', 'rate_limited')
     .gte('searched_at', since)
-    .limit(21)
+    .order('searched_at', { ascending: true })
+    .limit(DAILY_LOOKUP_LIMIT + 1)
 
-  if ((recentSearches?.length ?? 0) >= 20) {
+  if ((recentSearches?.length ?? 0) >= DAILY_LOOKUP_LIMIT) {
     await admin.from('search_audit_log').insert({
       searcher_id: user.id,
       identifier_hash: identifierHash,
       result: 'rate_limited',
       ip_address: ip,
     })
-    return { status: 'rate_limited' }
+    const oldest = recentSearches?.[0]?.searched_at as string | undefined
+    const resetsAt = oldest ? new Date(new Date(oldest).getTime() + 24 * 60 * 60 * 1000).toISOString() : undefined
+    return { status: 'rate_limited', resets_at: resetsAt }
   }
 
-  // 1. Search client_profiles.display_name (case insensitive, exact match)
+  // Find the user by exact username, email or UK mobile. Never by real name.
   let foundUserId: string | null = null
 
-  const { data: cpMatch } = await admin
-    .from('client_profiles')
-    .select('user_id')
-    .ilike('display_name', username.trim())
-    .maybeSingle()
-
-  if (cpMatch?.user_id) {
-    foundUserId = cpMatch.user_id as string
+  if (identifier.kind === 'email') {
+    const { data } = await admin.from('users').select('id').eq('email', identifier.value).maybeSingle()
+    if (data?.id) foundUserId = data.id as string
+  } else if (identifier.kind === 'phone') {
+    const { data } = await admin.from('users').select('id').eq('phone', identifier.value).maybeSingle()
+    if (data?.id) foundUserId = data.id as string
   } else {
-    // 2. Fallback: search users.full_name (case insensitive, exact match)
-    const { data: userMatch } = await admin
-      .from('users')
-      .select('id')
-      .ilike('full_name', username.trim())
+    const { data } = await admin
+      .from('client_profiles')
+      .select('user_id')
+      .eq('username', identifier.value.replace(/^@/, '').toLowerCase())
       .maybeSingle()
-
-    if (userMatch?.id) {
-      foundUserId = userMatch.id as string
-    }
+    if (data?.user_id) foundUserId = data.user_id as string
   }
 
   let clientProfile: ClientProfileRow | null = null

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { completeJob } from '@/actions/complete-job'
 import { ReportClaimButton } from '@/components/report-claim-button'
 import type { JobStatus } from '@/types/database'
+import { BackLink } from '@/components/back-link'
 
 export const metadata = { title: 'Job details | WorkedWith' }
 
@@ -82,18 +83,8 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <header className="bg-brand-navy px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <span className="text-xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </span>
-          <a href="/dashboard" className="text-sm text-white/60 hover:text-white transition-colors">
-            ← Dashboard
-          </a>
-        </div>
-      </header>
-
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 space-y-5">
+        <BackLink href="/dashboard" label="Back to dashboard" />
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>

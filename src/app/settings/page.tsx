@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { UserMenu } from '@/components/user-menu'
+import { AppHeader } from '@/components/app-header'
 import { SettingsContent } from './settings-content'
 
 export const metadata = { title: 'Settings | WorkedWith', robots: { index: false } }
@@ -17,14 +17,7 @@ export default async function SettingsPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <nav className="sticky top-0 z-40 bg-brand-navy px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <a href="/dashboard" className="text-xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </a>
-          <UserMenu />
-        </div>
-      </nav>
+      <AppHeader />
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
         <h1 className="mb-6 text-2xl font-bold text-brand-navy">Settings</h1>

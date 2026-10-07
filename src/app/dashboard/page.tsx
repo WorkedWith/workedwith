@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { NotificationBell } from '@/components/notifications/notification-bell'
-import { UserMenu } from '@/components/user-menu'
+import { AppHeader } from '@/components/app-header'
+import { UsernameCard } from '@/components/username-card'
 import { TRADE_TYPES } from '@/lib/trade-types'
 import { getJobHistory } from '@/actions/get-job-history'
 import { JobHistory } from '@/components/job-history'
@@ -54,7 +54,7 @@ export default async function DashboardPage() {
       ? admin.from('trade_profiles').select('id, average_rating, total_reviews, total_jobs, public_slug, subscription_tier, trade_types, operating_areas').eq('user_id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
     isClient
-      ? admin.from('client_profiles').select('id, average_rating, total_reviews, total_jobs').eq('user_id', user.id).maybeSingle()
+      ? admin.from('client_profiles').select('id, average_rating, total_reviews, total_jobs, username').eq('user_id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
     isTrade
       ? admin.from('jobs')
@@ -128,17 +128,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-40 bg-brand-navy px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <a href="/dashboard" className="text-xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </a>
-          <div className="flex items-center gap-2">
-            <NotificationBell />
-            <UserMenu />
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 space-y-6">
 
@@ -182,6 +172,20 @@ export default async function DashboardPage() {
         ══════════════════════════════════════════════ */}
         {isTrade && (
           <>
+            {/* 0. Why WorkedWith */}
+            <section className="rounded-xl border border-brand-navy/10 bg-brand-navy/5 p-5">
+              <p className="text-sm font-semibold text-brand-navy">Why WorkedWith?</p>
+              <p className="mt-1 text-sm text-gray-600 leading-relaxed">
+                Every job you log here ends with two verified reviews: one for you, one for your client.
+                Neither is shown until both are in, so nobody can review in revenge. Good work builds
+                your public profile, and you can see how a client has treated other trades before you
+                take the job on.
+              </p>
+              <p className="mt-2 text-xs text-gray-500">
+                Log a job, invite your client, get reviewed. Past jobs count too.
+              </p>
+            </section>
+
             {/* 1. Profile summary card */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex items-center gap-4">
               <div className="flex-shrink-0 flex flex-col items-center gap-1">
@@ -476,6 +480,11 @@ export default async function DashboardPage() {
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Find a tradesperson</p>
               <FindTradeForm />
             </section>
+
+            {/* Your username */}
+            {typeof clientProfile?.username === 'string' && clientProfile.username && (
+              <UsernameCard username={clientProfile.username} />
+            )}
 
             {/* 2. Pending actions banner — only jobs logged BY the tradesperson */}
             {pendingCount > 0 && (

@@ -14,7 +14,6 @@ type Step = 1 | 2 | 3
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
 type FieldErrors = Partial<Record<keyof CreateTradeProfileInput, string>>
 
-const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}$/i
 
 type SeededData = { businessName: string; tradeCategory: string; slug: string; operatingAreas: string[] }
 
@@ -35,7 +34,6 @@ export function TradeOnboardingForm({
 
   const [tradeType, setTradeType] = useState(seededData?.tradeCategory ?? '')
   const [companyName, setCompanyName] = useState(seededData?.businessName ?? '')
-  const [postcode, setPostcode] = useState('')
   const [bio, setBio] = useState('')
   const [operatingAreas, setOperatingAreas] = useState<DistrictEntry[]>(
     seededData?.operatingAreas.map(code => ({ code, adminDistrict: null })) ?? []
@@ -68,11 +66,6 @@ export function TradeOnboardingForm({
   function validateStep1(): FieldErrors {
     const errors: FieldErrors = {}
     if (!tradeType) errors.trade_type = 'Please select your trade type.'
-    if (!postcode.trim()) {
-      errors.postcode = 'Please enter your postcode.'
-    } else if (!UK_POSTCODE_RE.test(postcode.trim())) {
-      errors.postcode = 'Please enter a valid UK postcode.'
-    }
     if (bio.length > 300) errors.bio = 'Bio must be 300 characters or fewer.'
     return errors
   }
@@ -86,6 +79,11 @@ export function TradeOnboardingForm({
 
   function handleNextFromAreas(e: React.FormEvent) {
     e.preventDefault()
+    if (operatingAreas.length === 0) {
+      setFieldErrors({ operating_areas: 'Add at least one postcode district so clients can find you.' })
+      return
+    }
+    setFieldErrors({})
     setStep(3)
   }
 
@@ -97,7 +95,6 @@ export function TradeOnboardingForm({
       const payload: CreateTradeProfileInput = {
         trade_type: tradeType,
         company_name: companyName,
-        postcode,
         bio,
         username: username.trim().toLowerCase(),
         operating_areas: operatingAreas.map(e => e.code),
@@ -161,16 +158,6 @@ export function TradeOnboardingForm({
             />
           </Field>
 
-          <Field label="Postcode" error={fieldErrors.postcode} required className="mt-4">
-            <input
-              type="text"
-              value={postcode}
-              onChange={(e) => { setPostcode(e.target.value); setFieldErrors(prev => ({ ...prev, postcode: undefined })) }}
-              placeholder="SW1A 1AA"
-              className={inputClass(!!fieldErrors.postcode)}
-            />
-          </Field>
-
           <Field label="Bio" hint="Optional: 300 characters max" error={fieldErrors.bio} className="mt-4">
             <textarea
               value={bio}
@@ -197,11 +184,14 @@ export function TradeOnboardingForm({
         <form onSubmit={handleNextFromAreas} noValidate>
           <h2 className="text-xl font-semibold text-brand-navy mb-1">Where do you work?</h2>
           <p className="text-sm text-gray-500 mb-6">
-            Add the postcode districts you cover, up to 20. Clients searching in these areas will find your profile.
+            Add the postcode districts you cover, up to 20. Clients searching in these areas will find your profile, so add at least one.
             You can update this at any time.
           </p>
 
-          <OperatingAreasPicker value={operatingAreas} onChange={setOperatingAreas} />
+          <OperatingAreasPicker value={operatingAreas} onChange={e => { setOperatingAreas(e); setFieldErrors({}) }} />
+          {fieldErrors.operating_areas && (
+            <p className="mt-2 text-sm text-red-600">{fieldErrors.operating_areas}</p>
+          )}
 
           <div className="mt-6 flex gap-3">
             <button
@@ -215,7 +205,7 @@ export function TradeOnboardingForm({
               type="submit"
               className="flex-1 rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy transition-opacity hover:opacity-90"
             >
-              {operatingAreas.length === 0 ? 'Skip for now' : 'Next'}
+              Next
             </button>
           </div>
         </form>

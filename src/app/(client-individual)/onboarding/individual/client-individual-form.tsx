@@ -3,16 +3,18 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientProfile } from '@/actions/create-client-profile'
+import { suggestUsername, validateUsername, USERNAME_HELP } from '@/lib/username'
 
 const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}$/i
 
-type FieldErrors = { full_name?: string; postcode?: string }
+type FieldErrors = { full_name?: string; postcode?: string; username?: string }
 
 export function ClientIndividualForm({ initialFullName }: { initialFullName: string }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [fullName, setFullName] = useState(initialFullName)
   const [postcode, setPostcode] = useState('')
+  const [username, setUsername] = useState(() => suggestUsername(initialFullName))
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
 
@@ -24,6 +26,8 @@ export function ClientIndividualForm({ initialFullName }: { initialFullName: str
     } else if (!UK_POSTCODE_RE.test(postcode.trim())) {
       errors.postcode = 'Please enter a valid UK postcode.'
     }
+    const u = validateUsername(username)
+    if (u.error) errors.username = u.error
     return errors
   }
 
@@ -35,7 +39,7 @@ export function ClientIndividualForm({ initialFullName }: { initialFullName: str
 
     setGlobalError(null)
     startTransition(async () => {
-      const result = await createClientProfile({ full_name: fullName, postcode })
+      const result = await createClientProfile({ full_name: fullName, postcode, username })
       if (result.success) {
         router.push('/dashboard')
       } else {
@@ -100,6 +104,35 @@ export function ClientIndividualForm({ initialFullName }: { initialFullName: str
           {fieldErrors.postcode && (
             <p className="mt-1 text-xs text-red-600">{fieldErrors.postcode}</p>
           )}
+        </div>
+
+        {/* Username */}
+        <div className="mt-4 rounded-xl border border-brand-amber/50 bg-amber-50 p-4">
+          <label htmlFor="username" className="block text-sm font-semibold text-brand-navy mb-1.5">
+            Choose your WorkedWith username<span className="ml-0.5 text-red-500">*</span>
+          </label>
+          <input
+            id="username"
+            type="text"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            value={username}
+            onChange={(e) => {
+              setUsername(e.target.value)
+              setFieldErrors((prev) => ({ ...prev, username: undefined }))
+            }}
+            className={inputClass(!!fieldErrors.username)}
+          />
+          {fieldErrors.username ? (
+            <p className="mt-1 text-xs text-red-600">{fieldErrors.username}</p>
+          ) : (
+            <p className="mt-1 text-xs text-gray-500">{USERNAME_HELP}</p>
+          )}
+          <p className="mt-3 text-sm text-amber-900 leading-relaxed">
+            <strong>Remember this.</strong> Tradespeople use your username to find your profile, so you will
+            give it to them when you hire someone. You can see it on your dashboard at any time.
+          </p>
         </div>
 
         {globalError && (

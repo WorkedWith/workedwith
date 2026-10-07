@@ -2,10 +2,12 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { validateUsername } from '@/lib/username'
 
 export type CreateClientProfileInput = {
   full_name: string
   postcode: string
+  username: string
 }
 
 export type CreateClientProfileResult =
@@ -48,6 +50,19 @@ export async function createClientProfile(
     return { success: false, error: 'Please enter a valid UK postcode.', field: 'postcode' }
   }
 
+  const uname = validateUsername(input.username ?? '')
+  if (uname.error) {
+    return { success: false, error: uname.error, field: 'username' }
+  }
+  const { data: taken } = await admin
+    .from('client_profiles')
+    .select('id')
+    .eq('username', uname.value)
+    .maybeSingle()
+  if (taken) {
+    return { success: false, error: 'That username is already taken. Please choose another.', field: 'username' }
+  }
+
   // Update full_name in case the user changed it here
   await admin.from('users').update({ full_name }).eq('id', user.id)
 
@@ -60,6 +75,7 @@ export async function createClientProfile(
       user_id: user.id,
       postcode,
       display_name: full_name,
+      username: uname.value,
       client_type: 'individual',
     })
     .select()
@@ -68,6 +84,9 @@ export async function createClientProfile(
   console.log('Insert error:', JSON.stringify(insertError, null, 2))
 
   if (insertError) {
+    if (insertError.code === '23505') {
+      return { success: false, error: 'That username is already taken. Please choose another.', field: 'username' }
+    }
     return { success: false, error: 'Failed to create your profile. Please try again.' }
   }
 

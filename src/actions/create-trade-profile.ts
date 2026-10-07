@@ -8,7 +8,6 @@ import type { SeededProfile } from '@/types/database'
 export type CreateTradeProfileInput = {
   trade_type: string
   company_name: string
-  postcode: string
   bio: string
   username: string
   operating_areas: string[]
@@ -19,7 +18,7 @@ export type CreateTradeProfileResult =
   | { success: true }
   | { success: false; error: string; field?: keyof CreateTradeProfileInput }
 
-const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}$/i
+const UK_DISTRICT_RE = /^[A-Z]{1,2}\d[A-Z0-9]?$/i
 const USERNAME_RE = /^[a-z0-9-]{3,30}$/
 
 function normaliseUKPhone(phone: string): string {
@@ -52,7 +51,6 @@ export async function createTradeProfile(
 
   const trade_type = input.trade_type.trim()
   const company_name = input.company_name.trim()
-  const postcode = input.postcode.trim().toUpperCase()
   const bio = input.bio.trim()
   const username = input.username.trim().toLowerCase()
   const operating_areas = input.operating_areas.map(d => d.trim().toUpperCase())
@@ -61,12 +59,8 @@ export async function createTradeProfile(
     return { success: false, error: 'Please select a valid trade type.', field: 'trade_type' }
   }
 
-  if (!postcode) {
-    return { success: false, error: 'Please enter your postcode.', field: 'postcode' }
-  }
-
-  if (!UK_POSTCODE_RE.test(postcode)) {
-    return { success: false, error: 'Please enter a valid UK postcode.', field: 'postcode' }
+  if (operating_areas.length === 0 || !operating_areas.every(d => UK_DISTRICT_RE.test(d))) {
+    return { success: false, error: 'Please add at least one postcode district where you work.', field: 'operating_areas' }
   }
 
   if (bio.length > 300) {
@@ -157,7 +151,6 @@ export async function createTradeProfile(
     user_id: user.id,
     trade_types: [trade_type],
     company_name: company_name || null,
-    postcode,
     public_slug: username,
     bio: bio || null,
     operating_areas,

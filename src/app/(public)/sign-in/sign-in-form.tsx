@@ -54,7 +54,7 @@ export function SignInForm({ message, next }: { message?: string; next?: string 
         } else if (safeNext) {
           window.location.href = safeNext
         } else if (userData.user_type === 'client_business') {
-          window.location.href = '/org/dashboard'
+          window.location.href = '/dashboard'
         } else {
           window.location.href = '/dashboard'
         }

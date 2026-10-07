@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { UserMenu } from '@/components/user-menu'
+import { AppHeader } from '@/components/app-header'
 import { ProfileForm } from './profile-form'
+import { TradeProfileView } from '@/app/(public)/t/[slug]/profile-view'
 import type { User, TradeProfile, ClientProfile } from '@/types/database'
 
 export const metadata = { title: 'My profile | WorkedWith', robots: { index: false } }
@@ -31,16 +32,40 @@ export default async function ProfilePage() {
   const tradeProfile = rawTrade as unknown as TradeProfile | null
   const clientProfile = rawClient as unknown as ClientProfile | null
 
+  if (isTrade && tradeProfile) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <AppHeader />
+        <div className="mx-auto max-w-2xl px-4 pt-6 sm:px-6">
+          <div className="rounded-2xl border border-brand-amber/50 bg-amber-50 p-5">
+            <h1 className="text-lg font-bold text-brand-navy">This is how clients see your profile</h1>
+            <p className="mt-1 text-sm text-amber-900">
+              Keep it complete. Profiles with a photo, a short bio and your work on show get more attention.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+              <a href="/profile/edit" className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-brand-amber px-4 text-sm font-semibold text-brand-navy hover:bg-amber-400">
+                Edit details
+              </a>
+              <a href="/profile/areas" className="inline-flex min-h-[44px] items-center justify-center rounded-lg border-2 border-brand-navy px-4 text-sm font-semibold text-brand-navy hover:bg-white">
+                Edit areas
+              </a>
+              <a href="/profile/featured-jobs" className="inline-flex min-h-[44px] items-center justify-center rounded-lg border-2 border-brand-navy px-4 text-sm font-semibold text-brand-navy hover:bg-white">
+                Photos of your work
+              </a>
+              <a href={`/t/${tradeProfile.public_slug}`} className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-white">
+                Open public page
+              </a>
+            </div>
+          </div>
+        </div>
+        <TradeProfileView slug={tradeProfile.public_slug} preview />
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-gray-50">
-      <nav className="sticky top-0 z-40 bg-brand-navy px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <a href="/dashboard" className="text-xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </a>
-          <UserMenu />
-        </div>
-      </nav>
+      <AppHeader />
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
         <h1 className="mb-6 text-2xl font-bold text-brand-navy">My profile</h1>
@@ -55,7 +80,7 @@ export default async function ProfilePage() {
               profile_photo_url: userData.profile_photo_url,
             }}
             tradeProfile={tradeProfile ? {
-              postcode: tradeProfile.postcode,
+              company_name: tradeProfile.company_name,
               trade_types: tradeProfile.trade_types,
               bio: tradeProfile.bio,
               years_experience: tradeProfile.years_experience,
@@ -64,59 +89,11 @@ export default async function ProfilePage() {
             clientProfile={clientProfile ? {
               postcode: clientProfile.postcode,
               display_name: clientProfile.display_name,
+              username: clientProfile.username,
             } : null}
           />
         </div>
 
-        {tradeProfile && (
-          <>
-            <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-3 flex items-center justify-between gap-4">
-                <h2 className="text-base font-semibold text-brand-navy">Where you work</h2>
-                <a
-                  href="/profile/areas"
-                  className="rounded-lg border border-brand-navy px-3 py-1.5 text-sm font-semibold text-brand-navy hover:bg-gray-50"
-                >
-                  Edit areas
-                </a>
-              </div>
-              {(tradeProfile.operating_areas ?? []).length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {(tradeProfile.operating_areas ?? []).map(district => (
-                    <span
-                      key={district}
-                      className="rounded-full bg-brand-navy/10 px-3 py-1 text-sm font-medium text-brand-navy"
-                    >
-                      {district}
-                      {(tradeProfile.boosted_districts ?? []).includes(district) ? ' (boosted)' : ''}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">
-                  No areas yet. Add the postcode districts you cover so clients can find you.
-                </p>
-              )}
-            </section>
-
-            <section className="mt-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-semibold text-brand-navy">Your plan</h2>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Current plan: <span className="font-medium capitalize text-gray-700">{tradeProfile.subscription_tier ?? 'free'}</span>
-                  </p>
-                </div>
-                <a
-                  href="/subscription"
-                  className="rounded-lg bg-brand-amber px-3 py-1.5 text-sm font-bold text-brand-navy hover:bg-amber-400"
-                >
-                  Manage plan
-                </a>
-              </div>
-            </section>
-          </>
-        )}
       </div>
     </main>
   )

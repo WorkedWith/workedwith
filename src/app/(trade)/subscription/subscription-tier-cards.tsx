@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { UpgradeButton, ManageButton } from './subscription-buttons'
+import { UpgradeButton, ManageButton, DowngradeButton } from './subscription-buttons'
 import type { BillingPeriod, SubscriptionTier } from '@/types/database'
 
 type Props = {
@@ -29,7 +29,7 @@ export function SubscriptionTierCards({ currentTier }: Props) {
           description="Everything you need to build a verified reputation."
           highlight={currentTier === 'free'}
           isCurrent={currentTier === 'free'}
-          cta={null}
+          cta={currentTier === 'free' ? null : <DowngradeButton label="Downgrade to Free" />}
         />
 
         {/* Standard */}
@@ -48,7 +48,11 @@ export function SubscriptionTierCards({ currentTier }: Props) {
                 label="Choose Standard"
                 className="w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy transition-opacity hover:opacity-90"
               />
-            ) : null
+            ) : currentTier === 'pro' ? (
+              <DowngradeButton label="Downgrade to Standard" />
+            ) : (
+              <ManageButton currentTier="standard" />
+            )
           }
         />
 
@@ -82,6 +86,14 @@ export function SubscriptionTierCards({ currentTier }: Props) {
         />
 
       </div>
+
+      {currentTier !== 'free' && (
+        <p className="mt-4 text-sm text-gray-500">
+          Downgrading opens a secure Stripe page. Your plan stays as it is until the end of the
+          period you have paid for, then moves to the lower plan.
+          {currentTier === 'pro' && ' Moving off Pro ends your Boosted Districts at that point.'}
+        </p>
+      )}
 
     </div>
   )

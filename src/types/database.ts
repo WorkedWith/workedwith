@@ -36,7 +36,7 @@ export interface TradeProfile {
   user_id: string
   trade_types: string[]
   company_name: string | null
-  postcode: string
+  postcode: string | null
   public_slug: string
   bio: string | null
   average_rating: number
@@ -63,6 +63,7 @@ export interface ClientProfile {
   user_id: string
   postcode: string
   display_name: string | null
+  username: string | null
   client_type: ClientType | null
   company_name: string | null
   companies_house_number: string | null
@@ -485,13 +486,13 @@ export interface Database {
       }
       trade_profiles: {
         Row: WithIndex<TradeProfile>
-        Insert: Omit<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
+        Insert: Omit<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
         Update: Partial<TradeProfile>
         Relationships: []
       }
       client_profiles: {
         Row: WithIndex<ClientProfile>
-        Insert: Omit<ClientProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'> & Partial<Pick<ClientProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'>>
+        Insert: Omit<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'> & Partial<Pick<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'>>
         Update: Partial<ClientProfile>
         Relationships: []
       }
