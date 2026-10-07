@@ -1,5 +1,6 @@
 'use server'
 
+import { APP_URL } from '@/lib/app-url'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -69,7 +70,7 @@ export async function reportIncorrectClaim(jobId: string): Promise<ReportIncorre
   <li><strong>Job:</strong> ${jobId}</li>
   <li><strong>Reported by:</strong> ${isInvitingClient ? 'inviting client' : 'claiming trade'} (user ${user.id})</li>
 </ul>
-<p><a href="https://workedwith.co.uk/admin/pending-invites">Review in admin &rarr;</a></p>`,
+<p><a href="${APP_URL}/admin/pending-invites">Review in admin &rarr;</a></p>`,
     })
   } catch { /* non-fatal */ }
 

@@ -1,3 +1,4 @@
+import { APP_URL } from '@/lib/app-url'
 import type { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
@@ -24,6 +25,6 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: 'https://workedwith.co.uk/sitemap.xml',
+    sitemap: `${APP_URL}/sitemap.xml`,
   }
 }

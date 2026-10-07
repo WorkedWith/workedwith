@@ -1,5 +1,6 @@
 'use client'
 
+import { APP_HOST } from '@/lib/app-url'
 import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { TRADE_TYPES } from '@/lib/trade-types'
@@ -265,7 +266,7 @@ export function TradeOnboardingForm({
               <div className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm">
                 <span className="text-gray-500">Your profile: </span>
                 <span className="font-medium text-brand-navy">
-                  workedwith.co.uk/t/{username.trim().toLowerCase()}
+                  {APP_HOST}/t/{username.trim().toLowerCase()}
                 </span>
               </div>
             )}

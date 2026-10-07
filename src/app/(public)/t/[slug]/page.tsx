@@ -1,3 +1,4 @@
+import { APP_HOST, APP_URL } from '@/lib/app-url'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -38,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const title = `${displayName}, ${tradesLabel} | WorkedWith`
     const description = `${displayName} is a verified ${tradesLabel} based in ${profile.postcode}. ${reviewsText}`
-    const canonical = `https://workedwith.co.uk/t/${slug}`
+    const canonical = `${APP_URL}/t/${slug}`
 
     return {
       title,
@@ -60,7 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const sp = seeded as unknown as Pick<SeededProfile, 'business_name' | 'trade_category'>
     const title = `${sp.business_name}, ${sp.trade_category} | WorkedWith`
     const description = `${sp.business_name} is a ${sp.trade_category} with a listing on WorkedWith. This profile has not yet been claimed.`
-    const canonical = `https://workedwith.co.uk/t/${slug}`
+    const canonical = `${APP_URL}/t/${slug}`
     return {
       title,
       description,
@@ -224,7 +225,7 @@ export default async function TradeProfilePage({ params }: Props) {
   const displayName = (tradeProfile.company_name as string | null) ?? tradeUser.full_name as string
   const reviewList = reviews ?? []
   const reviewsClients = (reviewerActivity?.length ?? 0) > 0
-  const profileUrl = `https://workedwith.co.uk/t/${slug}`
+  const profileUrl = `${APP_URL}/t/${slug}`
 
   // JSON-LD structured data
   const jsonLd = {
@@ -497,7 +498,7 @@ export default async function TradeProfilePage({ params }: Props) {
             <h2 className="mb-3 text-sm font-semibold text-brand-navy">Share this profile</h2>
             <div className="flex items-center gap-3">
               <code className="min-w-0 flex-1 truncate rounded-lg bg-gray-100 px-4 py-2.5 text-sm text-gray-700">
-                workedwith.co.uk/t/{slug}
+                {APP_HOST}/t/{slug}
               </code>
               <CopyUrlButton url={profileUrl} />
             </div>

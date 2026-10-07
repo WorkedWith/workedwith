@@ -1,5 +1,6 @@
 'use server'
 
+import { APP_URL } from '@/lib/app-url'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -199,7 +200,7 @@ export async function claimTradeInvite(claimToken: string): Promise<ClaimTradeIn
 
       // Notify inviting client
       const clientUser = (await admin.from('users').select('id, email, full_name').eq('id', inv.inviting_client_id).single()).data
-      const jobUrl = `https://workedwith.co.uk/jobs/${job.id}`
+      const jobUrl = `${APP_URL}/jobs/${job.id}`
 
       const notifPromises: PromiseLike<unknown>[] = [
         admin.from('notifications').insert({

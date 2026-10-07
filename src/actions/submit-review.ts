@@ -1,5 +1,6 @@
 'use server'
 
+import { APP_URL } from '@/lib/app-url'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -280,8 +281,8 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
       : false
 
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const jobUrl = `https://workedwith.co.uk/jobs/${input.job_id}`
-  const reviewUrl = `https://workedwith.co.uk/jobs/${input.job_id}/review`
+  const jobUrl = `${APP_URL}/jobs/${input.job_id}`
+  const reviewUrl = `${APP_URL}/jobs/${input.job_id}/review`
   const now = new Date().toISOString()
 
   // ── Blind window still open and only one side has reviewed — hold ──

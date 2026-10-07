@@ -1,3 +1,4 @@
+import { APP_URL } from '@/lib/app-url'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
@@ -5,7 +6,7 @@ import { AddSeededProfileForm } from './add-form'
 import { CopyClaimLink } from './copy-claim-link'
 import type { SeededProfile, DoNotReseed } from '@/types/database'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://workedwith.co.uk'
+
 
 export const metadata = { title: 'Seeded Profiles — WorkedWith Admin' }
 

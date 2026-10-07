@@ -1,5 +1,6 @@
 'use server'
 
+import { APP_URL } from '@/lib/app-url'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripeClient } from '@/lib/stripe/client'
@@ -9,7 +10,7 @@ export type CheckoutPeriod = 'monthly' | 'annual'
 
 export type CheckoutResult = { url: string } | { error: string }
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://workedwith.co.uk'
+const BASE_URL = APP_URL
 
 type PriceKey = `${CheckoutTier}_${CheckoutPeriod}`
 

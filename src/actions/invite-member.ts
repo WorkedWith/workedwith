@@ -1,5 +1,6 @@
 'use server'
 
+import { APP_URL } from '@/lib/app-url'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -181,7 +182,7 @@ export async function inviteOrgMember(
   }
 
   // Send invite email via Resend
-  const inviteUrl = `https://workedwith.co.uk/invite/accept/${invite.invite_token}`
+  const inviteUrl = `${APP_URL}/invite/accept/${invite.invite_token}`
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   const { error: emailError } = await resend.emails.send({

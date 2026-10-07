@@ -1,5 +1,6 @@
 'use client'
 
+import { APP_URL } from '@/lib/app-url'
 import { Suspense, useState, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -51,7 +52,7 @@ function JoinTradeForm() {
         password,
         options: {
           data: { full_name: fullName.trim(), user_type: 'trade' },
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(verifyNext)}`,
+          emailRedirectTo: `${APP_URL}/auth/callback?next=${encodeURIComponent(verifyNext)}`,
         },
       })
 

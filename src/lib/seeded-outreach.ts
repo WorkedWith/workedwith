@@ -1,10 +1,11 @@
+import { APP_URL } from '@/lib/app-url'
 import { Resend } from 'resend'
 import twilio from 'twilio'
 import type { SeededProfile } from '@/types/database'
 
 export type OutreachDay = 'day0' | 'day21' | 'day42' | 'day56'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://workedwith.co.uk'
+
 
 // ── Helpers ───────────────────────────────────────────────────
 

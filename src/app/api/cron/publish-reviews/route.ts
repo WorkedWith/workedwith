@@ -1,3 +1,4 @@
+import { APP_URL } from '@/lib/app-url'
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -157,7 +158,7 @@ async function processWindow(
 
   const tradeName = (tradeProfile?.company_name ?? tradeUser?.full_name) ?? 'the tradesperson'
   const clientName = (clientProfile?.display_name ?? clientUser?.full_name) ?? 'the client'
-  const jobUrl = `https://workedwith.co.uk/jobs/${job_id}`
+  const jobUrl = `${APP_URL}/jobs/${job_id}`
 
   const bothSubmitted = trade_review_submitted && client_review_submitted
 

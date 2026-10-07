@@ -1,5 +1,6 @@
 'use client'
 
+import { APP_HOST } from '@/lib/app-url'
 import { useState, useTransition } from 'react'
 import { updateProfile } from '@/actions/update-profile'
 import { uploadProfilePhoto } from '@/actions/upload-profile-photo'
@@ -249,7 +250,7 @@ export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
                 rel="noopener noreferrer"
                 className="text-sm font-medium text-brand-amber hover:underline"
               >
-                workedwith.co.uk/t/{tradeProfile.public_slug}
+                {APP_HOST}/t/{tradeProfile.public_slug}
               </a>
             </div>
           )}

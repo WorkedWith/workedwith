@@ -1,3 +1,4 @@
+import { APP_URL } from '@/lib/app-url'
 import type Stripe from 'stripe'
 import { Resend } from 'resend'
 import { getStripeClient } from './client'
@@ -217,7 +218,7 @@ function paymentFailedHtml(): string {
     We were unable to process your WorkedWith subscription payment. Stripe will retry automatically, but please update your payment method to avoid any interruption to your service.
   </p>
   <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center">
-    <a href="https://workedwith.co.uk/subscription" style="display:inline-block;background:#F59E0B;color:#0F1F3D;font-weight:600;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">
+    <a href="${APP_URL}/subscription" style="display:inline-block;background:#F59E0B;color:#0F1F3D;font-weight:600;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">
       Update payment method
     </a>
   </td></tr></table>

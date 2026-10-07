@@ -1,5 +1,6 @@
 'use server'
 
+import { APP_URL } from '@/lib/app-url'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
@@ -96,7 +97,7 @@ function approvalEmailHtml(name: string): string {
     Great news — your identity has been verified. Your WorkedWith profile now shows a <strong>Fully Verified</strong> badge, which helps clients trust your work.
   </p>
   <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td align="center">
-    <a href="https://workedwith.co.uk/dashboard" style="display:inline-block;background:#F59E0B;color:#0F1F3D;font-weight:600;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">Go to dashboard</a>
+    <a href="${APP_URL}/dashboard" style="display:inline-block;background:#F59E0B;color:#0F1F3D;font-weight:600;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;">Go to dashboard</a>
   </td></tr></table>
 </td></tr>
 <tr><td style="padding:16px 28px;border-top:1px solid #F3F4F6;">

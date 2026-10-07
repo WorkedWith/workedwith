@@ -1,5 +1,6 @@
 'use server'
 
+import { APP_URL } from '@/lib/app-url'
 import { headers } from 'next/headers'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
@@ -213,7 +214,7 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
       // Existing user: send straight to the confirm page
       const emailParams: EmailParams = {
         tradeName, jobType: job_type, postcode, startedAt: started_at,
-        confirmUrl: `https://workedwith.co.uk/jobs/confirm/${inviteToken}`,
+        confirmUrl: `${APP_URL}/jobs/confirm/${inviteToken}`,
       }
       await Promise.all([
         admin.from('notifications').insert({
@@ -236,7 +237,7 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
       // New user: send to the branded invite landing page
       const emailParams: EmailParams = {
         tradeName, jobType: job_type, postcode, startedAt: started_at,
-        confirmUrl: `https://workedwith.co.uk/invite/job/${inviteToken}`,
+        confirmUrl: `${APP_URL}/invite/job/${inviteToken}`,
       }
       try {
         await resend.emails.send({

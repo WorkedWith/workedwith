@@ -1,5 +1,6 @@
 'use server'
 
+import { APP_URL } from '@/lib/app-url'
 import { headers } from 'next/headers'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
@@ -321,7 +322,7 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY)
-  const jobUrl = `https://workedwith.co.uk/jobs/${job.id}`
+  const jobUrl = `${APP_URL}/jobs/${job.id}`
 
   if (job.is_backdated) {
     const windowCloses = new Date(nowDate.getTime() + 30 * 24 * 60 * 60 * 1000)

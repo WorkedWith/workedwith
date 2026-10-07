@@ -1,7 +1,8 @@
+import { APP_URL } from '@/lib/app-url'
 import type { MetadataRoute } from 'next'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const BASE_URL = 'https://workedwith.co.uk'
+const BASE_URL = APP_URL
 
 // Always build fresh so new profiles appear without a redeploy
 export const dynamic = 'force-dynamic'

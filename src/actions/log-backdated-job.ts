@@ -1,5 +1,6 @@
 'use server'
 
+import { APP_URL } from '@/lib/app-url'
 import { headers } from 'next/headers'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
@@ -300,7 +301,7 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
       // Existing user: send straight to the confirm page
       const emailParams: BackdatedEmailParams = {
         callerName, jobType: job_type, backdatedPeriod: backdated_period,
-        confirmUrl: `https://workedwith.co.uk/jobs/confirm/${inviteToken}`,
+        confirmUrl: `${APP_URL}/jobs/confirm/${inviteToken}`,
       }
       await Promise.all([
         admin.from('notifications').insert({
@@ -323,7 +324,7 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
       // New user: send to the branded invite landing page
       const emailParams: BackdatedEmailParams = {
         callerName, jobType: job_type, backdatedPeriod: backdated_period,
-        confirmUrl: `https://workedwith.co.uk/invite/job/${inviteToken}`,
+        confirmUrl: `${APP_URL}/invite/job/${inviteToken}`,
       }
       try {
         await resend.emails.send({

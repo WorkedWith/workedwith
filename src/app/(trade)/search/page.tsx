@@ -1,3 +1,4 @@
+import { APP_URL } from '@/lib/app-url'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -133,7 +134,7 @@ function SearchResult({ result }: { result: ClientProfileResult }) {
           They may not have a WorkedWith account yet.
         </p>
         <a
-          href={`mailto:?subject=Join me on WorkedWith&body=Hi, I use WorkedWith to verify my jobs and reviews. You can create a free client account at https://workedwith.co.uk/join/client - it only takes a minute!`}
+          href={`mailto:?subject=Join me on WorkedWith&body=Hi, I use WorkedWith to verify my jobs and reviews. You can create a free client account at ${APP_URL}/join/client - it only takes a minute!`}
           className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-brand-navy px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy/90 transition-colors"
         >
           Invite them to join

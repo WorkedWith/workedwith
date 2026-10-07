@@ -1,5 +1,6 @@
 'use server'
 
+import { APP_URL } from '@/lib/app-url'
 import { randomBytes } from 'crypto'
 import twilio from 'twilio'
 import { Resend } from 'resend'
@@ -215,7 +216,7 @@ export async function inviteTrade(input: InviteTradeInput): Promise<InviteTradeR
   }
 
   // Send notifications
-  const claimUrl = `https://workedwith.co.uk/invite/claim/${invite.claim_token}`
+  const claimUrl = `${APP_URL}/invite/claim/${invite.claim_token}`
   const callerName =
     (clientProfile as { display_name: string | null; company_name: string | null }).display_name ??
     (clientProfile as { display_name: string | null; company_name: string | null }).company_name ??

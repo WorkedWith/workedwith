@@ -1,5 +1,6 @@
 'use server'
 
+import { APP_URL } from '@/lib/app-url'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -152,7 +153,7 @@ export async function raiseDispute(
 
   const raiserName = (raiserUser?.full_name as string | null | undefined) ?? 'The other party'
   const evidenceDeadline = dispute.evidence_deadline as string
-  const evidenceUrl = `https://workedwith.co.uk/reviews/${reviewId}/dispute/evidence`
+  const evidenceUrl = `${APP_URL}/reviews/${reviewId}/dispute/evidence`
 
   const resend = new Resend(process.env.RESEND_API_KEY)
   const tasks: PromiseLike<unknown>[] = [

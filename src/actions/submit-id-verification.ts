@@ -1,5 +1,6 @@
 'use server'
 
+import { APP_URL } from '@/lib/app-url'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -94,7 +95,7 @@ export async function submitIdVerification(formData: FormData): Promise<SubmitId
       from: 'WorkedWith <hello@workedwith.co.uk>',
       to: 'hello@workedwith.co.uk',
       subject: `New ID verification submitted by ${full_name} (${email})`,
-      html: `<p><strong>${full_name}</strong> (${email}) has submitted an ID document for review.</p><p>Log in to the <a href="https://workedwith.co.uk/admin/verification">admin verification queue</a> to review it.</p>`,
+      html: `<p><strong>${full_name}</strong> (${email}) has submitted an ID document for review.</p><p>Log in to the <a href="${APP_URL}/admin/verification">admin verification queue</a> to review it.</p>`,
     })
   } catch (emailError) {
     console.error('Admin notification email failed (non-fatal):', emailError)
