@@ -2,7 +2,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AddSeededProfileForm } from './add-form'
+import { CopyClaimLink } from './copy-claim-link'
 import type { SeededProfile, DoNotReseed } from '@/types/database'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://workedwith.co.uk'
 
 export const metadata = { title: 'Seeded Profiles — WorkedWith Admin' }
 
@@ -101,7 +104,7 @@ export default async function SeededProfilesPage() {
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  {['Created', 'Business', 'Trade', 'Areas', 'Status', 'Days left', 'Reminders', 'Contact'].map(h => (
+                  {['Created', 'Business', 'Trade', 'Areas', 'Status', 'Days left', 'Reminders', 'Contact', 'Claim link'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                       {h}
                     </th>
@@ -142,6 +145,13 @@ export default async function SeededProfilesPage() {
                       {p.contact_email && <div>Email</div>}
                       {p.contact_phone && <div>Phone</div>}
                       {!p.contact_email && !p.contact_phone && <span className="text-gray-300">None</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.status === 'unclaimed' ? (
+                        <CopyClaimLink url={`${APP_URL}/claim/${p.claim_token}`} />
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
