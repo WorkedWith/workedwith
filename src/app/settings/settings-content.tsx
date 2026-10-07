@@ -138,7 +138,10 @@ export function SettingsContent({ email, userType }: { email: string; userType: 
       <section className="rounded-2xl border border-red-200 bg-white p-6 shadow-sm">
         <h2 className="mb-2 text-base font-semibold text-red-700">Delete account</h2>
         <p className="mb-4 text-sm text-gray-500">
-          Permanently delete your account. Your reviews will be anonymised. This cannot be undone.
+          Permanently delete your account. Your reviews will be anonymised but kept. This cannot be undone.
+        </p>
+        <p className="mb-4 text-sm font-medium text-gray-700">
+          Important: once this account is deleted, your phone number cannot be used to create a new WorkedWith account. If you think you may want to come back, do not delete. If you do need to return later, contact support and we can review it.
         </p>
 
         {deleteError && (
