@@ -11,7 +11,10 @@ const tierMap: Record<string, { tier: SubscriptionTier; period: BillingPeriod }>
   [process.env.STRIPE_PRO_ANNUAL_PRICE_ID!]:       { tier: 'pro',      period: 'annual'  },
 }
 
-const ADDON_PRICE_ID = process.env.STRIPE_PRO_ADDON_PRICE_ID!
+const ADDON_PRICE_IDS = [
+  process.env.STRIPE_PRO_ADDON_PRICE_ID,
+  process.env.STRIPE_PRO_ADDON_ANNUAL_PRICE_ID,
+].filter((id): id is string => !!id)
 
 function activeTier(subscription: Stripe.Subscription): { tier: SubscriptionTier; billingPeriod: BillingPeriod } {
   if (subscription.status !== 'active' && subscription.status !== 'trialing') {
@@ -27,7 +30,7 @@ function activeTier(subscription: Stripe.Subscription): { tier: SubscriptionTier
 }
 
 function addonQuantity(subscription: Stripe.Subscription): number {
-  const addonItem = subscription.items.data.find(item => item.price.id === ADDON_PRICE_ID)
+  const addonItem = subscription.items.data.find(item => ADDON_PRICE_IDS.includes(item.price.id))
   return addonItem?.quantity ?? 0
 }
 
@@ -72,6 +75,7 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
           stripe_subscription_id: subscriptionId,
           is_searchable: tier !== 'free',
           boosted_district_addon_quantity: tier === 'pro' ? addonQty : 0,
+          boosted_district_addon_paid_quantity: tier === 'pro' ? addonQty : 0,
         })
         .eq('user_id', userId)
 
@@ -94,6 +98,20 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
         ? { boosted_districts: [], boosted_districts_updated_at: null }
         : {}
 
+      // Slots already paid for stay usable until the billing period rolls over.
+      // A new period start means renewal: paid slots reset to what was actually billed.
+      const { data: existing } = await admin
+        .from('trade_profiles')
+        .select('subscription_period_start_at, boosted_district_addon_paid_quantity')
+        .eq('stripe_customer_id', customerId)
+        .maybeSingle()
+
+      const storedStart = (existing?.subscription_period_start_at as string | null) ?? null
+      const storedPaid = (existing?.boosted_district_addon_paid_quantity as number | null) ?? 0
+      const periodRolledOver =
+        !storedStart || !currentPeriodStart || new Date(storedStart).getTime() !== new Date(currentPeriodStart).getTime()
+      const paidQty = tier !== 'pro' ? 0 : periodRolledOver ? addonQty : Math.max(storedPaid, addonQty)
+
       await admin
         .from('trade_profiles')
         .update({
@@ -104,6 +122,7 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
           stripe_subscription_id: subscription.id,
           is_searchable: tier !== 'free',
           boosted_district_addon_quantity: tier === 'pro' ? addonQty : 0,
+          boosted_district_addon_paid_quantity: paidQty,
           ...boostClear,
         })
         .eq('stripe_customer_id', customerId)
@@ -128,6 +147,7 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
           boosted_districts: [],
           boosted_districts_updated_at: null,
           boosted_district_addon_quantity: 0,
+          boosted_district_addon_paid_quantity: 0,
         })
         .eq('stripe_customer_id', customerId)
 

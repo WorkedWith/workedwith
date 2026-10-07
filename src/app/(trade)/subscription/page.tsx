@@ -5,7 +5,7 @@ import { getStripeClient } from '@/lib/stripe/client'
 import type { BillingPeriod, SubscriptionTier } from '@/types/database'
 import { ManageButton } from './subscription-buttons'
 import { SubscriptionTierCards } from './subscription-tier-cards'
-import { BoostedAddonManager } from './boosted-addon-manager'
+import { BoostSummaryCard } from './boost-summary'
 
 export const metadata = { title: 'Subscription | WorkedWith' }
 
@@ -66,38 +66,10 @@ export default async function SubscriptionPage() {
   const isPaid = currentTier === 'standard' || currentTier === 'pro'
   const isPro = currentTier === 'pro'
 
-  // ── Boosted add-on props (Pro only) ───────────────────────────
-  const addonQty = (tradeProfile?.boosted_district_addon_quantity as number | null | undefined) ?? 0
+  // ── Boost summary (Pro only) ──────────────────────────────────
+  const billedSlots = (tradeProfile?.boosted_district_addon_quantity as number | null | undefined) ?? 0
+  const paidSlots = Math.max((tradeProfile?.boosted_district_addon_paid_quantity as number | null | undefined) ?? 0, billedSlots)
   const activeBoostedCount = ((tradeProfile?.boosted_districts as string[] | null | undefined) ?? []).length
-
-  // Compute cooldown for decrease — mirrors update-boosted-addon-quantity action logic
-  let canDecrease = true
-  let cooldownMessage: string | null = null
-
-  if (isPro) {
-    const updatedAt = tradeProfile?.boosted_districts_updated_at as string | null | undefined
-    if (updatedAt) {
-      const updatedDate = new Date(updatedAt)
-      const isAnnual = currentBillingPeriod === 'annual'
-      if (isAnnual) {
-        const availableAt = new Date(updatedDate.getTime() + 30 * 24 * 60 * 60 * 1000)
-        if (new Date() < availableAt) {
-          canDecrease = false
-          cooldownMessage = `Available from ${availableAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} (30-day cooldown).`
-        }
-      } else {
-        const periodStart = tradeProfile?.subscription_period_start_at as string | null | undefined
-        if (periodStart && updatedDate >= new Date(periodStart)) {
-          canDecrease = false
-          const expiresAt = tradeProfile?.subscription_expires_at as string | null | undefined
-          const renewalFmt = expiresAt
-            ? new Date(expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-            : 'your next renewal'
-          cooldownMessage = `Available from ${renewalFmt} (one change per billing cycle).`
-        }
-      }
-    }
-  }
 
   let nextBillingDate: string | null = null
   if (subscriptionId) {
@@ -155,13 +127,13 @@ export default async function SubscriptionPage() {
           )}
         </div>
 
-        {/* Boosted District add-on management (Pro only) */}
-        {isPro && subscriptionId && (
-          <BoostedAddonManager
-            currentAddonQty={addonQty}
-            activeBoostedCount={activeBoostedCount}
-            canDecrease={canDecrease}
-            cooldownMessage={cooldownMessage}
+        {/* Boosted District summary (Pro only) */}
+        {isPro && (
+          <BoostSummaryCard
+            boostedCount={activeBoostedCount}
+            billedSlots={billedSlots}
+            paidSlots={paidSlots}
+            renewsOn={(tradeProfile?.subscription_expires_at as string | null | undefined) ?? null}
           />
         )}
 

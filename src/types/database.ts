@@ -45,6 +45,7 @@ export interface TradeProfile {
   operating_areas: string[]
   boosted_districts: string[]
   boosted_district_addon_quantity: number
+  boosted_district_addon_paid_quantity: number
   boosted_districts_updated_at: string | null
   subscription_period_start_at: string | null
   is_searchable: boolean
@@ -419,6 +420,16 @@ export interface FeaturedJobImage {
 
 // ── Rate limit events ─────────────────────────────────────────
 
+export interface BoostEventRow {
+  id: string
+  user_id: string | null
+  event_type: 'on' | 'off' | 'swap' | 'area_removed'
+  district: string | null
+  from_district: string | null
+  to_district: string | null
+  created_at: string
+}
+
 export interface RateLimitEvent {
   id: string
   key: string
@@ -474,7 +485,7 @@ export interface Database {
       }
       trade_profiles: {
         Row: WithIndex<TradeProfile>
-        Insert: Omit<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
+        Insert: Omit<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
         Update: Partial<TradeProfile>
         Relationships: []
       }
@@ -621,6 +632,12 @@ export interface Database {
         Row: WithIndex<DoNotReseed>
         Insert: { business_name_normalised: string } & Partial<Omit<DoNotReseed, 'business_name_normalised' | 'id' | 'created_at'>>
         Update: Partial<DoNotReseed>
+        Relationships: []
+      }
+      boost_events: {
+        Row: WithIndex<BoostEventRow>
+        Insert: { event_type: BoostEventRow['event_type'] } & Partial<Omit<BoostEventRow, 'event_type'>>
+        Update: Partial<BoostEventRow>
         Relationships: []
       }
       rate_limit_events: {

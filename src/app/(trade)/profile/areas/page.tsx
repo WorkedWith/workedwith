@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AreasForm } from './areas-form'
 import type { DistrictEntry } from '@/actions/resolve-district'
+import type { BoostSummary } from '@/lib/boost-types'
 
 export const metadata: Metadata = { title: 'Operating Areas | WorkedWith' }
 
@@ -15,7 +16,7 @@ export default async function OperatingAreasPage() {
   const admin = createAdminClient()
   const { data: profile } = await admin
     .from('trade_profiles')
-    .select('operating_areas, boosted_districts, boosted_district_addon_quantity, boosted_districts_updated_at, subscription_period_start_at, subscription_tier, subscription_expires_at')
+    .select('operating_areas, boosted_districts, boosted_district_addon_quantity, boosted_district_addon_paid_quantity, billing_period, subscription_tier, subscription_expires_at')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -23,30 +24,30 @@ export default async function OperatingAreasPage() {
 
   const isPro = (profile.subscription_tier as string) === 'pro'
 
-  // Cooldown: active if boosted_districts_updated_at falls within the current billing period
-  const updatedAt = profile.boosted_districts_updated_at as string | null
-  const periodStart = profile.subscription_period_start_at as string | null
-  const expiresAt = profile.subscription_expires_at as string | null
+  const billed = (profile.boosted_district_addon_quantity as number | null) ?? 0
+  const paid = Math.max((profile.boosted_district_addon_paid_quantity as number | null) ?? 0, billed)
 
-  const canUpdateBoosts = isPro && (
-    updatedAt === null ||
-    periodStart === null ||
-    new Date(updatedAt) < new Date(periodStart)
-  )
+  const initialBoost: BoostSummary = {
+    boosted: (profile.boosted_districts as string[] | null) ?? [],
+    billedSlots: billed,
+    paidSlots: paid,
+    renewsOn: (profile.subscription_expires_at as string | null) ?? null,
+  }
 
-  const nextRenewalDate = expiresAt
-    ? new Date(expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-    : null
-
-  const addonQuantity = (profile.boosted_district_addon_quantity as number) ?? 0
-  const maxBoosts = 3 + addonQuantity
+  const isAnnual = (profile.billing_period as string | null) === 'annual'
+  const extraDistrictsAvailable = isAnnual
+    ? !!process.env.STRIPE_PRO_ADDON_ANNUAL_PRICE_ID
+    : !!process.env.STRIPE_PRO_ADDON_PRICE_ID
+  const unavailableNote = extraDistrictsAvailable
+    ? null
+    : isAnnual
+      ? 'Extra boosted districts are not available on annual plans yet. Your 3 included districts work as normal.'
+      : 'Extra boosted districts are not available right now.'
 
   const initialAreas: DistrictEntry[] = ((profile.operating_areas as string[]) ?? []).map(code => ({
     code,
     adminDistrict: null,
   }))
-
-  const initialBoostedDistricts = (profile.boosted_districts as string[]) ?? []
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
@@ -65,15 +66,14 @@ export default async function OperatingAreasPage() {
         <AreasForm
           initialAreas={initialAreas}
           isPro={isPro}
-          initialBoostedDistricts={initialBoostedDistricts}
-          canUpdateBoosts={canUpdateBoosts}
-          nextRenewalDate={nextRenewalDate}
-          maxBoosts={maxBoosts}
+          initialBoost={initialBoost}
+          extraDistrictsAvailable={extraDistrictsAvailable}
+          unavailableNote={unavailableNote}
         />
       </div>
 
       <p className="mt-4 text-xs text-gray-400 text-center">
-        Operating Area changes take effect immediately. No cooldown applies.
+        Changes to your operating areas and boosts take effect immediately.
       </p>
     </main>
   )
