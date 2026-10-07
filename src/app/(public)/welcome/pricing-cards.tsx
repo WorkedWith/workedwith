@@ -19,7 +19,7 @@ const STANDARD_EXTRAS = [
 ]
 
 const PRO_EXTRAS = [
-  'Boosted Districts — 3 included, additional districts £10/month each. Top-of-search placement in chosen postcode districts (randomised within boosted band)',
+  'Boosted Districts: 3 included, additional districts £10/month each. Top-of-search placement in chosen postcode districts (randomised within boosted band)',
   'Pro badge on your profile and in every search result where you appear',
   'Extended featured job images (5 jobs, up to 10 images each)',
   'Profile analytics (views and search appearances)',
@@ -86,7 +86,7 @@ export function PricingCards() {
               Continue with free
             </a>
             <p className="text-center text-xs text-gray-400">
-              The Free tier is a permanent fully functional product — not a trial.
+              The Free tier is a permanent fully functional product, not a trial.
             </p>
           </div>
         </div>

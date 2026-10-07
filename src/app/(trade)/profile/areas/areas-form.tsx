@@ -167,7 +167,7 @@ export function AreasForm({
 
               <p className="mt-2 text-xs text-gray-400">
                 {boostedDistricts.length} / {maxBoosts} districts boosted
-                {boostedDistricts.length === maxBoosts && ' — deselect one to choose another'}
+                {boostedDistricts.length === maxBoosts && ', deselect one to choose another'}
               </p>
 
               {boostError && (

@@ -5,7 +5,7 @@ import { markAllRead } from '@/actions/mark-notifications-read'
 import { NotificationItem } from '@/components/notifications/notification-item'
 import type { Notification } from '@/types/database'
 
-export const metadata = { title: 'Notifications — WorkedWith' }
+export const metadata = { title: 'Notifications | WorkedWith' }
 
 export default async function NotificationsPage() {
   const supabase = await createClient()

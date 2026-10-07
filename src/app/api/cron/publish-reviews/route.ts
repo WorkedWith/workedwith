@@ -238,7 +238,7 @@ async function processWindow(
   if (nonSubmitterEmail) {
     promises.push(resend.emails.send({
       from: 'WorkedWith <hello@workedwith.co.uk>', to: nonSubmitterEmail,
-      subject: `You missed your review window — ${reviewerName}'s review of you is now live`,
+      subject: `You missed your review window: ${reviewerName}'s review of you is now live`,
       html: missedWindowHtml({ reviewerName, jobUrl }),
     }))
   }
@@ -305,7 +305,7 @@ async function publishBoth(p: {
   if (tradeUser?.email) {
     promises.push(resend.emails.send({
       from: 'WorkedWith <hello@workedwith.co.uk>', to: tradeUser.email,
-      subject: `Your WorkedWith reviews are now live — see what ${clientName} said about you`,
+      subject: `Your WorkedWith reviews are now live: see what ${clientName} said about you`,
       html: publishedBothHtml({ otherName: clientName, jobUrl }),
     }))
   }
@@ -320,7 +320,7 @@ async function publishBoth(p: {
   if (clientUser?.email) {
     promises.push(resend.emails.send({
       from: 'WorkedWith <hello@workedwith.co.uk>', to: clientUser.email,
-      subject: `Your WorkedWith reviews are now live — see what ${tradeName} said about you`,
+      subject: `Your WorkedWith reviews are now live: see what ${tradeName} said about you`,
       html: publishedBothHtml({ otherName: tradeName, jobUrl }),
     }))
   }

@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? `${profile.total_reviews} verified reviews on WorkedWith.`
         : 'New to WorkedWith.'
 
-    const title = `${displayName} — ${tradesLabel} | WorkedWith`
+    const title = `${displayName}, ${tradesLabel} | WorkedWith`
     const description = `${displayName} is a verified ${tradesLabel} based in ${profile.postcode}. ${reviewsText}`
     const canonical = `https://workedwith.co.uk/t/${slug}`
 
@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (seeded) {
     const sp = seeded as unknown as Pick<SeededProfile, 'business_name' | 'trade_category'>
-    const title = `${sp.business_name} — ${sp.trade_category} | WorkedWith`
+    const title = `${sp.business_name}, ${sp.trade_category} | WorkedWith`
     const description = `${sp.business_name} is a ${sp.trade_category} with a listing on WorkedWith. This profile has not yet been claimed.`
     const canonical = `https://workedwith.co.uk/t/${slug}`
     return {
@@ -292,7 +292,7 @@ export default async function TradeProfilePage({ params }: Props) {
             </h2>
             {(tradeProfile.total_reviews as number) === 0 ? (
               <p className="text-sm text-gray-500">
-                No reviews yet — reviews appear here once both parties have submitted.
+                No reviews yet. Reviews appear here once both parties have submitted.
               </p>
             ) : (
               <div className="flex items-start gap-6">
@@ -487,7 +487,7 @@ export default async function TradeProfilePage({ params }: Props) {
                 This tradesperson reviews their clients too
               </p>
               <p className="mt-1 text-sm leading-relaxed text-amber-700">
-                Reviews go both ways on WorkedWith — keeping both sides accountable.
+                Reviews go both ways on WorkedWith, keeping both sides accountable.
               </p>
             </section>
           )}

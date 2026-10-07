@@ -92,7 +92,7 @@ export function FeaturedWorkSection({ jobs, supabaseUrl }: Props) {
                   </div>
                   {job.images.length > 3 && (
                     <p className="mt-2 text-xs text-gray-400 text-center">
-                      +{job.images.length - 3} more — click to view all
+                      +{job.images.length - 3} more, click to view all
                     </p>
                   )}
                 </button>

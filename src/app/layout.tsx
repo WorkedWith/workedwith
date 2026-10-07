@@ -9,10 +9,10 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'WorkedWith — Know who you\'re working with',
+  title: 'WorkedWith | Know who you\'re working with',
   description: 'The only platform where both the tradesperson and the client have a reputation to protect. Mutual reviews. Verified identities. Real accountability.',
   openGraph: {
-    title: 'WorkedWith — Know who you\'re working with',
+    title: 'WorkedWith | Know who you\'re working with',
     description: 'The only platform where both the tradesperson and the client have a reputation to protect. Mutual reviews. Verified identities. Real accountability.',
     siteName: 'WorkedWith',
     type: 'website',

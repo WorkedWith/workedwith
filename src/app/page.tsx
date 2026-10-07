@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: "WorkedWith — Know who you're working with",
+  title: "WorkedWith | Know who you're working with",
   description: 'The only platform where both tradespeople and clients have a reputation to protect.',
 }
 

@@ -63,7 +63,7 @@ function SuccessCard({ tradePersonName, isBackdated, jobId }: {
       </h2>
       <p className="mt-2 text-sm text-gray-600 leading-relaxed">
         {isBackdated
-          ? <>Check your email — you can both leave reviews for your job with <span className="font-medium text-brand-navy">{tradePersonName}</span> now.</>
+          ? <>Check your email. You can both leave reviews for your job with <span className="font-medium text-brand-navy">{tradePersonName}</span> now.</>
           : <>You&apos;ll be asked to review <span className="font-medium text-brand-navy">{tradePersonName}</span> once the job is complete.</>}
       </p>
       <a

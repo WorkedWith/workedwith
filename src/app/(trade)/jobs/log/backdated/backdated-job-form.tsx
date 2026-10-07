@@ -171,8 +171,8 @@ export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy 
       <h2 className="text-xl font-semibold text-brand-navy mb-1">Add a past job</h2>
       <p className="text-sm text-gray-500 mb-6">
         {initiatedBy === 'trade'
-          ? 'Log a past job and invite your client to confirm — both parties can then leave verified reviews.'
-          : 'Log a past job and invite the tradesperson to confirm — both parties can then leave verified reviews.'}
+          ? 'Log a past job and invite your client to confirm. Both parties can then leave verified reviews.'
+          : 'Log a past job and invite the tradesperson to confirm. Both parties can then leave verified reviews.'}
       </p>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
@@ -257,7 +257,7 @@ export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy 
           <p className="text-sm font-medium text-gray-700 mb-1 capitalize">
             {inviteeLabel} contact <span className="text-red-500">*</span>
           </p>
-          <p className="text-xs text-gray-400 mb-4">Provide at least one — email is preferred.</p>
+          <p className="text-xs text-gray-400 mb-4">Provide at least one. Email is preferred.</p>
           <div className="space-y-3">
             <Field
               label={`${inviteeLabel.charAt(0).toUpperCase() + inviteeLabel.slice(1)} email`}
@@ -307,7 +307,7 @@ export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy 
             />
             <span className="text-sm font-medium text-gray-700">
               Leave your review now{' '}
-              <span className="font-normal text-gray-400">(optional — saves you coming back later)</span>
+              <span className="font-normal text-gray-400">(optional, saves you coming back later)</span>
             </span>
           </label>
 

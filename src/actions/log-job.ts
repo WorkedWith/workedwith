@@ -242,7 +242,7 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
         await resend.emails.send({
           from: 'WorkedWith <hello@workedwith.co.uk>',
           to: emailTo,
-          subject: `${tradeName} has logged a job with you — join WorkedWith to confirm it`,
+          subject: `${tradeName} has logged a job with you: join WorkedWith to confirm it`,
           html: newUserHtml(emailParams),
         })
       } catch (emailError) {

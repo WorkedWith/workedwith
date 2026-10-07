@@ -83,7 +83,7 @@ export function IdentityUploadForm() {
             <span className="text-sm font-medium text-gray-600">
               {fileName ?? 'Click to select file'}
             </span>
-            <span className="text-xs text-gray-400">JPG, PNG, WebP, or PDF — max 10 MB</span>
+            <span className="text-xs text-gray-400">JPG, PNG, WebP, or PDF, max 10 MB</span>
           </label>
           <input
             ref={inputRef}

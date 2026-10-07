@@ -12,7 +12,7 @@ export async function checkUsername(username: string): Promise<UsernameCheckResu
   if (!USERNAME_RE.test(username)) {
     return {
       available: false,
-      reason: 'Username must be 3–30 characters — letters, numbers, and hyphens only.',
+      reason: 'Username must be 3 to 30 characters, letters, numbers, and hyphens only.',
     }
   }
 

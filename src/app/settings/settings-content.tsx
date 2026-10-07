@@ -53,7 +53,7 @@ export function SettingsContent({ email, userType }: { email: string; userType: 
         <h2 className="mb-4 text-base font-semibold text-brand-navy">Change password</h2>
         {resetSent ? (
           <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3">
-            <p className="text-sm text-green-700">Password reset email sent — check your inbox.</p>
+            <p className="text-sm text-green-700">Password reset email sent, check your inbox.</p>
           </div>
         ) : (
           <div className="space-y-4">

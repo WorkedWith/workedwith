@@ -341,7 +341,7 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
         admin.from('notifications').insert({
           user_id: tradeUserId,
           type: 'review_window_opened',
-          title: 'Past job confirmed — leave your review',
+          title: 'Past job confirmed: leave your review',
           body: `Your ${job.job_type} job in ${job.backdated_period ?? 'the past'} with ${clientName} has been confirmed.`,
           link: `/jobs/${job.id}`,
         })
@@ -352,7 +352,7 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
         resend.emails.send({
           from: 'WorkedWith <hello@workedwith.co.uk>',
           to: tradeEmail,
-          subject: `${clientName} confirmed your past job — leave your reviews now`,
+          subject: `${clientName} confirmed your past job: leave your reviews now`,
           html: reviewRequestHtml({
             otherPartyName: clientName,
             jobType: job.job_type,
@@ -370,7 +370,7 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
         admin.from('notifications').insert({
           user_id: clientUserId,
           type: 'review_window_opened',
-          title: 'Past job confirmed — leave your review',
+          title: 'Past job confirmed: leave your review',
           body: `Your ${job.job_type} job in ${job.backdated_period ?? 'the past'} with ${tradeName} has been confirmed.`,
           link: `/jobs/${job.id}`,
         })
@@ -381,7 +381,7 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
         resend.emails.send({
           from: 'WorkedWith <hello@workedwith.co.uk>',
           to: clientEmail,
-          subject: `${tradeName} confirmed your past job — leave your reviews now`,
+          subject: `${tradeName} confirmed your past job: leave your reviews now`,
           html: reviewRequestHtml({
             otherPartyName: tradeName,
             jobType: job.job_type,

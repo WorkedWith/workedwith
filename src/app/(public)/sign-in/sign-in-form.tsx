@@ -26,7 +26,18 @@ export function SignInForm({ message, next }: { message?: string; next?: string 
       })
 
       if (authError) {
-        setError('Email or password is incorrect.')
+        const msg = authError.message.toLowerCase()
+        if (msg.includes('email not confirmed')) {
+          setError('You need to confirm your email first. Check your inbox for the link we sent when you signed up.')
+        } else if (authError.status === 429 || msg.includes('rate limit') || msg.includes('too many')) {
+          setError('Too many attempts. Please wait a few minutes and try again.')
+        } else if (authError.status === 0 || msg.includes('fetch') || msg.includes('network')) {
+          setError('We could not reach the server. Check your connection and try again.')
+        } else if (authError.status && authError.status >= 500) {
+          setError('Something went wrong on our side. Please try again in a moment.')
+        } else {
+          setError('Email or password is incorrect. If you have forgotten it, use Forgot password.')
+        }
         return
       }
 

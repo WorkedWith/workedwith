@@ -102,10 +102,10 @@ export function JobHistory({ jobs }: Props) {
                       (job.my_role === 'trade' && job.initiated_by === 'trade') ||
                       (job.my_role === 'client' && job.initiated_by === 'client')
                     const text = initiatedByViewer
-                      ? `You sent this invite — waiting for ${job.other_party.name} to confirm`
+                      ? `You sent this invite, waiting for ${job.other_party.name} to confirm`
                       : job.my_role === 'client'
-                        ? 'Logged by the tradesperson — confirm this job happened'
-                        : `Logged by ${job.other_party.name} — confirm this job happened`
+                        ? 'Logged by the tradesperson, confirm this job happened'
+                        : `Logged by ${job.other_party.name}, confirm this job happened`
                     return <p className="mt-1.5 text-xs text-gray-400">{text}</p>
                   })()}
                 </div>

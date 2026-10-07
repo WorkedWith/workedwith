@@ -33,8 +33,8 @@ export default async function LogJobPage() {
           <h1 className="mt-4 text-2xl sm:text-3xl font-bold text-white">Log a job</h1>
           <p className="mt-2 text-sm text-white/60">
             {isFirstJob
-              ? 'Log your first job to start building your WorkedWith profile. Your client confirms it — then mutual reviews unlock once the job is done.'
-              : 'Invite your client to confirm the job — both parties can leave verified reviews once it\'s done.'}
+              ? 'Log your first job to start building your WorkedWith profile. Your client confirms it, then mutual reviews unlock once the job is done.'
+              : 'Invite your client to confirm the job. Both parties can leave verified reviews once it\'s done.'}
           </p>
         </div>
         <LogJobForm />

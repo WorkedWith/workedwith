@@ -37,7 +37,7 @@ export default async function InviteTradePage() {
           <h1 className="mt-4 text-2xl sm:text-3xl font-bold text-white">Invite a tradesperson</h1>
           <p className="mt-2 text-sm text-white/60">
             Log a job with a tradesperson who isn&apos;t on WorkedWith yet. They&apos;ll receive an invite to
-            verify and claim it — nothing is published until they do.
+            verify and claim it. Nothing is published until they do.
           </p>
         </div>
         <InviteTradeForm />

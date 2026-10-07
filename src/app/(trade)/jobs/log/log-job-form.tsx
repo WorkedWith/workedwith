@@ -172,7 +172,7 @@ export function LogJobForm() {
           <p className="text-sm font-medium text-gray-700 mb-1">
             Client contact <span className="text-red-500">*</span>
           </p>
-          <p className="text-xs text-gray-400 mb-4">Provide at least one — email is preferred.</p>
+          <p className="text-xs text-gray-400 mb-4">Provide at least one. Email is preferred.</p>
 
           <div className="space-y-3">
             <Field label="Client email" error={fieldErrors.invitee_email}>

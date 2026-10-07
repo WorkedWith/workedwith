@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { DemoProfilePage } from '@/components/demo/demo-profile-page'
 import { DEMO_TRADE_PROFILES, DEMO_REVIEWS_JAMES } from '@/lib/demo-data'
 
-export const metadata: Metadata = { title: 'James Whitfield — Electrician | WorkedWith (Example)' }
+export const metadata: Metadata = { title: 'James Whitfield, Electrician | WorkedWith (Example)' }
 
 const profile = DEMO_TRADE_PROFILES.find(p => p.id === 'demo-1')!
 

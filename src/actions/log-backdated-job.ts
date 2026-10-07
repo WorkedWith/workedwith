@@ -329,7 +329,7 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
         await resend.emails.send({
           from: 'WorkedWith <hello@workedwith.co.uk>',
           to: emailTo,
-          subject: `${callerName} worked with you — join WorkedWith to confirm it`,
+          subject: `${callerName} worked with you: join WorkedWith to confirm it`,
           html: newUserBackdatedHtml(emailParams),
         })
       } catch (emailError) {

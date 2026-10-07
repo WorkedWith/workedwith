@@ -35,7 +35,7 @@ export function BoostedAddonManager({
       const result = await updateBoostedAddonQuantity(newQty)
       if (result.success) {
         setAddonQty(result.newQty)
-        setSuccessMsg(delta > 0 ? 'Slot added — Stripe will prorate the charge.' : 'Slot removed.')
+        setSuccessMsg(delta > 0 ? 'Slot added. Stripe will prorate the charge.' : 'Slot removed.')
         setTimeout(() => setSuccessMsg(null), 5000)
       } else {
         setError(result.error)
@@ -50,7 +50,7 @@ export function BoostedAddonManager({
         <span className="rounded-full bg-brand-amber px-2 py-0.5 text-xs font-bold text-brand-navy">Pro add-on</span>
       </div>
       <p className="text-sm text-gray-500 mb-5">
-        3 districts included with Pro. Additional slots are £10/month each — Stripe prorates
+        3 districts included with Pro. Additional slots are £10/month each, Stripe prorates
         mid-cycle additions. Removing a slot is subject to the same 30-day cooldown as district changes.
       </p>
 

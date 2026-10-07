@@ -29,7 +29,7 @@ export function ClientSearchForm({ onFirstSearch }: Props = {}) {
       return
     }
     if (hasEmail && hasPhone) {
-      setInputError('Please enter only one — email or mobile number, not both.')
+      setInputError('Please enter only one, email or mobile number, not both.')
       return
     }
 

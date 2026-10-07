@@ -274,7 +274,7 @@ export const DEMO_CLIENT_PROFILE = {
     {
       trade_type: 'Plumber',
       date: 'April 2026',
-      excerpt: 'Really easy client — brief was clear from day one. Paid same day without any chasing.',
+      excerpt: 'Really easy client, brief was clear from day one. Paid same day without any chasing.',
     },
     {
       trade_type: 'Electrician',

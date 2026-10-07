@@ -263,7 +263,7 @@ export function FeaturedJobsClient({
                 <option value="">No linked job</option>
                 {completedJobs.map(j => (
                   <option key={j.id} value={j.id}>
-                    {j.job_type} — {j.postcode}
+                    {j.job_type}, {j.postcode}
                     {j.completed_at ? ` (${new Date(j.completed_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })})` : ''}
                   </option>
                 ))}

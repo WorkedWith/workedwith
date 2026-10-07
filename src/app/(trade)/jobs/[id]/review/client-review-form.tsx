@@ -118,7 +118,7 @@ export function ClientReviewForm({ jobId, revieweeName, jobType }: Props) {
             disabled={isPending}
             rows={4}
             maxLength={500}
-            placeholder="Optional — describe the quality of work and your experience…"
+            placeholder="Optional: describe the quality of work and your experience…"
             className={`${inputCls(!!fieldErrors.written_review)} resize-none`}
           />
           {fieldErrors.written_review && (
@@ -136,7 +136,7 @@ export function ClientReviewForm({ jobId, revieweeName, jobType }: Props) {
         >
           {isPending
             ? 'Submitting…'
-            : `Submit your review — it won't be visible until ${revieweeName} submits theirs`}
+            : `Submit your review. It won't be visible until ${revieweeName} submits theirs`}
         </button>
       </form>
     </div>

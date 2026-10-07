@@ -62,7 +62,7 @@ export async function reportIncorrectClaim(jobId: string): Promise<ReportIncorre
     await resend.emails.send({
       from: 'WorkedWith <hello@workedwith.co.uk>',
       to: 'hello@workedwith.co.uk',
-      subject: 'Incorrect claim reported — action required',
+      subject: 'Incorrect claim reported: action required',
       html: `<p>An incorrect claim has been reported.</p>
 <ul>
   <li><strong>Pending invite:</strong> ${invite.id}</li>

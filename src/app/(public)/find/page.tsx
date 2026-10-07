@@ -7,7 +7,7 @@ import { DEMO_TRADE_PROFILES } from '@/lib/demo-data'
 import { DemoProfileCard } from '@/components/demo/demo-profile-card'
 
 export const metadata: Metadata = {
-  title: 'Find a Tradesperson — WorkedWith',
+  title: 'Find a Tradesperson | WorkedWith',
   description: 'Search verified tradespeople near you. Every tradesperson on WorkedWith has confirmed jobs and genuine mutual reviews.',
 }
 
@@ -92,9 +92,25 @@ export default async function FindPage({ searchParams }: PageProps) {
           <div>
             <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-xl text-center">
               <p className="text-amber-800 font-medium text-sm">
-                No verified tradespeople in {district ?? 'your area'} yet — WorkedWith is growing fast.
+                No verified tradespeople in {district ?? 'your area'} yet. WorkedWith is growing fast.
                 Here is what a WorkedWith profile looks like.
               </p>
+              {!isAuthenticated && (
+                <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <a
+                    href="/join/client"
+                    className="rounded-lg bg-brand-navy px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+                  >
+                    Create a free client account
+                  </a>
+                  <a
+                    href="/for-trades"
+                    className="text-sm font-semibold text-brand-navy underline"
+                  >
+                    Know a tradesperson? Tell them about WorkedWith
+                  </a>
+                </div>
+              )}
             </div>
             <div className="grid gap-6 sm:grid-cols-3">
               {DEMO_TRADE_PROFILES.map(profile => (

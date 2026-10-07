@@ -5,7 +5,7 @@ import { UserMenu } from '@/components/user-menu'
 import { ProfileForm } from './profile-form'
 import type { User, TradeProfile, ClientProfile } from '@/types/database'
 
-export const metadata = { title: 'My profile — WorkedWith', robots: { index: false } }
+export const metadata = { title: 'My profile | WorkedWith', robots: { index: false } }
 
 export default async function ProfilePage() {
   const supabase = await createClient()

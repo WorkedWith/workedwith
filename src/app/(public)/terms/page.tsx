@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Terms of Service — WorkedWith' }
+export const metadata: Metadata = {
+  title: 'Terms of Service | WorkedWith',
+  description: 'The terms that apply when you use WorkedWith as a tradesperson or a client.',
+}
 
 export default function TermsPage() {
   return (

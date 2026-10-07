@@ -5,7 +5,7 @@ import { SampleReviewCard } from '@/components/demo/sample-review-card'
 import { DEMO_TRADE_PROFILES, DEMO_TRADESPERSON_REVIEWS } from '@/lib/demo-data'
 
 export const metadata: Metadata = {
-  title: 'Find a Tradesperson — WorkedWith',
+  title: 'Find a Tradesperson | WorkedWith',
   description: 'Find verified tradespeople in your area with genuine mutual reviews from real jobs.',
 }
 
@@ -69,7 +69,7 @@ export default function ForClientsPage() {
             </span>
           </h1>
           <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-white/70 text-balance">
-            Every review on WorkedWith is verified and mutual. Tradespeople review clients too — so only the best trades want to work with the best clients.
+            Every review on WorkedWith is verified and mutual. Tradespeople review clients too, so only the best trades want to work with the best clients.
           </p>
 
           {/* Search bar */}

@@ -3,7 +3,7 @@ import { SampleReviewCard } from '@/components/demo/sample-review-card'
 import { DEMO_REVIEWS_JAMES, DEMO_REVIEWS_SARAH, DEMO_REVIEWS_OWEN } from '@/lib/demo-data'
 
 export const metadata: Metadata = {
-  title: 'For Tradespeople — WorkedWith',
+  title: 'For Tradespeople | WorkedWith',
   description: 'Build your verified reputation, vet clients before you commit, and get found by homeowners who value quality over price.',
 }
 
@@ -143,7 +143,7 @@ export default function ForTradesPage() {
             Stop working blind.
           </h2>
           <p className="mt-4 text-center text-base text-gray-500">
-            WorkedWith gives you the full picture — on both sides of every job.
+            WorkedWith gives you the full picture, on both sides of every job.
           </p>
           <div className="mt-12 grid gap-6 sm:grid-cols-2">
 
@@ -152,7 +152,7 @@ export default function ForTradesPage() {
               <p className="text-xs font-semibold uppercase tracking-widest text-white/40">For you</p>
               <h3 className="mt-3 text-2xl font-bold">Build the profile you deserve.</h3>
               <ul className="mt-6 space-y-4">
-                <BulletPoint text="Every review linked to a confirmed real job — no fake five-stars" />
+                <BulletPoint text="Every review linked to a confirmed real job, no fake five-stars" />
                 <BulletPoint text="Build a verified work record you own, not locked to any platform" />
                 <BulletPoint text="Get found by clients searching for your trade in your area" />
               </ul>
@@ -191,7 +191,7 @@ export default function ForTradesPage() {
                   </div>
                 </div>
                 <p className="mt-4 text-sm text-gray-600 italic line-clamp-2">
-                  &ldquo;Really easy client — brief was clear from day one. Paid same day.&rdquo;
+                  &ldquo;Really easy client, brief was clear from day one. Paid same day.&rdquo;
                 </p>
                 <p className="mt-1 text-xs text-gray-400">— Plumber, April 2026</p>
               </div>

@@ -72,7 +72,7 @@ export default async function SubscriptionSuccessPage({
                 <p className="mt-1 text-sm text-amber-700 leading-relaxed">
                   Select up to 3 postcode districts where you want top-band placement in search
                   results (additional districts available at £10/month each). Your Pro badge will
-                  appear everywhere you operate — boosts apply to the specific districts you choose.
+                  appear everywhere you operate. Boosts apply to the specific districts you choose.
                 </p>
               </div>
               <div className="mt-6 flex flex-col gap-3">

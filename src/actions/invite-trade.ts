@@ -156,7 +156,8 @@ export async function inviteTrade(input: InviteTradeInput): Promise<InviteTradeR
   // Dedup: check for existing unclaimed invites to the same contact
   // If found, still create the record but skip re-sending the notification
   let stackedCount = 0
-  let alreadyNotified = false
+  let phoneStacked = false
+  let emailStacked = false
 
   if (contact_phone) {
     const { data: existing } = await admin
@@ -166,21 +167,26 @@ export async function inviteTrade(input: InviteTradeInput): Promise<InviteTradeR
       .eq('status', 'sent')
     if (existing && existing.length > 0) {
       stackedCount = existing.length
-      alreadyNotified = true
+      phoneStacked = true
     }
   }
 
-  if (!alreadyNotified && contact_email) {
+  if (contact_email) {
     const { data: existing } = await admin
       .from('pending_invites')
       .select('id')
       .eq('contact_email', contact_email)
       .eq('status', 'sent')
     if (existing && existing.length > 0) {
-      stackedCount = existing.length
-      alreadyNotified = true
+      stackedCount = Math.max(stackedCount, existing.length)
+      emailStacked = true
     }
   }
+
+  // Skip notifying only when every contact method given has already been notified.
+  // A new email or phone on a stacked invite still gets its own message.
+  const alreadyNotified =
+    (!contact_phone || phoneStacked) && (!contact_email || emailStacked)
 
   // Insert pending invite
   const claim_token = randomBytes(32).toString('hex')
@@ -218,7 +224,7 @@ export async function inviteTrade(input: InviteTradeInput): Promise<InviteTradeR
   const sends: Promise<unknown>[] = []
   let smsFailed = false
 
-  if (contact_phone && process.env.TWILIO_MESSAGING_SERVICE_SID) {
+  if (contact_phone && !phoneStacked && process.env.TWILIO_MESSAGING_SERVICE_SID) {
     try {
       const tw = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
       sends.push(
@@ -237,12 +243,12 @@ export async function inviteTrade(input: InviteTradeInput): Promise<InviteTradeR
       smsFailed = true
       console.error('Twilio init failed:', e)
     }
-  } else if (contact_phone) {
+  } else if (contact_phone && !phoneStacked) {
     smsFailed = true
     console.warn('TWILIO_MESSAGING_SERVICE_SID not configured, skipping invite SMS')
   }
 
-  if (contact_email) {
+  if (contact_email && !emailStacked) {
     sends.push(
       resend.emails
         .send({

@@ -22,7 +22,7 @@ const STANDARD_FEATURES = [
 
 const PRO_FEATURES = [
   'Everything in Standard',
-  'Boosted Districts — 3 included, additional districts £10/month each. Top-of-search placement in chosen postcode districts (randomised within boosted band)',
+  'Boosted Districts: 3 included, additional districts £10/month each. Top-of-search placement in chosen postcode districts (randomised within boosted band)',
   'Pro badge on your profile and in every search result where you appear',
   'Extended featured job images (5 jobs, up to 10 images each)',
   'Profile analytics (views and search appearances)',
@@ -100,7 +100,7 @@ export function PricingCards() {
             {FREE_FEATURES.map(f => <FeatureItem key={f} text={f} />)}
           </ul>
           <p className="mt-5 text-xs text-gray-400 italic leading-relaxed">
-            The Free tier is a fully functional product — not a time-limited trial.
+            The Free tier is a fully functional product, not a time-limited trial.
           </p>
           <a
             href="/join/trade"

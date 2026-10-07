@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { FaqAccordion } from './faq-accordion'
 
 export const metadata: Metadata = {
-  title: 'FAQ — WorkedWith',
-  description: 'Answers to common questions about WorkedWith — how reviews work, pricing, finding tradespeople, and more.',
+  title: 'FAQ | WorkedWith',
+  description: 'Answers to common questions about WorkedWith, how reviews work, pricing, finding tradespeople, and more.',
 }
 
 export default function FaqPage() {

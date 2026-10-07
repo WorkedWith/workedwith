@@ -197,12 +197,6 @@ export async function claimTradeInvite(claimToken: string): Promise<ClaimTradeIn
         })
         .eq('id', inv.id)
 
-      // Update trade profile job count
-      await admin
-        .from('trade_profiles')
-        .update({ total_jobs: ((tradeProfile as { total_jobs: number }).total_jobs ?? 0) + jobIds.length })
-        .eq('id', tradeProfile.id)
-
       // Notify inviting client
       const clientUser = (await admin.from('users').select('id, email, full_name').eq('id', inv.inviting_client_id).single()).data
       const jobUrl = `https://workedwith.co.uk/jobs/${job.id}`
@@ -239,6 +233,14 @@ export async function claimTradeInvite(claimToken: string): Promise<ClaimTradeIn
     } catch (err) {
       console.error(`Failed to process invite ${inv.id}:`, err)
     }
+  }
+
+  if (jobIds.length > 0) {
+    // Update trade profile job count once, after all stacked invites are processed
+    await admin
+      .from('trade_profiles')
+      .update({ total_jobs: ((tradeProfile as { total_jobs: number }).total_jobs ?? 0) + jobIds.length })
+      .eq('id', tradeProfile.id)
   }
 
   if (jobIds.length === 0) {

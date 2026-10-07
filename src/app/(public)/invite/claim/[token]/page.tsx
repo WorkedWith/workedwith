@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { claimTradeInvite } from '@/actions/claim-trade-invite'
 import type { PendingInvite } from '@/types/database'
 
-export const metadata = { title: 'Claim your job invite — WorkedWith', robots: { index: false } }
+export const metadata = { title: 'Claim your job invite | WorkedWith', robots: { index: false } }
 
 type PageProps = { params: Promise<{ token: string }> }
 
@@ -149,8 +149,8 @@ export default async function ClaimInvitePage({ params }: PageProps) {
           </h1>
           <p className="mt-3 text-base text-white/70 max-w-sm mx-auto leading-relaxed">
             They logged a <span className="font-medium text-white">{invite.job_type}</span> job in{' '}
-            <span className="font-medium text-white">{invite.job_date}</span>. Claim it to confirm it happened
-            and leave each other verified reviews.
+            <span className="font-medium text-white">{invite.job_date}</span>. Claim it and the job is confirmed,
+            so you can leave each other verified reviews.
           </p>
         </div>
 
@@ -158,9 +158,9 @@ export default async function ClaimInvitePage({ params }: PageProps) {
           <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-7">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-5">How claiming works</p>
             <div className="space-y-4 mb-7">
-              <Step n={1} label="Verify your identity" subtext="Sign in or create a free account" />
-              <Step n={2} label="Confirm the job" subtext="One click — no details to re-enter" />
-              <Step n={3} label="Leave your review" subtext="Both parties review each other privately" />
+              <Step n={1} label="Sign in or create a free account" subtext="It takes a couple of minutes" />
+              <Step n={2} label="The job is confirmed for you" subtext="Nothing to fill in, we already have the details" />
+              <Step n={3} label="Leave your review" subtext="You both review each other privately, and reviews go live together" />
             </div>
 
             <a
@@ -220,13 +220,13 @@ export default async function ClaimInvitePage({ params }: PageProps) {
           <p className="mt-2 text-sm text-gray-600 leading-relaxed">
             {result.claimedCount > 1
               ? `You've claimed ${result.claimedCount} pending jobs in one go. You and the clients can now leave each other verified reviews.`
-              : `Your ${invite.job_type} job from ${clientName} is now confirmed. You can both leave mutual reviews within 7 days.`}
+              : `Your ${invite.job_type} job from ${clientName} is now confirmed. Leave your review now. Reviews go live together once you have both submitted, or after 7 days.`}
           </p>
           <a
-            href={`/jobs/${primaryJobId}`}
+            href={`/jobs/${primaryJobId}/review`}
             className="mt-6 inline-block w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy text-center hover:opacity-90 transition-opacity"
           >
-            View job and leave a review
+            Leave your review
           </a>
           {result.claimedCount > 1 && (
             <a

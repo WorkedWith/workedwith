@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Privacy Policy — WorkedWith' }
+export const metadata: Metadata = {
+  title: 'Privacy Policy | WorkedWith',
+  description: 'How WorkedWith collects, uses and protects your personal data.',
+}
 
 export default function PrivacyPage() {
   return (

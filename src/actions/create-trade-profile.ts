@@ -76,7 +76,7 @@ export async function createTradeProfile(
   if (!USERNAME_RE.test(username)) {
     return {
       success: false,
-      error: 'Username must be 3–30 characters — letters, numbers, and hyphens only.',
+      error: 'Username must be 3 to 30 characters, letters, numbers, and hyphens only.',
       field: 'username',
     }
   }

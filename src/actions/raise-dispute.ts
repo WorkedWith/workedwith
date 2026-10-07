@@ -112,7 +112,14 @@ export async function raiseDispute(
     return { success: false, error: 'The 14-day dispute window for this review has closed.' }
   }
 
-  const respondentId = review.reviewer_id as string
+  const respondentId = review.reviewer_id as string | null
+
+  if (!respondentId) {
+    return {
+      success: false,
+      error: 'The author of this review has closed their account, so it can no longer be disputed. Contact support if you need help.',
+    }
+  }
 
   const isPriority = isProTier(tier)
 
@@ -163,7 +170,7 @@ export async function raiseDispute(
       resend.emails.send({
         from: 'WorkedWith <hello@workedwith.co.uk>',
         to: respondentUser.email as string,
-        subject: 'A dispute has been raised on your WorkedWith review — you have 7 days to submit evidence',
+        subject: 'A dispute has been raised on your WorkedWith review, you have 7 days to submit evidence',
         html: disputeRaisedHtml({ raiserName, evidenceDeadline, evidenceUrl }),
       }).catch((emailError: unknown) => {
         console.error('Email send failed (non-fatal):', emailError)

@@ -56,7 +56,7 @@ export default async function OperatingAreasPage() {
         </a>
         <h1 className="mt-4 text-2xl font-bold text-brand-navy">Operating Areas</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Add the postcode districts where you work — up to 20. Clients searching in these areas
+          Add the postcode districts where you work, up to 20. Clients searching in these areas
           will find your profile. Type a postcode, district code (e.g. M20), or place name.
         </p>
       </div>

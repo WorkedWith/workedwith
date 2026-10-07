@@ -170,7 +170,7 @@ export function TradeOnboardingForm({
             />
           </Field>
 
-          <Field label="Bio" hint="Optional — 300 characters max" error={fieldErrors.bio} className="mt-4">
+          <Field label="Bio" hint="Optional: 300 characters max" error={fieldErrors.bio} className="mt-4">
             <textarea
               value={bio}
               onChange={(e) => { setBio(e.target.value); setFieldErrors(prev => ({ ...prev, bio: undefined })) }}
@@ -196,7 +196,7 @@ export function TradeOnboardingForm({
         <form onSubmit={handleNextFromAreas} noValidate>
           <h2 className="text-xl font-semibold text-brand-navy mb-1">Where do you work?</h2>
           <p className="text-sm text-gray-500 mb-6">
-            Add the postcode districts you cover — up to 20. Clients searching in these areas will find your profile.
+            Add the postcode districts you cover, up to 20. Clients searching in these areas will find your profile.
             You can update this at any time.
           </p>
 
@@ -257,7 +257,7 @@ export function TradeOnboardingForm({
             )}
             {usernameStatus === 'invalid' && username.length > 0 && (
               <p className="mt-1.5 text-xs text-red-600">
-                3–30 characters — letters, numbers, and hyphens only
+                3 to 30 characters, letters, numbers, and hyphens only
               </p>
             )}
 

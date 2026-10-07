@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Job, JobInvite } from '@/types/database'
 
-export const metadata = { title: 'You have a job to confirm — WorkedWith', robots: { index: false } }
+export const metadata = { title: 'You have a job to confirm | WorkedWith', robots: { index: false } }
 
 type InviteRow = Pick<JobInvite, 'id' | 'job_id' | 'inviter_id' | 'status' | 'expires_at' | 'invite_token'>
 type JobRow = Pick<Job, 'id' | 'job_type' | 'backdated_period' | 'started_at' | 'initiated_by' | 'trade_profile_id' | 'client_profile_id'>
@@ -155,7 +155,7 @@ export default async function InviteJobPage({ params }: { params: { token: strin
           Worked<span className="text-brand-amber">With</span>
         </a>
         <h1 className="mt-8 text-2xl font-bold text-white sm:text-3xl">
-          {inviterName} worked with you — join to confirm it
+          {inviterName} worked with you: join to confirm it
         </h1>
         <p className="mt-3 text-base text-white/70 max-w-sm mx-auto leading-relaxed">
           They logged a <span className="font-medium text-white">{job.job_type}</span> job

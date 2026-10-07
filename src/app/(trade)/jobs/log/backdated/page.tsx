@@ -52,8 +52,8 @@ export default async function BackdatedJobPage() {
 
   const subtitle =
     initiatedBy === 'trade'
-      ? 'Invite your client to confirm — you can both leave verified reviews once they accept.'
-      : 'Invite the tradesperson to confirm — you can both leave verified reviews once they accept.'
+      ? 'Invite your client to confirm. You can both leave verified reviews once they accept.'
+      : 'Invite the tradesperson to confirm. You can both leave verified reviews once they accept.'
 
   return (
     <main className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-4">

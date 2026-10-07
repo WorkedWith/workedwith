@@ -5,7 +5,7 @@ import { getClientProfileByUsername } from '@/actions/get-client-profile-by-user
 import type { ClientProfileResult } from '@/actions/get-client-profile'
 import type { VerificationTier } from '@/types/database'
 
-export const metadata = { title: 'Client lookup — WorkedWith' }
+export const metadata = { title: 'Client lookup | WorkedWith' }
 
 type PageProps = {
   searchParams: { username?: string | string[] }

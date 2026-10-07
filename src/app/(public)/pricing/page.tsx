@@ -2,14 +2,14 @@ import type { Metadata } from 'next'
 import { PricingCards } from './pricing-cards'
 
 export const metadata: Metadata = {
-  title: 'Pricing — WorkedWith',
+  title: 'Pricing | WorkedWith',
   description: 'Simple, honest pricing. Free forever for tradespeople who want the basics. Standard and Pro for those who want more.',
 }
 
 const FAQS = [
   {
     q: 'Is there a free trial?',
-    a: 'No. The Free tier is the trial — it is a permanent, fully functional product. You can use WorkedWith indefinitely on the Free tier and upgrade whenever the additional features are worth it to you.',
+    a: 'No. The Free tier is the trial. It is a permanent, fully functional product. You can use WorkedWith indefinitely on the Free tier and upgrade whenever the additional features are worth it to you.',
   },
   {
     q: 'Can I switch between monthly and annual billing?',
@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     q: 'What happens if I cancel?',
-    a: 'Your subscription remains active until the end of your current billing period, then your account moves to Free automatically. No data is lost — your job history, reviews, and profile are all retained.',
+    a: 'Your subscription remains active until the end of your current billing period, then your account moves to Free automatically. No data is lost. Your job history, reviews, and profile are all retained.',
   },
   {
     q: 'Do annual subscribers get price protection?',
@@ -33,7 +33,7 @@ const FAQS = [
   },
   {
     q: 'Is the free tier really unlimited?',
-    a: 'Yes. There are no caps on jobs or reviews on the free tier. Standard and Pro unlock better client intelligence and visibility — not more usage.',
+    a: 'Yes. There are no caps on jobs or reviews on the free tier. Standard and Pro unlock better client intelligence and visibility, not more usage.',
   },
 ]
 
