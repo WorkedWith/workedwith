@@ -38,6 +38,11 @@ export async function createCheckoutSession(
     return { error: 'Subscriptions are available for trade accounts only.' }
   }
 
+  // Annual billing is deferred (PRD v3.5). Existing price IDs are kept so it can be switched back on.
+  if (period !== 'monthly') {
+    return { error: 'Annual billing is not available yet. Please choose monthly.' }
+  }
+
   const priceId = PRICE_IDS[`${tier}_${period}`]
   if (!priceId) return { error: `Price ID for ${tier} ${period} is not configured.` }
 

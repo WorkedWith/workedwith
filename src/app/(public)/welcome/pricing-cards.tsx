@@ -27,39 +27,11 @@ const PRO_EXTRAS = [
 ]
 
 export function PricingCards() {
-  const [period, setPeriod] = useState<'monthly' | 'annual'>('monthly')
+  // Annual billing is deferred (PRD v3.5). Kept as state so it can be switched back on.
+  const [period] = useState<'monthly' | 'annual'>('monthly')
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-      {/* Monthly / Annual toggle */}
-      <div className="flex justify-center mb-8">
-        <div className="inline-flex rounded-full border border-gray-200 bg-white p-1 shadow-sm">
-          <button
-            onClick={() => setPeriod('monthly')}
-            className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
-              period === 'monthly'
-                ? 'bg-brand-navy text-white'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => setPeriod('annual')}
-            className={`rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
-              period === 'annual'
-                ? 'bg-brand-navy text-white'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Annual
-            <span className="ml-1.5 rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-bold text-green-700">
-              Save 2 months
-            </span>
-          </button>
-        </div>
-      </div>
-
       <div className="grid gap-6 sm:grid-cols-3">
 
         {/* Free */}

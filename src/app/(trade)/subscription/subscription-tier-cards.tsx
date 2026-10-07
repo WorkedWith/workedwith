@@ -9,37 +9,14 @@ type Props = {
   currentBillingPeriod: BillingPeriod
 }
 
-export function SubscriptionTierCards({ currentTier, currentBillingPeriod }: Props) {
-  const [period, setPeriod] = useState<'monthly' | 'annual'>(
-    currentTier === 'free' ? 'monthly' : currentBillingPeriod
-  )
+export function SubscriptionTierCards({ currentTier }: Props) {
+  // Annual billing is deferred (PRD v3.5): new subscriptions are monthly only.
+  const [period] = useState<'monthly' | 'annual'>('monthly')
 
   return (
     <div>
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-bold text-brand-navy">Plans</h2>
-        {/* Period toggle */}
-        <div className="inline-flex rounded-full border border-gray-200 bg-white p-1 shadow-sm">
-          <button
-            onClick={() => setPeriod('monthly')}
-            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
-              period === 'monthly' ? 'bg-brand-navy text-white' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => setPeriod('annual')}
-            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
-              period === 'annual' ? 'bg-brand-navy text-white' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Annual
-            <span className="ml-1 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-700">
-              Save 2 mo
-            </span>
-          </button>
-        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -106,9 +83,6 @@ export function SubscriptionTierCards({ currentTier, currentBillingPeriod }: Pro
 
       </div>
 
-      <p className="mt-3 text-xs text-gray-400 text-center">
-        Annual billing saves the equivalent of two months per year. Switch via the customer portal.
-      </p>
     </div>
   )
 }

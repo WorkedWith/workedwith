@@ -42,7 +42,7 @@ export default function TermsPage() {
           </Section>
 
           <Section n={6} title="Subscriptions">
-            <p>Tradesperson accounts may subscribe to Standard (£9.99/month or £99.90/year) or Pro (£39.99/month or £399.90/year) tiers. Client accounts are always free. Subscriptions are billed via Stripe. You may cancel at any time. Your subscription remains active until the end of the current billing period, then reverts to Free. No data is lost on downgrade. Annual subscribers retain their agreed price for the duration of their term. No partial refunds are issued for annual plans cancelled mid-term. We reserve the right to change prices with reasonable notice to monthly subscribers.</p>
+            <p>Tradesperson accounts may subscribe to Standard (£9.99/month) or Pro (£39.99/month) tiers. Pro includes 3 Boosted Districts, with extra Boosted Districts available at £10/month each. Client accounts are always free. Subscriptions are billed via Stripe. You may cancel at any time. Your subscription remains active until the end of the current billing period, then reverts to Free. No data is lost on downgrade. No refunds are issued for part months. We reserve the right to change prices with reasonable notice to subscribers.</p>
           </Section>
 
           <Section n={7} title="Prohibited conduct">

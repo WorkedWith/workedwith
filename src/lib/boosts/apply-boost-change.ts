@@ -18,7 +18,6 @@ import {
 // slot stays usable until renewal, so switching a boost back on before then is free.
 
 const MONTHLY_ADDON_PRICE = process.env.STRIPE_PRO_ADDON_PRICE_ID
-const ANNUAL_ADDON_PRICE = process.env.STRIPE_PRO_ADDON_ANNUAL_PRICE_ID
 
 export type BoostEvent =
   | { type: 'on' | 'off'; district: string }
@@ -40,7 +39,7 @@ async function setAddonQuantity(
   const stripe = getStripeClient()
   const subscription = await stripe.subscriptions.retrieve(subscriptionId)
   const existing = subscription.items.data.find(
-    item => item.price.id === MONTHLY_ADDON_PRICE || item.price.id === ANNUAL_ADDON_PRICE,
+    item => item.price.id === MONTHLY_ADDON_PRICE,
   )
 
   if (qty === 0) {
@@ -77,7 +76,7 @@ export async function applyBoostChange(
   const { data: profile } = await admin
     .from('trade_profiles')
     .select(
-      'subscription_tier, billing_period, stripe_subscription_id, operating_areas, boosted_districts, boosted_district_addon_quantity, boosted_district_addon_paid_quantity, subscription_expires_at',
+      'subscription_tier, stripe_subscription_id, operating_areas, boosted_districts, boosted_district_addon_quantity, boosted_district_addon_paid_quantity, subscription_expires_at',
     )
     .eq('user_id', userId)
     .maybeSingle()
@@ -102,8 +101,7 @@ export async function applyBoostChange(
   const paid = Math.max((profile.boosted_district_addon_paid_quantity as number | null) ?? 0, billed)
   const renewsOn = (profile.subscription_expires_at as string | null) ?? null
   const subscriptionId = profile.stripe_subscription_id as string | null
-  const isAnnual = (profile.billing_period as string | null) === 'annual'
-  const addonPriceId = isAnnual ? ANNUAL_ADDON_PRICE : MONTHLY_ADDON_PRICE
+  const addonPriceId = MONTHLY_ADDON_PRICE
 
   let newBilled = billed
   let newPaid = paid
@@ -119,9 +117,7 @@ export async function applyBoostChange(
     if (!addonPriceId) {
       return {
         status: 'error',
-        error: isAnnual
-          ? 'Extra boosted districts are not available on annual plans yet. Your 3 included districts still work.'
-          : 'Extra boosted districts are not set up yet. Please contact support.',
+        error: 'Extra boosted districts are not set up yet. Please contact support.',
       }
     }
 

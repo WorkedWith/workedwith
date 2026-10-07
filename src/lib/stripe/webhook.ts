@@ -11,10 +11,7 @@ const tierMap: Record<string, { tier: SubscriptionTier; period: BillingPeriod }>
   [process.env.STRIPE_PRO_ANNUAL_PRICE_ID!]:       { tier: 'pro',      period: 'annual'  },
 }
 
-const ADDON_PRICE_IDS = [
-  process.env.STRIPE_PRO_ADDON_PRICE_ID,
-  process.env.STRIPE_PRO_ADDON_ANNUAL_PRICE_ID,
-].filter((id): id is string => !!id)
+const ADDON_PRICE_IDS = [process.env.STRIPE_PRO_ADDON_PRICE_ID].filter((id): id is string => !!id)
 
 function activeTier(subscription: Stripe.Subscription): { tier: SubscriptionTier; billingPeriod: BillingPeriod } {
   if (subscription.status !== 'active' && subscription.status !== 'trialing') {

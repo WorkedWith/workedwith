@@ -39,7 +39,8 @@ function FeatureItem({ text, light = false }: { text: string; light?: boolean })
 }
 
 export function PricingCards() {
-  const [annual, setAnnual] = useState(false)
+  // Annual billing is deferred (PRD v3.5). Kept as state so it can be switched back on.
+  const [annual] = useState(false)
 
   const standardMonthlyEq = annual ? '£8.33' : '£9.99'
   const standardPrice     = annual ? '£99.90/year' : '£9.99/month'
@@ -55,35 +56,6 @@ export function PricingCards() {
 
   return (
     <>
-      {/* Toggle */}
-      <div className="flex items-center justify-center gap-3 mb-12">
-        <span className={`text-sm font-medium ${!annual ? 'text-brand-navy' : 'text-gray-400'}`}>Monthly</span>
-        <button
-          type="button"
-          onClick={() => setAnnual(a => !a)}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-            annual ? 'bg-brand-navy' : 'bg-gray-300'
-          }`}
-          role="switch"
-          aria-checked={annual}
-          aria-label="Toggle annual billing"
-        >
-          <span
-            className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-              annual ? 'translate-x-6' : 'translate-x-1'
-            }`}
-          />
-        </button>
-        <span className={`text-sm font-medium ${annual ? 'text-brand-navy' : 'text-gray-400'}`}>
-          Annual
-          {annual && (
-            <span className="ml-1.5 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-              2 months free
-            </span>
-          )}
-        </span>
-      </div>
-
       {/* Cards */}
       <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-3">
 

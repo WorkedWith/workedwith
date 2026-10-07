@@ -12,16 +12,8 @@ const FAQS = [
     a: 'No. The Free tier is the trial. It is a permanent, fully functional product. You can use WorkedWith indefinitely on the Free tier and upgrade whenever the additional features are worth it to you.',
   },
   {
-    q: 'Can I switch between monthly and annual billing?',
-    a: 'Yes. You can switch from monthly to annual at any time from your account settings. The change takes effect at your next renewal date.',
-  },
-  {
     q: 'What happens if I cancel?',
     a: 'Your subscription remains active until the end of your current billing period, then your account moves to Free automatically. No data is lost. Your job history, reviews, and profile are all retained.',
-  },
-  {
-    q: 'Do annual subscribers get price protection?',
-    a: 'Yes. If prices change, annual subscribers retain their agreed rate for the duration of their current term. Monthly subscribers are notified before any price change takes effect on their renewal.',
   },
   {
     q: 'Do clients pay anything?',

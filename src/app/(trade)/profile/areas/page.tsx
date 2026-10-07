@@ -16,7 +16,7 @@ export default async function OperatingAreasPage() {
   const admin = createAdminClient()
   const { data: profile } = await admin
     .from('trade_profiles')
-    .select('operating_areas, boosted_districts, boosted_district_addon_quantity, boosted_district_addon_paid_quantity, billing_period, subscription_tier, subscription_expires_at')
+    .select('operating_areas, boosted_districts, boosted_district_addon_quantity, boosted_district_addon_paid_quantity, subscription_tier, subscription_expires_at')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -34,15 +34,9 @@ export default async function OperatingAreasPage() {
     renewsOn: (profile.subscription_expires_at as string | null) ?? null,
   }
 
-  const isAnnual = (profile.billing_period as string | null) === 'annual'
-  const extraDistrictsAvailable = isAnnual
-    ? !!process.env.STRIPE_PRO_ADDON_ANNUAL_PRICE_ID
-    : !!process.env.STRIPE_PRO_ADDON_PRICE_ID
-  const unavailableNote = extraDistrictsAvailable
-    ? null
-    : isAnnual
-      ? 'Extra boosted districts are not available on annual plans yet. Your 3 included districts work as normal.'
-      : 'Extra boosted districts are not available right now.'
+  // Annual billing is deferred (PRD v3.5), so the monthly add-on price is the only one in use
+  const extraDistrictsAvailable = !!process.env.STRIPE_PRO_ADDON_PRICE_ID
+  const unavailableNote = extraDistrictsAvailable ? null : 'Extra boosted districts are not available right now.'
 
   const initialAreas: DistrictEntry[] = ((profile.operating_areas as string[]) ?? []).map(code => ({
     code,
