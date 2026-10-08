@@ -23,6 +23,7 @@ export type ClientProfileResult =
   | { status: 'unverified' }
   | {
       status: 'free'
+      client_name?: string | null
       overall_rating: number
       total_reviews: number
       verification_tier: VerificationTier
@@ -30,6 +31,7 @@ export type ClientProfileResult =
     }
   | {
       status: 'pro'
+      client_name?: string | null
       overall_rating: number
       total_reviews: number
       verification_tier: VerificationTier

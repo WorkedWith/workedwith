@@ -5,7 +5,7 @@ import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getUserTier, isStandardOrAbove } from '@/lib/stripe/get-tier'
-import { DAILY_LOOKUP_LIMIT, classifyIdentifier } from '@/lib/lookup'
+import { DAILY_LOOKUP_LIMIT, classifyIdentifier, clientLookupName } from '@/lib/lookup'
 import type { ClientProfileResult } from './get-client-profile'
 import type { VerificationTier } from '@/types/database'
 
@@ -16,6 +16,7 @@ function sha256(value: string): string {
 type ClientProfileRow = {
   id: string
   user_id: string
+  client_name: string | null
   average_rating: number
   total_reviews: number
   payment_reliability_score: number
@@ -99,7 +100,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
       admin.from('users').select('created_at, verification_tier').eq('id', foundUserId).single(),
       admin
         .from('client_profiles')
-        .select('id, user_id, average_rating, total_reviews, payment_reliability_score, communication_score, scope_clarity_score, red_flag_count')
+        .select('id, user_id, display_name, company_name, client_type, average_rating, total_reviews, payment_reliability_score, communication_score, scope_clarity_score, red_flag_count')
         .eq('user_id', foundUserId)
         .maybeSingle(),
     ])
@@ -115,6 +116,11 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
       clientProfile = {
         id: cp.id as string,
         user_id: cp.user_id as string,
+        client_name: clientLookupName({
+          client_type: cp.client_type as string | null,
+          company_name: cp.company_name as string | null,
+          display_name: cp.display_name as string | null,
+        }),
         average_rating: cp.average_rating as number,
         total_reviews: cp.total_reviews as number,
         payment_reliability_score: cp.payment_reliability_score as number,
@@ -144,6 +150,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
   if (!isFullAccess) {
     return {
       status: 'free',
+      client_name: clientProfile.client_name,
       overall_rating: clientProfile.average_rating,
       total_reviews: clientProfile.total_reviews,
       verification_tier: verTier,
@@ -179,6 +186,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
 
   return {
     status: 'pro',
+    client_name: clientProfile.client_name,
     overall_rating: clientProfile.average_rating,
     total_reviews: clientProfile.total_reviews,
     verification_tier: verTier,

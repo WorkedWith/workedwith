@@ -241,9 +241,9 @@ export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
 
           <div>
             <p className="block text-sm font-medium text-gray-700 mb-2">Trade types</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="columns-2 gap-x-4 sm:columns-3">
               {TRADE_TYPES.map(t => (
-                <div key={t} className="contents">
+                <div key={t} className="mb-2 break-inside-avoid">
                   <label className="flex cursor-pointer items-center gap-2">
                     <input
                       type="checkbox"

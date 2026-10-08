@@ -150,12 +150,15 @@ function SearchResult({ result }: { result: ClientProfileResult }) {
       <div className="bg-brand-navy px-6 py-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
+            {result.client_name && (
+              <h3 className="mb-2 truncate text-xl font-bold text-white">{result.client_name}</h3>
+            )}
             <StarDisplay rating={result.overall_rating} total={result.total_reviews} />
-            <p className="mt-1 text-sm text-white/60">
-              {result.total_reviews === 0
-                ? 'No reviews yet'
-                : `${result.total_reviews} verified review${result.total_reviews !== 1 ? 's' : ''}`}
-            </p>
+            {result.total_reviews > 0 && (
+              <p className="mt-1 text-sm text-white/60">
+                {`${result.total_reviews} review${result.total_reviews !== 1 ? 's' : ''} confirmed by both sides`}
+              </p>
+            )}
           </div>
           <VerificationBadge tier={result.verification_tier} />
         </div>

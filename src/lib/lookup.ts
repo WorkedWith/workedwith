@@ -29,3 +29,19 @@ export function classifyIdentifier(input: string): LookupIdentifier {
 export function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, m => `\\${m}`)
 }
+
+/**
+ * The name shown to a tradesperson after a lookup, so they can confirm they have the right client.
+ * Individuals: first name and last initial only ("Adam M."). Businesses: the company name.
+ */
+export function clientLookupName(cp: {
+  client_type: string | null
+  company_name: string | null
+  display_name: string | null
+}): string | null {
+  if (cp.client_type === 'business' && cp.company_name?.trim()) return cp.company_name.trim()
+  const parts = (cp.display_name ?? '').trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return cp.company_name?.trim() || null
+  if (parts.length === 1) return parts[0]
+  return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`
+}

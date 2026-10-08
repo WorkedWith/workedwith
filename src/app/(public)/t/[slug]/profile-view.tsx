@@ -211,6 +211,11 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
   const profileUrl = `${APP_URL}/t/${slug}`
   // Contact details are only sent to signed in viewers
   const contactPhone = currentUser && tradeUser.phone_verified && typeof tradeUser.phone === 'string' ? tradeUser.phone : null
+  const mailtoHref = (() => {
+    const subject = `Enquiry via WorkedWith: ${displayName}`
+    const body = `Hello,\n\nI found your profile on WorkedWith (${profileUrl}) and would like to ask about some work.\n\nThe job:\nMy postcode:\nWhen I need it done:\n\nThank you`
+    return `mailto:${tradeUser.email as string}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  })()
   const contactEmail = currentUser && typeof tradeUser.email === 'string' ? tradeUser.email : null
 
   // JSON-LD structured data
@@ -249,7 +254,7 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
 
       <main className={preview ? 'bg-gray-50' : 'min-h-screen bg-gray-50'}>
         {/* ── Header ─────────────────────────────────────────── */}
-        <header className={preview ? 'mx-auto max-w-2xl px-4 pt-2 sm:px-6' : 'bg-brand-navy px-4 pb-8 pt-10 sm:px-6'}>
+        <header className={preview ? 'mx-auto max-w-2xl px-4 pt-2 sm:px-6' : 'bg-brand-navy px-4 pb-16 pt-10 sm:px-6'}>
           <div className={preview ? 'rounded-2xl bg-brand-navy px-6 pb-7 pt-7' : 'mx-auto max-w-2xl'}>
             <div className="flex items-center gap-4">
               <Avatar
@@ -307,59 +312,36 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
               {formatAreas(tradeProfile.operating_areas as string[] | null) && (
                 <span>📍 {formatAreas(tradeProfile.operating_areas as string[] | null)}</span>
               )}
-              {(tradeProfile.years_experience as number | null) !== null && (
-                <span>{tradeProfile.years_experience as number} years experience</span>
-              )}
-              <span>Member since {memberSinceYear(tradeUser.created_at as string)}</span>
             </div>
           </div>
         </header>
 
         <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 space-y-5">
 
-          {/* ── About ─────────────────────────────────────────── */}
-          {typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim() && (
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">About</h2>
-              <p className="whitespace-pre-line text-sm leading-relaxed text-gray-700">{tradeProfile.bio}</p>
-            </section>
-          )}
-
-          {/* ── WorkedWith Score ──────────────────────────────── */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-gray-400">
-              WorkedWith Score
-            </h2>
-            {(tradeProfile.total_reviews as number) === 0 ? (
-              <p className="text-sm text-gray-500">
-                No reviews yet. Reviews appear here once both parties have submitted.
-              </p>
-            ) : (
-              <div className="flex items-start gap-6">
-                <div>
-                  <p className="text-5xl font-bold leading-none text-brand-navy">
-                    {(tradeProfile.average_rating as number).toFixed(1)}
-                  </p>
-                  <div className="mt-1.5">
-                    <Stars rating={tradeProfile.average_rating as number} size="lg" />
-                  </div>
-                </div>
-                <div className="space-y-1.5 pt-1">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-semibold text-brand-navy">
-                      {tradeProfile.total_reviews as number}
-                    </span>{' '}
-                    verified review{(tradeProfile.total_reviews as number) !== 1 ? 's' : ''}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <span className="font-semibold text-brand-navy">
-                      {tradeProfile.total_jobs as number}
-                    </span>{' '}
-                    confirmed job{(tradeProfile.total_jobs as number) !== 1 ? 's' : ''}
-                  </p>
-                </div>
-              </div>
-            )}
+          {/* ── Key facts ─────────────────────────────────────── */}
+          <section className="-mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-gray-200 bg-gray-200 shadow-sm sm:grid-cols-4">
+            <Fact
+              label="WorkedWith Score"
+              value={(tradeProfile.total_reviews as number) > 0 ? `${(tradeProfile.average_rating as number).toFixed(1)} ★` : 'New'}
+              note={(tradeProfile.total_reviews as number) > 0
+                ? `${tradeProfile.total_reviews as number} review${(tradeProfile.total_reviews as number) !== 1 ? 's' : ''}`
+                : 'No reviews yet'}
+            />
+            <Fact
+              label="Confirmed jobs"
+              value={String(tradeProfile.total_jobs as number)}
+              note="confirmed by both sides"
+            />
+            <Fact
+              label="Experience"
+              value={(tradeProfile.years_experience as number | null) !== null ? `${tradeProfile.years_experience as number} yrs` : '—'}
+              note="in the trade"
+            />
+            <Fact
+              label="Member since"
+              value={String(memberSinceYear(tradeUser.created_at as string))}
+              note="on WorkedWith"
+            />
           </section>
 
           {/* ── Contact ───────────────────────────────────────── */}
@@ -378,7 +360,7 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                   )}
                   {contactEmail && (
                     <a
-                      href={`mailto:${contactEmail}`}
+                      href={mailtoHref}
                       className="inline-flex min-h-[44px] flex-1 items-center justify-center break-all rounded-xl border border-gray-300 px-5 text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors"
                     >
                       {contactEmail}
@@ -410,7 +392,13 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
               </div>
             )}
           </section>
-
+          {/* ── About ─────────────────────────────────────────── */}
+          {typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim() && (
+            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">About</h2>
+              <p className="whitespace-pre-line text-sm leading-relaxed text-gray-700">{tradeProfile.bio}</p>
+            </section>
+          )}
           {/* ── Operating areas ──────────────────────────────── */}
           {((tradeProfile.operating_areas as string[]) ?? []).length > 0 && (
             <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -428,6 +416,40 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                 ))}
               </div>
             </section>
+          )}
+          {/* ── WorkedWith Score ──────────────────────────────── */}
+          {(tradeProfile.total_reviews as number) > 0 && (
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              WorkedWith Score
+            </h2>
+            {(tradeProfile.total_reviews as number) === 0 ? null : (
+              <div className="flex items-start gap-6">
+                <div>
+                  <p className="text-5xl font-bold leading-none text-brand-navy">
+                    {(tradeProfile.average_rating as number).toFixed(1)}
+                  </p>
+                  <div className="mt-1.5">
+                    <Stars rating={tradeProfile.average_rating as number} size="lg" />
+                  </div>
+                </div>
+                <div className="space-y-1.5 pt-1">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-semibold text-brand-navy">
+                      {tradeProfile.total_reviews as number}
+                    </span>{' '}
+                    verified review{(tradeProfile.total_reviews as number) !== 1 ? 's' : ''}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-semibold text-brand-navy">
+                      {tradeProfile.total_jobs as number}
+                    </span>{' '}
+                    confirmed job{(tradeProfile.total_jobs as number) !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
           )}
 
           {/* ── Review history ────────────────────────────────── */}
@@ -602,6 +624,16 @@ function SubScoreRow({ label, score }: { label: string; score: number }) {
           {score.toFixed(1)}
         </span>
       </div>
+    </div>
+  )
+}
+
+function Fact({ label, value, note }: { label: string; value: string; note: string }) {
+  return (
+    <div className="bg-white px-4 py-4 text-center">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-brand-navy">{value}</p>
+      <p className="mt-0.5 text-xs text-gray-500">{note}</p>
     </div>
   )
 }
