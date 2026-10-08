@@ -10,7 +10,7 @@ import { CopyUrlButton } from './copy-url-button'
 import { getFeaturedJobs } from '@/actions/featured-jobs/get-featured-jobs'
 import { FeaturedWorkSection } from '@/components/featured-work-section'
 
-function SeededProfilePage({ profile }: { profile: SeededProfile; slug: string }) {
+function SeededProfilePage({ profile, signedIn }: { profile: SeededProfile; slug: string; signedIn: boolean }) {
   return (
     <main className="min-h-screen bg-gray-50">
       <header className="bg-brand-navy px-4 pb-8 pt-10 sm:px-6">
@@ -59,6 +59,41 @@ function SeededProfilePage({ profile }: { profile: SeededProfile; slug: string }
                 </span>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* Contact: email only, signed in members only. Phone numbers are never seeded. */}
+        {profile.contact_email && (
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Contact</h2>
+            {signedIn ? (
+              <a
+                href={`mailto:${profile.contact_email}`}
+                className="inline-flex min-h-[44px] w-full items-center justify-center break-all rounded-xl border border-gray-300 px-5 text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors sm:w-auto"
+              >
+                {profile.contact_email}
+              </a>
+            ) : (
+              <div>
+                <p className="text-sm text-gray-600">
+                  Contact details are shown to signed in members only. It is free to join.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <a
+                    href="/join/client"
+                    className="inline-flex min-h-[44px] items-center rounded-xl bg-brand-amber px-5 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
+                  >
+                    Create a free account
+                  </a>
+                  <a
+                    href="/sign-in"
+                    className="inline-flex min-h-[44px] items-center rounded-xl border border-gray-300 px-5 text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors"
+                  >
+                    Sign in
+                  </a>
+                </div>
+              </div>
+            )}
           </section>
         )}
 
@@ -112,10 +147,12 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
       .maybeSingle()
 
     if (rawSeeded) {
+      const seededSupabase = await createClient()
+      const { data: { user: seededViewer } } = await seededSupabase.auth.getUser()
       return (
         <>
           <SiteHeader />
-          <SeededProfilePage profile={rawSeeded as unknown as SeededProfile} slug={slug} />
+          <SeededProfilePage profile={rawSeeded as unknown as SeededProfile} slug={slug} signedIn={Boolean(seededViewer)} />
         </>
       )
     }
@@ -172,6 +209,9 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
   const reviewList = reviews ?? []
   const reviewsClients = (reviewerActivity?.length ?? 0) > 0
   const profileUrl = `${APP_URL}/t/${slug}`
+  // Contact details are only sent to signed in viewers
+  const contactPhone = currentUser && tradeUser.phone_verified && typeof tradeUser.phone === 'string' ? tradeUser.phone : null
+  const contactEmail = currentUser && typeof tradeUser.email === 'string' ? tradeUser.email : null
 
   // JSON-LD structured data
   const jsonLd = {
@@ -241,6 +281,27 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
               </div>
             )}
 
+            {/* Verification and plan badges */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {/* Subscription badge: Pro supersedes Verified, never show both */}
+              {(tradeProfile.subscription_tier as string) === 'pro' && (
+                <span className="inline-flex items-center rounded-full bg-brand-amber px-3 py-1 text-xs font-bold text-brand-navy">
+                  Pro
+                </span>
+              )}
+              {(tradeProfile.subscription_tier as string) === 'standard' && (
+                <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white">
+                  Verified
+                </span>
+              )}
+              {(verTier === 'phone_verified' || verTier === 'fully_verified') && (
+                <VerifiedBadge>✓ Phone Verified</VerifiedBadge>
+              )}
+              {verTier === 'fully_verified' && (
+                <VerifiedBadge>✓ ID Verified</VerifiedBadge>
+              )}
+            </div>
+
             {/* Meta row */}
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/60">
               {formatAreas(tradeProfile.operating_areas as string[] | null) && (
@@ -301,33 +362,53 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
             )}
           </section>
 
-          {/* ── Verification & subscription badges ───────────── */}
+          {/* ── Contact ───────────────────────────────────────── */}
           <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-gray-400">
-              Verified on WorkedWith
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {/* Subscription badge: Pro supersedes Verified, never show both */}
-              {(tradeProfile.subscription_tier as string) === 'pro' && (
-                <span className="inline-flex items-center rounded-full bg-brand-amber px-3 py-1 text-xs font-bold text-brand-navy">
-                  Pro
-                </span>
-              )}
-              {(tradeProfile.subscription_tier as string) === 'standard' && (
-                <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                  Verified
-                </span>
-              )}
-              {(verTier === 'phone_verified' || verTier === 'fully_verified') && (
-                <VerifiedBadge>✓ Phone Verified</VerifiedBadge>
-              )}
-              {verTier === 'fully_verified' && (
-                <VerifiedBadge>✓ ID Verified</VerifiedBadge>
-              )}
-              <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                ✓ WorkedWith Member Since {memberSinceYear(tradeUser.created_at as string)}
-              </span>
-            </div>
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Contact</h2>
+            {currentUser ? (
+              contactPhone || contactEmail ? (
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  {contactPhone && (
+                    <a
+                      href={`tel:${contactPhone.replace(/\s+/g, '')}`}
+                      className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-brand-amber px-5 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
+                    >
+                      Call {contactPhone}
+                    </a>
+                  )}
+                  {contactEmail && (
+                    <a
+                      href={`mailto:${contactEmail}`}
+                      className="inline-flex min-h-[44px] flex-1 items-center justify-center break-all rounded-xl border border-gray-300 px-5 text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors"
+                    >
+                      {contactEmail}
+                    </a>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No contact details available.</p>
+              )
+            ) : (
+              <div>
+                <p className="text-sm text-gray-600">
+                  Contact details are shown to signed in members only. It is free to join.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <a
+                    href="/join/client"
+                    className="inline-flex min-h-[44px] items-center rounded-xl bg-brand-amber px-5 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
+                  >
+                    Create a free account
+                  </a>
+                  <a
+                    href="/sign-in"
+                    className="inline-flex min-h-[44px] items-center rounded-xl border border-gray-300 px-5 text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors"
+                  >
+                    Sign in
+                  </a>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* ── Operating areas ──────────────────────────────── */}
@@ -527,7 +608,7 @@ function SubScoreRow({ label, score }: { label: string; score: number }) {
 
 function VerifiedBadge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
+    <span className="inline-flex items-center rounded-full bg-green-500/20 px-3 py-1 text-xs font-semibold text-green-300">
       {children}
     </span>
   )

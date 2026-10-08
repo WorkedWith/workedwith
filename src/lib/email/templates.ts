@@ -503,7 +503,7 @@ export function seededOutreach(p: {
   removeUrl: string
 }): EmailContent {
   const stranger = {
-    why: `We set up this page using your business details from ${p.source}. It shows only your business name, your trade, the areas you cover${p.hasBio ? ' and the description from your own public page' : ''}.`,
+    why: `We set up this page using your business details from ${p.source}. It shows only your business name, your trade, the areas you cover${p.hasBio ? ', the description from your own public page' : ''} and your public email address.`,
     removeUrl: p.removeUrl,
   }
   const button = { label: 'Claim your page', url: p.claimUrl }
