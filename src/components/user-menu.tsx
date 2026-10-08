@@ -7,6 +7,7 @@ import { signOut } from '@/actions/sign-out'
 export function UserMenu() {
   const [open, setOpen] = useState(false)
   const [fullName, setFullName] = useState('')
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -15,11 +16,14 @@ export function UserMenu() {
       if (!user) return
       supabase
         .from('users')
-        .select('full_name')
+        .select('full_name, profile_photo_url')
         .eq('id', user.id)
         .single()
         .then(({ data }) => {
-          if (data) setFullName(String(data.full_name ?? ''))
+          if (data) {
+            setFullName(String(data.full_name ?? ''))
+            setPhotoUrl(data.profile_photo_url ? String(data.profile_photo_url) : null)
+          }
         })
     })
   }, [])
@@ -46,9 +50,14 @@ export function UserMenu() {
         onClick={() => setOpen(v => !v)}
         aria-label="Account menu"
         aria-expanded={open}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-amber text-xs font-bold text-brand-navy hover:bg-amber-400 transition-colors"
+        className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-brand-amber text-xs font-bold text-brand-navy hover:bg-amber-400 transition-colors"
       >
-        {initials}
+        {photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          initials
+        )}
       </button>
 
       {open && (

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getJobHistory } from '@/actions/get-job-history'
+import { Avatar } from '@/components/avatar'
 import { JobHistory } from '@/components/job-history'
 import type { ClientProfile, Review } from '@/types/database'
 
@@ -8,6 +9,7 @@ interface Props {
   userId: string
   fullName: string
   clientProfile: ClientProfile
+  photoUrl?: string | null
 }
 
 function Stars({ value }: { value: number }) {
@@ -18,10 +20,6 @@ function Stars({ value }: { value: number }) {
       <span className="text-gray-300">{'★'.repeat(Math.max(0, 5 - full))}</span>
     </span>
   )
-}
-
-function initials(name: string): string {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join('') || 'W'
 }
 
 function Card({ title, children }: { title?: string; children: React.ReactNode }) {
@@ -44,7 +42,7 @@ function ScoreRow({ label, value }: { label: string; value: number }) {
   )
 }
 
-export async function ClientProfileView({ userId, fullName, clientProfile }: Props) {
+export async function ClientProfileView({ userId, fullName, clientProfile, photoUrl }: Props) {
   const admin = createAdminClient()
   const jobs = await getJobHistory()
 
@@ -74,21 +72,36 @@ export async function ClientProfileView({ userId, fullName, clientProfile }: Pro
 
   return (
     <div>
-      <div className="bg-brand-navy px-5 pb-6 pt-4">
-        <div className="mx-auto flex max-w-2xl items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-white/20 bg-brand-amber text-xl font-bold text-brand-navy">
-            {initials(displayName)}
+      <div className="bg-brand-navy pb-6 pt-6">
+        <div className="mx-auto max-w-2xl px-4 sm:px-6">
+          <div className="flex items-center gap-4">
+            <Avatar
+              name={displayName}
+              photoUrl={photoUrl}
+              sizeClass="h-16 w-16 sm:h-20 sm:w-20"
+              textClass="text-xl sm:text-2xl"
+              ringClass="border-2 border-white/20"
+            />
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-xl font-bold text-white sm:text-2xl">{displayName}</h1>
+              <p className="mt-1 text-sm text-white/60">
+                {clientProfile.username ? `@${clientProfile.username} · ` : ''}Client · {clientProfile.postcode}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <h2 className="truncate text-xl font-bold text-white">{displayName}</h2>
-            <p className="mt-1 text-sm text-white/60">
-              {clientProfile.username ? `@${clientProfile.username} · ` : ''}Client · {clientProfile.postcode}
-            </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-white/60">This is how trades see you when they look you up.</p>
+            <Link
+              href="/profile/edit"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-brand-amber px-5 text-sm font-semibold text-brand-navy hover:bg-amber-400"
+            >
+              Edit profile
+            </Link>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-4 sm:px-6">
+      <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-5 sm:px-6">
         <Card title="Your reputation with trades">
           {hasReviews ? (
             <>
@@ -128,15 +141,15 @@ export async function ClientProfileView({ userId, fullName, clientProfile }: Pro
           )}
         </Card>
 
-        <Card title="Your jobs">
-          {jobs.length > 0 ? (
-            <JobHistory jobs={jobs} />
-          ) : (
+        {jobs.length > 0 ? (
+          <JobHistory jobs={jobs} />
+        ) : (
+          <Card title="Your jobs">
             <p className="text-sm text-gray-600">
               No jobs yet. When a tradesperson logs a job with you, or you add a past one, it appears here.
             </p>
-          )}
-        </Card>
+          </Card>
+        )}
 
         <Card title="Reviews from trades">
           {reviews.length === 0 ? (

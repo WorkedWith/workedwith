@@ -6,6 +6,7 @@ import { uploadFeaturedImage } from '@/actions/featured-jobs/upload-featured-ima
 import { deleteFeaturedImage } from '@/actions/featured-jobs/delete-featured-image'
 import { deleteFeaturedJob } from '@/actions/featured-jobs/delete-featured-job'
 import type { FeaturedJobOwner, CompletedJobOption } from './page'
+import { workTitle } from '@/lib/trade-types'
 
 type PendingFile = {
   file: File
@@ -263,7 +264,7 @@ export function FeaturedJobsClient({
                 <option value="">No linked job</option>
                 {completedJobs.map(j => (
                   <option key={j.id} value={j.id}>
-                    {j.job_type}, {j.postcode}
+                    {workTitle(j.job_type)}, {j.postcode}
                     {j.completed_at ? ` (${new Date(j.completed_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })})` : ''}
                   </option>
                 ))}

@@ -4,6 +4,7 @@ import { sendEmail } from '@/lib/email/send'
 import { adminIdSubmitted } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isIdDocumentType } from '@/lib/id-hash'
 import type { User } from '@/types/database'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'])
@@ -40,6 +41,9 @@ export async function submitIdVerification(formData: FormData): Promise<SubmitId
     return { success: false, error: 'Your identity is already verified.' }
   }
 
+  const documentType = formData.get('document_type')
+  if (!isIdDocumentType(documentType)) return { success: false, error: 'Please choose which document you are sending.' }
+
   const file = formData.get('file')
   if (!(file instanceof File)) return { success: false, error: 'No file provided.' }
   if (!ALLOWED_TYPES.has(file.type)) {
@@ -68,6 +72,7 @@ export async function submitIdVerification(formData: FormData): Promise<SubmitId
   const { error: docErr } = await admin.from('verification_documents').insert({
     user_id: user.id,
     storage_path: storagePath,
+    document_type: documentType,
     outcome: 'pending',
   })
 

@@ -20,7 +20,7 @@ export async function deleteAccount(): Promise<{ error?: string }> {
   // the account is not deleted.
   const { data: profile } = await admin
     .from('users')
-    .select('phone')
+    .select('phone, licence_number_hash')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -37,6 +37,21 @@ export async function deleteAccount(): Promise<{ error?: string }> {
         { onConflict: 'identity_hash,identity_type', ignoreDuplicates: true },
       )
     if (blockError) return { error: 'Failed to delete account. Please contact support.' }
+  }
+
+  if (profile?.licence_number_hash) {
+    const { error: idBlockError } = await admin
+      .from('deactivated_identities')
+      .upsert(
+        {
+          identity_hash: profile.licence_number_hash,
+          identity_type: 'licence_number',
+          deactivated_by: null,
+          reason: 'account_deleted',
+        },
+        { onConflict: 'identity_hash,identity_type', ignoreDuplicates: true },
+      )
+    if (idBlockError) return { error: 'Failed to delete account. Please contact support.' }
   }
 
   // Anonymise reviews — strip identifying content, preserve aggregate ratings

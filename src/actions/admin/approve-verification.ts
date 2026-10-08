@@ -5,6 +5,7 @@ import { sendEmail } from '@/lib/email/send'
 import { idVerified } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { hashIdNumber, isIdDocumentType } from '@/lib/id-hash'
 
 export type ApproveVerificationResult =
   | { success: true }
@@ -12,6 +13,7 @@ export type ApproveVerificationResult =
 
 export async function approveVerification(
   documentId: string,
+  documentNumber: string,
 ): Promise<ApproveVerificationResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -35,6 +37,29 @@ export async function approveVerification(
   if (!doc) return { success: false, error: 'Document not found' }
   if (doc.outcome !== 'pending') return { success: false, error: 'Document already reviewed' }
 
+  // Hash the number the admin read off the document. The raw number is never stored.
+  const docType = isIdDocumentType(doc.document_type) ? doc.document_type : 'driving_licence'
+  const numberHash = hashIdNumber(docType, documentNumber)
+  if (!numberHash) {
+    return { success: false, error: 'Enter the document number exactly as printed (at least 5 characters).' }
+  }
+
+  const { data: clash } = await admin
+    .from('users')
+    .select('id')
+    .eq('licence_number_hash', numberHash)
+    .neq('id', doc.user_id)
+    .maybeSingle()
+  if (clash) return { success: false, error: 'This document is already verified on another account. Reject it and check for a duplicate.' }
+
+  const { data: banned } = await admin
+    .from('deactivated_identities')
+    .select('id')
+    .eq('identity_hash', numberHash)
+    .eq('identity_type', 'licence_number')
+    .maybeSingle()
+  if (banned) return { success: false, error: 'This document belongs to a closed or banned account. Reject it.' }
+
   const now = new Date().toISOString()
 
   await Promise.all([
@@ -46,6 +71,7 @@ export async function approveVerification(
       .from('users')
       .update({
         verification_tier: 'fully_verified',
+        licence_number_hash: numberHash,
         id_verification_status: 'approved',
         id_reviewed_at: now,
         id_reviewed_by: user.id,

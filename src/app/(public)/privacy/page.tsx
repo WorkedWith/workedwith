@@ -22,7 +22,7 @@ export default async function PrivacyPage() {
         <div className="prose prose-gray max-w-none space-y-10">
 
           <Section n={1} title="What data we collect">
-            <p>When you register: your name, email address, and mobile phone number. If you choose to verify your identity: a photo of your driving licence which is deleted after admin review. We retain only a one-way hash of your licence number. ID verification is optional. When you use the platform: job records, reviews you submit, reviews submitted about you, search lookups you perform, and notification activity. When you subscribe: your Stripe customer ID and subscription status. We do not store card details. Device and connection data: IP address and user agent, used for fraud detection.</p>
+            <p>When you register: your name, email address, and mobile phone number. If you choose to verify your identity: a photo of your driving licence or passport, which is deleted after admin review. We retain only a one-way hash of the document number. ID verification is optional. When you use the platform: job records, reviews you submit, reviews submitted about you, search lookups you perform, and notification activity. When you subscribe: your Stripe customer ID and subscription status. We do not store card details. Device and connection data: IP address and user agent, used for fraud detection.</p>
           </Section>
 
           <Section n={2} title="Legal basis for processing">
@@ -34,7 +34,7 @@ export default async function PrivacyPage() {
           </Section>
 
           <Section n={4} title="Identity hashes and account closure">
-            <p>When an account is closed, we retain a one-way hash of your verified phone number and driving licence number if provided. These hashes are retained indefinitely under legitimate interest to prevent banned users from creating new accounts. Raw numbers and licence images are not retained after closure.</p>
+            <p>When an account is closed, we retain a one-way hash of your verified phone number and ID document number if provided. These hashes are retained indefinitely under legitimate interest to prevent banned users from creating new accounts. Raw numbers and licence images are not retained after closure.</p>
           </Section>
 
           <Section n={5} title="Reviews and reputation data">

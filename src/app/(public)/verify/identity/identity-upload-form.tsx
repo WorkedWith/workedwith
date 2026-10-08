@@ -6,6 +6,7 @@ import { submitIdVerification } from '@/actions/submit-id-verification'
 export function IdentityUploadForm() {
   const [preview, setPreview] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
+  const [documentType, setDocumentType] = useState<'driving_licence' | 'passport'>('driving_licence')
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -33,6 +34,7 @@ export function IdentityUploadForm() {
 
     const formData = new FormData()
     formData.set('file', file)
+    formData.set('document_type', documentType)
 
     setError(null)
     startTransition(async () => {
@@ -61,11 +63,34 @@ export function IdentityUploadForm() {
       <div>
         <h2 className="text-lg font-bold text-brand-navy">Verify your identity</h2>
         <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-          Upload a photo of your UK driving licence. A WorkedWith team member checks it, usually within 1 to 2 working days, then deletes the image. Your licence number is never stored, only a secure scrambled version so nobody can use the same licence twice. Clients never see your licence.
+          Send a photo of a driving licence or a passport. Any passport works, you do not need a UK licence. A WorkedWith team member checks it, usually within 1 to 2 working days, then deletes the image. We never keep the document number, only a scrambled version so the same document cannot be used on two accounts. Clients never see your document.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium text-gray-700">Which document are you sending?</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {([['driving_licence', 'Driving licence'], ['passport', 'Passport']] as const).map(([value, label]) => (
+              <label
+                key={value}
+                className={`flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border-2 px-3 text-sm font-semibold transition-colors ${
+                  documentType === value ? 'border-brand-navy bg-brand-navy text-white' : 'border-gray-200 text-gray-700 hover:border-brand-navy'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="document_type"
+                  value={value}
+                  checked={documentType === value}
+                  onChange={() => setDocumentType(value)}
+                  className="sr-only"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
         {/* File input */}
         <div>
           <label

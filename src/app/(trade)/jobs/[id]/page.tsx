@@ -6,7 +6,9 @@ import { ReportClaimButton } from '@/components/report-claim-button'
 import type { JobStatus } from '@/types/database'
 import { BackLink } from '@/components/back-link'
 import { InviteMessage } from '@/components/invite-message'
+import { RemindClientButton } from '@/components/remind-client-button'
 import { VerifyIdPrompt } from '@/components/verify-id-prompt'
+import { workTitle } from '@/lib/trade-types'
 
 export const metadata = { title: 'Job details | WorkedWith' }
 
@@ -101,7 +103,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-brand-navy">{job.job_type}</h1>
+            <h1 className="text-2xl font-bold text-brand-navy">{workTitle(job.job_type)}</h1>
             <p className="mt-0.5 text-sm text-gray-500">{job.postcode ?? '—'}</p>
           </div>
           <span className={`shrink-0 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${STATUS_COLOURS[status]}`}>
@@ -113,7 +115,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
         {/* Details card */}
         <section className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
-          <Row label="Job type" value={job.job_type} />
+          <Row label="Job type" value={workTitle(job.job_type)} />
           <Row label="Location" value={job.postcode ?? '—'} />
           <Row label="Description" value={job.description ?? '—'} />
           <Row label="Approximate start" value={fmt(job.started_at)} />
@@ -178,6 +180,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
                 A quick message from you is the best way to get it confirmed.
               </p>
             </div>
+            <RemindClientButton jobId={job.id} canEmail={!!invite?.invitee_email} />
             <InviteMessage />
           </section>
         )}

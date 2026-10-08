@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendSeededOutreach, SEEDED_FOLLOW_UPS, SEEDED_LIFETIME_DAYS, type OutreachDay } from '@/lib/seeded-outreach'
 import { normaliseBusinessName, normalisePhone, normaliseEmail, sha256 } from '@/lib/seeded-hash'
+import { sendEmail } from '@/lib/email/send'
+import { idReminder } from '@/lib/email/templates'
 import type { SeededProfile } from '@/types/database'
 
 function daysSince(iso: string): number {
@@ -123,6 +125,34 @@ export async function GET(request: Request) {
     )
     results.seededExpired = expired
     results.seededReminders = { day0: day0Sent, ...followUps }
+  }
+
+  // ── 2b. One reminder to verify ID, three days after the trade verified their phone ──
+  {
+    const cutoff = new Date(Date.now() - 3 * 86_400_000).toISOString()
+    const { data: due } = await admin
+      .from('users')
+      .select('id, email, full_name')
+      .in('user_type', ['trade', 'both'])
+      .eq('phone_verified', true)
+      .eq('id_verification_status', 'not_submitted')
+      .is('id_reminder_sent_at', null)
+      .lt('created_at', cutoff)
+      .limit(50)
+
+    let idRemindersSent = 0
+    for (const u of (due ?? []) as unknown as { id: string; email: string | null; full_name: string | null }[]) {
+      if (!u.email) continue
+      const firstName = (u.full_name ?? '').trim().split(/\s+/)[0] || 'there'
+      const r = await sendEmail(u.email, idReminder({ name: firstName }))
+      if (r.ok) {
+        await admin.from('users').update({ id_reminder_sent_at: new Date().toISOString() }).eq('id', u.id)
+        idRemindersSent++
+      } else {
+        console.error('ID reminder failed (non-fatal):', r.error)
+      }
+    }
+    results.idRemindersSent = idRemindersSent
   }
 
   // ── 3. Rate limit event cleanup (> 24 hours) ─────────────────

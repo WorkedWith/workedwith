@@ -20,6 +20,7 @@ export interface User {
   verification_tier: VerificationTier
   licence_number_hash: string | null
   id_verification_status: IdVerificationStatus
+  id_reminder_sent_at?: string | null
   id_submitted_at: string | null
   id_reviewed_at: string | null
   id_reviewed_by: string | null
@@ -298,6 +299,8 @@ export interface JobInvite {
   sent_at: string
   expires_at: string
   responded_at: string | null
+  last_reminded_at?: string | null
+  reminder_count?: number
 }
 
 export type NotificationType =
@@ -373,6 +376,7 @@ export interface VerificationDocument {
   id: string
   user_id: string
   storage_path: string
+  document_type?: 'driving_licence' | 'passport'
   outcome: VerificationOutcome
   submitted_at: string
   reviewed_at: string | null

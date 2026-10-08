@@ -110,6 +110,24 @@ export function LogJobForm() {
         Your client will receive an invite to confirm the job on WorkedWith.
       </p>
 
+      <div className="mb-6">
+        <p className="mb-2 text-sm font-medium text-gray-700">Where is this job up to?</p>
+        <div className="grid grid-cols-2 gap-2">
+          <span className="flex min-h-[44px] items-center justify-center rounded-xl border-2 border-brand-navy bg-brand-navy px-3 text-center text-sm font-semibold text-white">
+            Upcoming or in progress
+          </span>
+          <a
+            href="/jobs/log/backdated"
+            className="flex min-h-[44px] items-center justify-center rounded-xl border-2 border-gray-200 px-3 text-center text-sm font-semibold text-gray-700 transition-colors hover:border-brand-navy"
+          >
+            Already finished
+          </a>
+        </div>
+        <p className="mt-2 text-xs leading-relaxed text-gray-500">
+          If the work is done, add it as a past job instead. You log it and leave your review in one go.
+        </p>
+      </div>
+
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
         {/* Job type */}
         <Field label="Job type" error={fieldErrors.job_type} required>

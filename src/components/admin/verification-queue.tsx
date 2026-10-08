@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { approveVerification } from '@/actions/admin/approve-verification'
 import { rejectVerification } from '@/actions/admin/reject-verification'
+import { ID_DOCUMENT_LABELS, isIdDocumentType } from '@/lib/id-hash'
 import type { VerificationDocument, User } from '@/types/database'
 
 export type VerificationDocWithUser = VerificationDocument & {
@@ -35,13 +36,14 @@ export function VerificationQueue({ docs }: Props) {
 function VerificationRow({ doc }: { doc: VerificationDocWithUser }) {
   const [rejecting, setRejecting] = useState(false)
   const [reason, setReason] = useState('')
+  const [docNumber, setDocNumber] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function handleApprove() {
     setError(null)
     startTransition(async () => {
-      const result = await approveVerification(doc.id)
+      const result = await approveVerification(doc.id, docNumber)
       if (!result.success) setError(result.error)
     })
   }
@@ -63,6 +65,9 @@ function VerificationRow({ doc }: { doc: VerificationDocWithUser }) {
         <div>
           <p className="font-semibold text-gray-900">{doc.user?.full_name ?? '—'}</p>
           <p className="text-sm text-gray-500">{doc.user?.email ?? '—'}</p>
+          <p className="mt-1 text-xs font-semibold text-gray-700">
+            {ID_DOCUMENT_LABELS[isIdDocumentType(doc.document_type) ? doc.document_type : 'driving_licence']}
+          </p>
           <p className="mt-1 text-xs text-gray-400">
             Submitted {new Date(doc.submitted_at).toLocaleDateString('en-GB', {
               day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -85,6 +90,20 @@ function VerificationRow({ doc }: { doc: VerificationDocWithUser }) {
           <span className="text-xs text-gray-400 italic">Document unavailable</span>
         )}
       </div>
+
+      {!rejecting && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Document number (not saved, only a scrambled version is kept)</label>
+          <input
+            type="text"
+            value={docNumber}
+            onChange={e => setDocNumber(e.target.value)}
+            autoComplete="off"
+            placeholder="Type the number from the document"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+          />
+        </div>
+      )}
 
       {/* Reject reason input */}
       {rejecting && (

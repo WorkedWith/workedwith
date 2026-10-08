@@ -57,6 +57,13 @@ export async function createTradeProfile(
   const username = input.username.trim().toLowerCase()
   const operating_areas = input.operating_areas.map(d => d.trim().toUpperCase())
 
+  if (!company_name) {
+    return { success: false, error: 'Add your business or trading name. It is the heading on your profile.', field: 'company_name' }
+  }
+  if (company_name.length > 80) {
+    return { success: false, error: 'Business name must be 80 characters or fewer.', field: 'company_name' }
+  }
+
   if (!(TRADE_TYPES as readonly string[]).includes(trade_type)) {
     return { success: false, error: 'Please select a valid trade type.', field: 'trade_type' }
   }

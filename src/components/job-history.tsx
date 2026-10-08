@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { JobHistoryItem } from '@/actions/get-job-history'
 import { JobDetailModal } from './job-detail-modal'
+import { workTitle } from '@/lib/trade-types'
 
 interface Props {
   jobs: JobHistoryItem[]
@@ -91,7 +92,7 @@ export function JobHistory({ jobs }: Props) {
                   <p className="font-semibold text-brand-navy truncate">{job.other_party.name}</p>
                   <div className="mt-1.5 flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
-                      {job.job_type}
+                      {workTitle(job.job_type)}
                     </span>
                     <span className="text-xs text-gray-400">
                       {formatDate(job.started_at, job.backdated_period, job.is_backdated)}

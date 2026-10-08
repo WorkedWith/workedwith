@@ -30,7 +30,7 @@ export default async function TermsPage() {
           </Section>
 
           <Section n={3} title="Verified identity">
-            <p>Phone verification is required to submit or receive reviews. You may optionally verify your identity further by uploading a government-issued driving licence. Completing ID verification unlocks a Verified badge on your public profile, giving clients additional confidence in your identity. Business clients may be verified via Companies House. We retain identity hashes after account deletion to prevent rebrand attempts.</p>
+            <p>Phone verification is required to submit or receive reviews. You may optionally verify your identity further by uploading a driving licence or passport. Completing ID verification unlocks a Verified badge on your public profile, giving clients additional confidence in your identity. Business clients may be verified via Companies House. We retain identity hashes after account deletion to prevent rebrand attempts.</p>
           </Section>
 
           <Section n={4} title="Reviews">

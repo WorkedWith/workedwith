@@ -148,13 +148,13 @@ export function TradeOnboardingForm({
             </select>
           </Field>
 
-          <Field label="Company name" hint="Optional" className="mt-4">
+          <Field label="Business or trading name" hint="Shown as the heading on your profile" error={fieldErrors.company_name} required className="mt-4">
             <input
               type="text"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Your company or trading name"
-              className={inputClass(false)}
+              placeholder="e.g. Jasmine's Tiling Services"
+              className={inputClass(!!fieldErrors.company_name)}
             />
           </Field>
 

@@ -282,6 +282,19 @@ export function disputeDecidedAuthor(p: {
 
 // ── Identity checks ────────────────────────────────────────────
 
+export function idReminder(p: { name: string }): EmailContent {
+  return {
+    subject: 'Clients choose trades they can check',
+    heading: 'Get your ID verified',
+    paragraphs: [
+      `Hi ${p.name}, you have not verified your ID yet.`,
+      'Clients are more likely to choose a trade with a verified ID. You get a green tag on your profile and in search results.',
+      'It takes two minutes. Send a photo of a driving licence or passport. We check it, usually within 1 to 2 working days, and delete the photo straight after. Clients never see it.',
+    ],
+    button: { label: 'Verify my ID', url: `${APP_URL}/verify/identity` },
+  }
+}
+
 export function idVerified(p: { name: string; isTrade: boolean }): EmailContent {
   return {
     subject: 'Your identity is verified',

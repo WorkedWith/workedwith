@@ -110,6 +110,13 @@ const WORK_NAMES: Record<string, string> = {
   'Venetian Plastering': 'Venetian plastering',
 }
 
+/** Title case name of the work: "Tiling", "Electrical". Falls back to the type as stored. */
+export function workTitle(jobType: string | null | undefined): string {
+  if (!jobType) return 'Job'
+  const work = jobType === 'Other' ? 'Other work' : (WORK_NAMES[jobType] ?? jobType)
+  return work.charAt(0).toUpperCase() + work.slice(1)
+}
+
 /** "tiling job", "electrical job". Falls back to a lower cased type, or just "job". */
 export function jobLabel(jobType: string | null | undefined): string {
   if (!jobType || jobType === 'Other') return 'job'

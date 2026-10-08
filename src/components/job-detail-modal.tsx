@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react'
 import type { JobHistoryItem } from '@/actions/get-job-history'
+import { completeJob } from '@/actions/complete-job'
+import { workTitle } from '@/lib/trade-types'
 
 interface Props {
   job: JobHistoryItem
@@ -75,7 +77,7 @@ export function JobDetailModal({ job, onClose }: Props) {
           <div className="flex items-start justify-between gap-4 p-5 border-b border-gray-100">
             <div>
               <h2 className="text-lg font-bold text-brand-navy">
-                {job.job_type} with {job.other_party.name}
+                {workTitle(job.job_type)} with {job.other_party.name}
               </h2>
               <p className="mt-0.5 text-sm text-gray-500">
                 {formatDate(job.started_at, job.backdated_period, job.is_backdated)}
@@ -107,6 +109,29 @@ export function JobDetailModal({ job, onClose }: Props) {
               <div className="rounded-xl bg-gray-50 border border-gray-200 p-4">
                 <p className="text-sm text-gray-600">
                   This job is waiting for the other party to confirm.
+                </p>
+              </div>
+            )}
+
+            {/* Active job: the tradesperson marks it complete, then both review */}
+            {job.status === 'active' && job.my_role === 'trade' && (
+              <form action={completeJob} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <input type="hidden" name="job_id" value={job.id} />
+                <p className="text-sm text-gray-600">
+                  Finished the work? Mark it complete and you will both be asked for a review.
+                </p>
+                <button
+                  type="submit"
+                  className="mt-3 min-h-[44px] w-full rounded-lg bg-brand-navy px-4 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                >
+                  Mark as complete
+                </button>
+              </form>
+            )}
+            {job.status === 'active' && job.my_role === 'client' && (
+              <div className="rounded-xl bg-gray-50 border border-gray-200 p-4">
+                <p className="text-sm text-gray-600">
+                  This job is under way. {job.other_party.name} marks it complete when the work is done, then you can both leave a review.
                 </p>
               </div>
             )}

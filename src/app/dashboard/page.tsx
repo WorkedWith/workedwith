@@ -269,7 +269,7 @@ export default async function DashboardPage() {
                       done={id_verification_status === 'pending' || id_verification_status === 'approved'}
                       label="Get your ID verified"
                       href="/verify/identity"
-                      helper="Clients are more likely to choose a trade with a verified ID. Send a photo of your driving licence. We check it and delete it straight after, and it is never shown on your profile."
+                      helper="Clients are more likely to choose a trade with a verified ID. Send a photo of a driving licence or passport. We check it and delete it straight after, and it is never shown on your profile."
                     />
                   )}
                 </div>

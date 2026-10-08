@@ -55,6 +55,7 @@ export async function updateProfile(input: UpdateProfileInput): Promise<UpdatePr
     const trade_types = input.trade_types ?? []
     if (trade_types.length === 0) return { success: false, error: 'Select at least one trade type.', field: 'trade_types' }
     const invalid = trade_types.filter(t => !(ALL_TRADE_TERMS as readonly string[]).includes(t))
+    if (!(input.company_name ?? '').trim()) return { success: false, error: 'Add your business or trading name. It is the heading on your profile.', field: 'company_name' }
     if ((input.company_name ?? '').length > 80) return { success: false, error: 'Company name must be 80 characters or fewer.', field: 'company_name' }
     if (invalid.length > 0) return { success: false, error: 'Invalid trade type selected.', field: 'trade_types' }
 

@@ -227,14 +227,14 @@ export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
         <>
           <div>
             <label htmlFor="company_name" className="block text-sm font-medium text-gray-700 mb-1.5">
-              Company or trading name <span className="font-normal text-gray-400">(optional)</span>
+              Business or trading name
             </label>
             <input
               id="company_name"
               type="text"
               value={companyName}
               onChange={e => setCompanyName(e.target.value)}
-              placeholder="Shown as your profile heading if you add one"
+              placeholder="Shown as the heading on your profile"
               className="w-full min-h-[44px] rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
             />
           </div>
