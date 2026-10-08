@@ -11,8 +11,7 @@ export function VerifyIdPrompt({ phoneVerified, className = '' }: Props) {
     <div className={`rounded-xl border border-amber-200 bg-amber-50 p-4 ${className}`}>
       <p className="text-sm font-semibold text-brand-navy">Clients choose trades they can check</p>
       <p className="mt-1 text-sm leading-relaxed text-gray-600">
-        A verified ID shows a green tag on your profile and in search. It takes two minutes, and your document
-        is deleted once we have checked it.
+        A verified ID shows a green tag on your profile and in search. It takes a few minutes: a photo of your ID, then a selfie on your phone. We delete both once we have checked them.
       </p>
       <Link
         href={phoneVerified ? '/verify/identity' : '/verify/phone'}

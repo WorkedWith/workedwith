@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { submitIdVerification } from '@/actions/submit-id-verification'
 
 export function IdentityUploadForm() {
@@ -9,6 +10,7 @@ export function IdentityUploadForm() {
   const [documentType, setDocumentType] = useState<'driving_licence' | 'passport'>('driving_licence')
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -41,6 +43,7 @@ export function IdentityUploadForm() {
       const result = await submitIdVerification(formData)
       if (result.success) {
         setDone(true)
+        router.refresh()
       } else {
         setError(result.error)
       }
@@ -50,9 +53,9 @@ export function IdentityUploadForm() {
   if (done) {
     return (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
-        <p className="font-semibold text-amber-900">Your ID is under review</p>
+        <p className="font-semibold text-amber-900">Document received</p>
         <p className="mt-1 text-sm text-amber-700 leading-relaxed">
-          We will notify you within 1 to 2 working days. You can close this page.
+          One more step: the selfie.
         </p>
       </div>
     )
@@ -63,7 +66,7 @@ export function IdentityUploadForm() {
       <div>
         <h2 className="text-lg font-bold text-brand-navy">Verify your identity</h2>
         <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-          Send a photo of a driving licence or a passport. Any passport works, you do not need a UK licence. A WorkedWith team member checks it, usually within 1 to 2 working days, then deletes the image. We never keep the document number, only a scrambled version so the same document cannot be used on two accounts. Clients never see your document.
+          Send a photo of a driving licence or a passport. Any passport works, you do not need a UK licence. This is step 1 of 2. Step 2 is a quick selfie, taken on your phone, so we can check the ID is yours. A WorkedWith team member checks both, usually within 1 to 2 working days, then deletes the images. We never keep the document number, only a scrambled version so the same document cannot be used on two accounts. Clients never see your document or selfie.
         </p>
       </div>
 
@@ -127,7 +130,7 @@ export function IdentityUploadForm() {
           disabled={isPending || !fileName}
           className="w-full rounded-lg bg-brand-amber py-3 text-sm font-semibold text-brand-navy hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          {isPending ? 'Uploading…' : 'Submit for review'}
+          {isPending ? 'Uploading…' : 'Continue to selfie'}
         </button>
       </form>
     </div>

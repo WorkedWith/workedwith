@@ -1,7 +1,5 @@
 'use server'
 
-import { sendEmail } from '@/lib/email/send'
-import { adminIdSubmitted } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isIdDocumentType } from '@/lib/id-hash'
@@ -9,11 +7,16 @@ import type { User } from '@/types/database'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'])
 const MAX_BYTES = 10 * 1024 * 1024
+const BUCKET = 'verification-documents'
 
 export type SubmitIdVerificationResult =
   | { success: true }
   | { success: false; error: string }
 
+/**
+ * Step 1 of 2: the ID document. Allowed from any device.
+ * It is not sent to admins until the selfie (step 2) is in.
+ */
 export async function submitIdVerification(formData: FormData): Promise<SubmitIdVerificationResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,14 +25,14 @@ export async function submitIdVerification(formData: FormData): Promise<SubmitId
   const admin = createAdminClient()
   const { data: userData } = await admin
     .from('users')
-    .select('full_name, email, phone_verified, id_verification_status')
+    .select('phone_verified, id_verification_status')
     .eq('id', user.id)
     .single()
 
   if (!userData) return { success: false, error: 'Account not found.' }
 
-  const { phone_verified, id_verification_status, full_name, email } =
-    userData as unknown as Pick<User, 'phone_verified' | 'id_verification_status' | 'full_name' | 'email'>
+  const { phone_verified, id_verification_status } =
+    userData as unknown as Pick<User, 'phone_verified' | 'id_verification_status'>
 
   if (!phone_verified) {
     return { success: false, error: 'Phone verification is required before ID verification.' }
@@ -53,21 +56,28 @@ export async function submitIdVerification(formData: FormData): Promise<SubmitId
     return { success: false, error: 'File must be 10 MB or smaller.' }
   }
 
+  // Replace any earlier incomplete attempt
+  const { data: stale } = await admin
+    .from('verification_documents')
+    .select('id, storage_path')
+    .eq('user_id', user.id)
+    .eq('outcome', 'pending')
+    .is('selfie_path', null)
+  for (const row of (stale ?? []) as unknown as { id: string; storage_path: string }[]) {
+    await admin.storage.from(BUCKET).remove([row.storage_path])
+    await admin.from('verification_documents').delete().eq('id', row.id)
+  }
+
   const ext = file.type === 'application/pdf' ? 'pdf'
     : file.type === 'image/png' ? 'png'
     : file.type === 'image/webp' ? 'webp'
     : 'jpg'
-  const docId = crypto.randomUUID()
-  const storagePath = `${user.id}/${docId}.${ext}`
+  const storagePath = `${user.id}/${crypto.randomUUID()}.${ext}`
 
-  const buffer = await file.arrayBuffer()
   const { error: uploadErr } = await admin.storage
-    .from('verification-documents')
-    .upload(storagePath, buffer, { contentType: file.type })
-
-  if (uploadErr) {
-    return { success: false, error: 'Failed to upload document. Please try again.' }
-  }
+    .from(BUCKET)
+    .upload(storagePath, await file.arrayBuffer(), { contentType: file.type })
+  if (uploadErr) return { success: false, error: 'Failed to upload document. Please try again.' }
 
   const { error: docErr } = await admin.from('verification_documents').insert({
     user_id: user.id,
@@ -75,27 +85,10 @@ export async function submitIdVerification(formData: FormData): Promise<SubmitId
     document_type: documentType,
     outcome: 'pending',
   })
-
-  console.log('verification_documents insert error:', docErr ? JSON.stringify(docErr) : 'none')
-
   if (docErr) {
-    await admin.storage.from('verification-documents').remove([storagePath])
+    await admin.storage.from(BUCKET).remove([storagePath])
     return { success: false, error: `Failed to record submission. Please try again. (${docErr.message})` }
   }
-
-  const { error: statusErr } = await admin
-    .from('users')
-    .update({ id_verification_status: 'pending' })
-    .eq('id', user.id)
-
-  console.log('users id_verification_status update error:', statusErr ? JSON.stringify(statusErr) : 'none')
-
-  if (statusErr) {
-    return { success: false, error: `Failed to update verification status. Please try again. (${statusErr.message})` }
-  }
-
-  const alert = await sendEmail('hello@workedwith.co.uk', adminIdSubmitted({ name: full_name, email }))
-  if (!alert.ok) console.error('Admin notification email failed (non-fatal):', alert.error)
 
   return { success: true }
 }

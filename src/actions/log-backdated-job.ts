@@ -5,7 +5,7 @@ import { sendEmail } from '@/lib/email/send'
 import { pastJobExisting, pastJobNew } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { ALL_TRADE_TERMS } from '@/lib/trade-types'
 import type { JobInitiatedBy, RedFlagReason } from '@/types/database'
 import { aJobLabel } from '@/lib/trade-types'
 
@@ -85,7 +85,7 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
   const invitee_phone = invitee_phone_raw ? normalizeUKMobile(invitee_phone_raw) : null
 
   // Validate
-  if (!(TRADE_TYPES as readonly string[]).includes(job_type)) {
+  if (!(ALL_TRADE_TERMS as readonly string[]).includes(job_type)) {
     return { success: false, error: 'Please select a valid job type.', field: 'job_type' }
   }
   if (!postcode || !UK_POSTCODE_RE.test(postcode)) {

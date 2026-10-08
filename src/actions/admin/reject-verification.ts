@@ -58,6 +58,9 @@ export async function rejectVerification(
         id_reviewed_by: user.id,
       })
       .eq('id', doc.user_id),
+    admin.storage.from('verification-documents').remove(
+      [doc.storage_path as string, ...(doc.selfie_path ? [doc.selfie_path as string] : [])],
+    ),
     admin.from('notifications').insert({
       user_id: doc.user_id,
       type: 'id_rejected',

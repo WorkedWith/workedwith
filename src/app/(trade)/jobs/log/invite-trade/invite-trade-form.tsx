@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { TradePicker } from '@/components/trade-picker'
 import { inviteTrade } from '@/actions/invite-trade'
 
 const MONTHS = [
@@ -137,15 +137,11 @@ export function InviteTradeForm() {
 
         {/* Job type */}
         <Field label="Job type" error={fieldErrors.job_type} required>
-          <select
+          <TradePicker
             value={jobType}
-            onChange={e => { setJobType(e.target.value); clearFieldError('job_type') }}
-            disabled={isPending}
-            className={selectCls(!!fieldErrors.job_type)}
-          >
-            <option value="">Select job type…</option>
-            {TRADE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+            onChange={v => { setJobType(v); clearFieldError('job_type') }}
+            placeholder="Choose a trade"
+          />
         </Field>
 
         {/* Description */}

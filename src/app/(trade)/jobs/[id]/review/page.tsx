@@ -9,11 +9,6 @@ function Shell({ jobId, children }: { jobId: string; children: React.ReactNode }
   return (
     <main className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <span className="text-2xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </span>
-        </div>
         {children}
         <div className="mt-4 text-center">
           <a href={`/jobs/${jobId}`} className="text-sm text-white/50 hover:text-white transition-colors">

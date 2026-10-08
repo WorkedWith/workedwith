@@ -282,6 +282,18 @@ export function disputeDecidedAuthor(p: {
 
 // ── Identity checks ────────────────────────────────────────────
 
+export function idSelfieLink(p: { name: string }): EmailContent {
+  return {
+    subject: 'Finish your ID check on your phone',
+    heading: 'One more step',
+    paragraphs: [
+      `Hi ${p.name}, we have your ID document. The last step is a quick selfie, and it has to be taken on a phone.`,
+      'Open this link on your phone, sign in, and take a quick selfie. It takes about a minute.',
+    ],
+    button: { label: 'Take my selfie', url: `${APP_URL}/verify/identity` },
+  }
+}
+
 export function idReminder(p: { name: string }): EmailContent {
   return {
     subject: 'Clients choose trades they can check',
@@ -289,7 +301,7 @@ export function idReminder(p: { name: string }): EmailContent {
     paragraphs: [
       `Hi ${p.name}, you have not verified your ID yet.`,
       'Clients are more likely to choose a trade with a verified ID. You get a green tag on your profile and in search results.',
-      'It takes two minutes. Send a photo of a driving licence or passport. We check it, usually within 1 to 2 working days, and delete the photo straight after. Clients never see it.',
+      'It takes a few minutes. Send a photo of a driving licence or passport, then take a quick selfie on your phone, so we know the ID is yours. We check both, usually within 1 to 2 working days, and delete them straight after. Clients never see them.',
     ],
     button: { label: 'Verify my ID', url: `${APP_URL}/verify/identity` },
   }
@@ -494,7 +506,7 @@ export function adminIdSubmitted(p: { name: string; email: string }): EmailConte
     subject: 'ID check waiting in the queue',
     heading: 'New ID check',
     internal: true,
-    paragraphs: [`${p.name} (${p.email}) has submitted an ID document for review.`],
+    paragraphs: [`${p.name} (${p.email}) has submitted an ID document and a selfie for review.`],
     button: { label: 'Open the queue', url: `${APP_URL}/admin/verification` },
   }
 }

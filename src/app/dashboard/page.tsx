@@ -3,9 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AppHeader } from '@/components/app-header'
 import { UsernameCard } from '@/components/username-card'
-import { TRADE_TYPES } from '@/lib/trade-types'
 import { getJobHistory } from '@/actions/get-job-history'
 import { JobHistory } from '@/components/job-history'
+import { TradeSearchForm } from './trade-search-form'
 import { ClientLookupForm } from '@/components/client-lookup-form'
 import { getProfileAnalytics } from '@/actions/get-profile-analytics'
 import type { ProfileAnalytics } from '@/actions/get-profile-analytics'
@@ -134,14 +134,14 @@ export default async function DashboardPage() {
 
         {/* ── Client-only welcome row ───────────────────── */}
         {!isTrade && (
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-brand-navy">
-                Welcome back, {firstName}
-              </h1>
-              <p className="mt-0.5 text-sm text-gray-500">{accountLabel} account</p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+              <div>
+                <h1 className="text-2xl font-bold text-brand-navy">
+                  Welcome back, {firstName}
+                </h1>
+                <p className="mt-0.5 text-sm text-gray-500">{accountLabel} account</p>
+              </div>
               {pendingCount > 0 && (
                 <a
                   href="#your-jobs"
@@ -151,15 +151,17 @@ export default async function DashboardPage() {
                   {pendingCount} to confirm
                 </a>
               )}
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
               <a
                 href="/jobs/log/invite-trade"
-                className="whitespace-nowrap rounded-lg bg-brand-amber px-4 py-2 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
+                className="flex min-h-[44px] items-center justify-center rounded-lg bg-brand-amber px-3 text-center text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors sm:px-4"
               >
                 + Invite a tradesperson
               </a>
               <a
                 href="/jobs/log/backdated"
-                className="whitespace-nowrap rounded-lg border border-brand-navy px-4 py-2 text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors"
+                className="flex min-h-[44px] items-center justify-center rounded-lg border border-brand-navy px-3 text-center text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors sm:px-4"
               >
                 + Add a past job
               </a>
@@ -269,7 +271,7 @@ export default async function DashboardPage() {
                       done={id_verification_status === 'pending' || id_verification_status === 'approved'}
                       label="Get your ID verified"
                       href="/verify/identity"
-                      helper="Clients are more likely to choose a trade with a verified ID. Send a photo of a driving licence or passport. We check it and delete it straight after, and it is never shown on your profile."
+                      helper="Clients are more likely to choose a trade with a verified ID. Send a photo of a driving licence or passport, then a quick selfie on your phone. We check them and delete them straight after, and they are never shown on your profile."
                     />
                   )}
                 </div>
@@ -432,7 +434,7 @@ export default async function DashboardPage() {
             {isBoth && (
               <section>
                 <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Find a tradesperson</p>
-                <FindTradeForm />
+                <TradeSearchForm />
               </section>
             )}
 
@@ -482,7 +484,7 @@ export default async function DashboardPage() {
             {/* 1. Find a tradesperson */}
             <section>
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Find a tradesperson</p>
-              <FindTradeForm />
+              <TradeSearchForm />
             </section>
 
             {/* Your username */}
@@ -583,41 +585,6 @@ export default async function DashboardPage() {
 }
 
 // ── Sub-components ────────────────────────────────────────────
-
-function FindTradeForm() {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <form
-        method="GET"
-        action="/find"
-        className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1.5fr_auto] sm:items-center"
-      >
-        <select
-          name="trade"
-          required
-          className="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
-        >
-          <option value="" disabled>Select a trade type</option>
-          {TRADE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <input
-          name="postcode"
-          type="text"
-          required
-          placeholder="Your postcode"
-          autoComplete="postal-code"
-          className="h-11 w-full rounded-lg border border-gray-200 px-3 text-sm uppercase placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
-        />
-        <button
-          type="submit"
-          className="h-11 w-full rounded-lg bg-brand-amber px-4 text-sm font-bold text-brand-navy whitespace-nowrap hover:bg-amber-400 transition-colors"
-        >
-          Search
-        </button>
-      </form>
-    </div>
-  )
-}
 
 function OnboardingItem({
   done,

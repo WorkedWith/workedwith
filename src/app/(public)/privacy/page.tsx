@@ -22,7 +22,7 @@ export default async function PrivacyPage() {
         <div className="prose prose-gray max-w-none space-y-10">
 
           <Section n={1} title="What data we collect">
-            <p>When you register: your name, email address, and mobile phone number. If you choose to verify your identity: a photo of your driving licence or passport, which is deleted after admin review. We retain only a one-way hash of the document number. ID verification is optional. When you use the platform: job records, reviews you submit, reviews submitted about you, search lookups you perform, and notification activity. When you subscribe: your Stripe customer ID and subscription status. We do not store card details. Device and connection data: IP address and user agent, used for fraud detection.</p>
+            <p>When you register: your name, email address, and mobile phone number. If you choose to verify your identity: a photo of your driving licence or passport, and a selfie taken on your phone, both of which are used only for a manual face and name check and deleted after admin review. We retain only a one-way hash of the document number. ID verification is optional. When you use the platform: job records, reviews you submit, reviews submitted about you, search lookups you perform, and notification activity. When you subscribe: your Stripe customer ID and subscription status. We do not store card details. Device and connection data: IP address and user agent, used for fraud detection.</p>
           </Section>
 
           <Section n={2} title="Legal basis for processing">
@@ -46,7 +46,7 @@ export default async function PrivacyPage() {
           </Section>
 
           <Section n={7} title="Data retention">
-            <p>Active account data: retained for the duration of your account. Review data: retained indefinitely, anonymised on account closure. Identity hashes: retained indefinitely for fraud prevention. Licence images: deleted after admin review. Search audit logs: retained for 12 months.</p>
+            <p>Active account data: retained for the duration of your account. Review data: retained indefinitely, anonymised on account closure. Identity hashes: retained indefinitely for fraud prevention. ID document images and selfies: deleted after admin review. Search audit logs: retained for 12 months.</p>
           </Section>
 
           <Section n={8} title="Your rights">

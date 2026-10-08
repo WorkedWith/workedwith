@@ -9,6 +9,7 @@ import type { VerificationDocument, User } from '@/types/database'
 export type VerificationDocWithUser = VerificationDocument & {
   user: Pick<User, 'id' | 'full_name' | 'email'> | null
   signedUrl: string | null
+  selfieUrl: string | null
 }
 
 type Props = {
@@ -75,20 +76,41 @@ function VerificationRow({ doc }: { doc: VerificationDocWithUser }) {
           </p>
         </div>
 
-        {/* Document link */}
-        {doc.signedUrl ? (
-          <a
-            href={doc.signedUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-amber hover:underline shrink-0"
-          >
-            <DocumentIcon />
-            View document
-          </a>
-        ) : (
-          <span className="text-xs text-gray-400 italic">Document unavailable</span>
-        )}
+        {/* Document and selfie links */}
+        <div className="flex flex-col items-start gap-2 sm:items-end shrink-0">
+          {doc.signedUrl ? (
+            <a
+              href={doc.signedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-amber hover:underline"
+            >
+              <DocumentIcon />
+              View document
+            </a>
+          ) : (
+            <span className="text-xs text-gray-400 italic">Document unavailable</span>
+          )}
+          {doc.selfieUrl ? (
+            <a
+              href={doc.selfieUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-amber hover:underline"
+            >
+              <DocumentIcon />
+              View selfie
+            </a>
+          ) : (
+            <span className="text-xs text-gray-400 italic">Selfie unavailable</span>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
+        <p>
+          Check: the face in the selfie matches the document, and the name matches <strong>{doc.user?.full_name ?? 'the account'}</strong>.
+        </p>
       </div>
 
       {!rejecting && (

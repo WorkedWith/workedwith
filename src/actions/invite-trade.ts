@@ -8,7 +8,7 @@ import { tradeInviteFromClient } from '@/lib/email/templates'
 import { tradeInviteSms } from '@/lib/sms-copy'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { ALL_TRADE_TERMS } from '@/lib/trade-types'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -77,7 +77,7 @@ export async function inviteTrade(input: InviteTradeInput): Promise<InviteTradeR
   if (trade_name.length > 100) {
     return { success: false, error: 'Trade name must be 100 characters or fewer.', field: 'trade_name' }
   }
-  if (!job_type || !(TRADE_TYPES as readonly string[]).includes(job_type)) {
+  if (!job_type || !(ALL_TRADE_TERMS as readonly string[]).includes(job_type)) {
     return { success: false, error: 'Please select a valid job type.', field: 'job_type' }
   }
   if (!job_date) {

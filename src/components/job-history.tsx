@@ -17,10 +17,10 @@ function formatDate(started_at: string | null, backdated_period: string | null, 
   return 'Date unknown'
 }
 
-function StatusBadge({ status, otherPartyName }: { status: string; otherPartyName: string }) {
+function StatusBadge({ status }: { status: string }) {
   const variants: Record<string, { label: string; className: string }> = {
     pending_confirmation: {
-      label: `Waiting for ${otherPartyName} to confirm`,
+      label: 'Awaiting confirmation',
       className: 'bg-gray-100 text-gray-600',
     },
     active:    { label: 'In progress', className: 'bg-blue-100 text-blue-700' },
@@ -89,7 +89,7 @@ export function JobHistory({ jobs }: Props) {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-brand-navy truncate">{job.other_party.name}</p>
+                  <p className="break-words font-semibold text-brand-navy">{job.other_party.name}</p>
                   <div className="mt-1.5 flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
                       {workTitle(job.job_type)}
@@ -110,7 +110,7 @@ export function JobHistory({ jobs }: Props) {
                     return <p className="mt-1.5 text-xs text-gray-400">{text}</p>
                   })()}
                 </div>
-                <StatusBadge status={job.status} otherPartyName={job.other_party.name} />
+                <StatusBadge status={job.status} />
               </div>
 
               {(job.reviews.received || job.reviews.given || reviewPending) && (

@@ -84,7 +84,9 @@ export async function approveVerification(
       body: 'Your ID has been approved. Your profile now shows as fully verified.',
       link: '/dashboard',
     }),
-    admin.storage.from('verification-documents').remove([doc.storage_path as string]),
+    admin.storage.from('verification-documents').remove(
+      [doc.storage_path as string, ...(doc.selfie_path ? [doc.selfie_path as string] : [])],
+    ),
   ])
 
   // Send approval email

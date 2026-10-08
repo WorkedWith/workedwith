@@ -2,7 +2,7 @@
 
 import { InviteMessage } from '@/components/invite-message'
 import { useState, useTransition } from 'react'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { TradePicker } from '@/components/trade-picker'
 import { logJob, type LogJobInput } from '@/actions/log-job'
 
 type FieldErrors = Partial<Record<keyof LogJobInput, string>>
@@ -105,7 +105,6 @@ export function LogJobForm() {
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
-      <h2 className="text-xl font-semibold text-brand-navy mb-1">Log a job</h2>
       <p className="text-sm text-gray-500 mb-6">
         Your client will receive an invite to confirm the job on WorkedWith.
       </p>
@@ -131,15 +130,11 @@ export function LogJobForm() {
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
         {/* Job type */}
         <Field label="Job type" error={fieldErrors.job_type} required>
-          <select
+          <TradePicker
             value={jobType}
-            onChange={e => { setJobType(e.target.value); clearFieldError('job_type') }}
-            disabled={isPending}
-            className={selectCls(!!fieldErrors.job_type)}
-          >
-            <option value="">Select job type…</option>
-            {TRADE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+            onChange={v => { setJobType(v); clearFieldError('job_type') }}
+            placeholder="Choose a trade"
+          />
         </Field>
 
         {/* Description */}

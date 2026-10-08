@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { IdentityUploadForm } from './identity-upload-form'
+import { SelfieStep } from './selfie-step'
 import type { User } from '@/types/database'
 import { AppHeader } from '@/components/app-header'
 import { BackLink } from '@/components/back-link'
@@ -28,6 +29,18 @@ export default async function VerifyIdentityPage() {
 
   if (!phone_verified) redirect('/verify/phone')
 
+  // Document sent but selfie still to come?
+  const { data: incomplete } = await admin
+    .from('verification_documents')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('outcome', 'pending')
+    .is('selfie_path', null)
+    .order('submitted_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const awaitingSelfie = !!incomplete
+
   return (
     <main className="min-h-screen bg-gray-50">
       <AppHeader />
@@ -36,7 +49,7 @@ export default async function VerifyIdentityPage() {
         <div>
           <h1 className="text-2xl font-bold text-brand-navy">Identity verification</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Clients are more likely to choose a trade with a verified ID. You get a green tag on your profile and in search.
+            Clients are more likely to choose a trade with a verified ID. You get a green tag on your profile and in search. Two quick steps: your ID, then a selfie on your phone.
           </p>
         </div>
 
@@ -57,6 +70,8 @@ export default async function VerifyIdentityPage() {
               We will notify you within 1 to 2 working days. No action is needed from you right now.
             </p>
           </div>
+        ) : awaitingSelfie ? (
+          <SelfieStep />
         ) : (
           <>
             {id_verification_status === 'rejected' && (

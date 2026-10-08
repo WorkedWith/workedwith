@@ -12,6 +12,7 @@ export default async function VerificationPage() {
     .from('verification_documents')
     .select('*')
     .eq('outcome', 'pending')
+    .not('selfie_path', 'is', null)
     .order('submitted_at', { ascending: true })
 
   console.log('Verification queue fetch — count:', rawDocs?.length ?? 0, 'error:', docsError ? JSON.stringify(docsError) : 'none')
@@ -33,10 +34,14 @@ export default async function VerificationPage() {
       const { data: urlData } = await admin.storage
         .from('verification-documents')
         .createSignedUrl(doc.storage_path, 60)
+      const { data: selfieData } = doc.selfie_path
+        ? await admin.storage.from('verification-documents').createSignedUrl(doc.selfie_path, 60)
+        : { data: null }
       return {
         ...doc,
         user: users.find(u => u.id === doc.user_id) ?? null,
         signedUrl: urlData?.signedUrl ?? null,
+        selfieUrl: selfieData?.signedUrl ?? null,
       }
     })
   )

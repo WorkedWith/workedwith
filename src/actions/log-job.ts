@@ -6,7 +6,7 @@ import { jobInviteNewClient, jobToConfirmExisting } from '@/lib/email/templates'
 import { outwardCode } from '@/lib/email/format'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { ALL_TRADE_TERMS } from '@/lib/trade-types'
 import { aJobLabel } from '@/lib/trade-types'
 
 // ── Types ─────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
   const agreed_payment_terms_days = agreedRaw !== '' ? parseInt(agreedRaw, 10) : null
 
   // Validate
-  if (!(TRADE_TYPES as readonly string[]).includes(job_type)) {
+  if (!(ALL_TRADE_TERMS as readonly string[]).includes(job_type)) {
     return { success: false, error: 'Please select a valid job type.', field: 'job_type' }
   }
   if (!postcode) {

@@ -169,7 +169,7 @@ export async function getJobHistory(): Promise<JobHistoryItem[]> {
 
     const inviteeEmail = inviteeEmailByJob.get(job.id) ?? null
     const otherParty: OtherParty = {
-      name: resolvedName ?? inviteeEmail ?? 'Invited user',
+      name: resolvedName ?? inviteeEmail ?? (myRole === 'client' ? 'Invited tradesperson' : 'Invited client'),
       public_slug: resolvedSlug,
     }
 

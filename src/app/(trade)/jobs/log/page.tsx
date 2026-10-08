@@ -27,10 +27,7 @@ export default async function LogJobPage() {
     <main className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <span className="text-2xl font-bold tracking-tight text-white">
-            Worked<span className="text-brand-amber">With</span>
-          </span>
-          <h1 className="mt-4 text-2xl sm:text-3xl font-bold text-white">Log a job</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Log a job</h1>
           <p className="mt-2 text-sm text-white/60">
             {isFirstJob
               ? 'Log your first job to start building your WorkedWith profile. Your client confirms it, then mutual reviews unlock once the job is done.'

@@ -17,14 +17,14 @@ function linksFor(userType: string | null): NavLink[] {
     return [
       { href: '/dashboard', label: 'Dashboard' },
       { href: '/org/members', label: 'Members' },
-      { href: '/find', label: 'Find a tradesperson' },
+      { href: '/find', label: 'Find a tradesperson', shortLabel: 'Find a trade' },
       { href: '/profile', label: 'Profile' },
       { href: '/settings', label: 'Settings' },
     ]
   }
   return [
     { href: '/dashboard', label: 'Dashboard' },
-    { href: '/find', label: 'Find a tradesperson' },
+    { href: '/find', label: 'Find a tradesperson', shortLabel: 'Find a trade' },
     { href: '/profile', label: 'Profile' },
     { href: '/settings', label: 'Settings' },
   ]

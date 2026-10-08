@@ -32,6 +32,7 @@ export const EMAIL_SAMPLES: EmailSample[] = [
   { id: 'E19', group: 'Disputes', label: 'Decision (person who raised it)', to: 'Raiser', content: t.disputeDecidedRaiser({ name: 'Sam', outcome: 'kept as published', jobId: 'sample' }) },
   { id: 'E20', group: 'Disputes', label: 'Decision (person who wrote the review)', to: 'Author', content: t.disputeDecidedAuthor({ name: 'Raul', raiserName: 'Sam Patel', outcome: 'kept as published', jobId: 'sample' }) },
   { id: 'E21', group: 'ID', label: 'ID verified (tradesperson)', to: 'User', content: t.idVerified({ name: 'Raul', isTrade: true }) },
+  { id: 'E22c', group: 'ID', label: 'NEW: Finish ID check on your phone (selfie step)', to: 'Trade', content: t.idSelfieLink({ name: 'Raul' }) },
   { id: 'E22b', group: 'ID', label: 'NEW: Reminder to verify ID (3 days after signup)', to: 'Trade', content: t.idReminder({ name: 'Raul' }) },
   { id: 'E22', group: 'ID', label: 'ID not verified', to: 'User', content: t.idNotVerified({ name: 'Raul', reason: 'The photo was blurred so we could not read the licence number.' }) },
   { id: 'E23', group: 'Invites', label: 'Client invites a tradesperson', to: 'Stranger', content: t.tradeInviteFromClient({ callerName: 'Sam Patel', jobType: 'Tiling', jobDate: 'March 2026', claimUrl: `${APP_URL}/invite/claim/sample`, days: 60 }) },

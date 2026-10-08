@@ -155,6 +155,25 @@ export async function GET(request: Request) {
     results.idRemindersSent = idRemindersSent
   }
 
+  // ── 2c. Incomplete ID checks (document sent, no selfie) older than 7 days: delete the file ──
+  {
+    const cutoff = new Date(Date.now() - 7 * 86_400_000).toISOString()
+    const { data: stale } = await admin
+      .from('verification_documents')
+      .select('id, storage_path')
+      .eq('outcome', 'pending')
+      .is('selfie_path', null)
+      .lt('submitted_at', cutoff)
+      .limit(100)
+    let cleared = 0
+    for (const row of (stale ?? []) as unknown as { id: string; storage_path: string }[]) {
+      await admin.storage.from('verification-documents').remove([row.storage_path])
+      await admin.from('verification_documents').delete().eq('id', row.id)
+      cleared++
+    }
+    results.incompleteIdChecksCleared = cleared
+  }
+
   // ── 3. Rate limit event cleanup (> 24 hours) ─────────────────
   {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()

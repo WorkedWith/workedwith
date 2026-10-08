@@ -377,6 +377,9 @@ export interface VerificationDocument {
   user_id: string
   storage_path: string
   document_type?: 'driving_licence' | 'passport'
+  selfie_path?: string | null
+  selfie_code?: string | null
+  selfie_submitted_at?: string | null
   outcome: VerificationOutcome
   submitted_at: string
   reviewed_at: string | null

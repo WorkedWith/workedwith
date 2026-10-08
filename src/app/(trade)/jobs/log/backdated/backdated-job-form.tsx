@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { TradePicker } from '@/components/trade-picker'
 import { logBackdatedJob } from '@/actions/log-backdated-job'
 import type { JobInitiatedBy, RedFlagReason } from '@/types/database'
 
@@ -168,25 +168,14 @@ export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy 
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
-      <h2 className="text-xl font-semibold text-brand-navy mb-1">Add a past job</h2>
-      <p className="text-sm text-gray-500 mb-6">
-        {initiatedBy === 'trade'
-          ? 'Log a past job and invite your client to confirm. Both parties can then leave verified reviews.'
-          : 'Log a past job and invite the tradesperson to confirm. Both parties can then leave verified reviews.'}
-      </p>
-
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
         {/* Job type */}
         <Field label="Job type" error={fieldErrors.job_type} required>
-          <select
+          <TradePicker
             value={jobType}
-            onChange={e => { setJobType(e.target.value); clearFieldError('job_type') }}
-            disabled={isPending}
-            className={selectCls(!!fieldErrors.job_type)}
-          >
-            <option value="">Select job type…</option>
-            {TRADE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+            onChange={v => { setJobType(v); clearFieldError('job_type') }}
+            placeholder="Choose a trade"
+          />
         </Field>
 
         {/* Description */}
