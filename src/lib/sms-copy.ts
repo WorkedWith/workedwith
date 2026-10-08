@@ -1,10 +1,11 @@
+import { aJobLabel } from '@/lib/trade-types'
 import { APP_URL } from '@/lib/app-url'
 import type { SeededDay } from '@/lib/email/templates'
 
 /** Every text message WorkedWith sends. Edit wording here only. */
 
 export function tradeInviteSms(p: { callerName: string; jobType: string; token: string; days: number }): string {
-  return `WorkedWith: ${p.callerName} has logged a ${p.jobType} job with you. See it and claim it: ${APP_URL}/invite/claim/${p.token} Expires in ${p.days} days. Reply STOP to opt out.`
+  return `WorkedWith: ${p.callerName} has logged ${aJobLabel(p.jobType)} with you. See it and claim it: ${APP_URL}/invite/claim/${p.token} Expires in ${p.days} days. Reply STOP to opt out.`
 }
 
 export function seededSms(p: {

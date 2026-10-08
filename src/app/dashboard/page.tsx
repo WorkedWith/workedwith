@@ -267,9 +267,9 @@ export default async function DashboardPage() {
                   {phone_verified && (
                     <OnboardingItem
                       done={id_verification_status === 'pending' || id_verification_status === 'approved'}
-                      label="Get your Verified badge"
+                      label="Get your ID verified"
                       href="/verify/identity"
-                      helper="Submit your driving licence for identity verification. Your document is reviewed securely and deleted immediately after. Never visible on your profile."
+                      helper="Clients are more likely to choose a trade with a verified ID. Send a photo of your driving licence. We check it and delete it straight after, and it is never shown on your profile."
                     />
                   )}
                 </div>

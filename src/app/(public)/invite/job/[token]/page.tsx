@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { aJobLabel } from '@/lib/trade-types'
 import type { Job, JobInvite } from '@/types/database'
 
 export const metadata = { title: 'You have a job to confirm | WorkedWith', robots: { index: false } }
@@ -158,7 +159,7 @@ export default async function InviteJobPage({ params }: { params: { token: strin
           {inviterName} worked with you: join to confirm it
         </h1>
         <p className="mt-3 text-base text-white/70 max-w-sm mx-auto leading-relaxed">
-          They logged a <span className="font-medium text-white">{job.job_type}</span> job
+          They logged <span className="font-medium text-white">{aJobLabel(job.job_type)}</span>
           {jobPeriod !== 'recently' ? ` in ${jobPeriod}` : ''}. Confirm it happened and leave each other verified reviews.
         </p>
       </div>

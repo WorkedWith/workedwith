@@ -39,7 +39,13 @@ function InfoCard({ title, message }: { title: string; message: string }) {
   )
 }
 
-export default async function ReviewPage({ params }: { params: { id: string } }) {
+export default async function ReviewPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string }
+  searchParams: { confirmed?: string }
+}) {
   const { id } = params
   const data = await getReviewFormData(id)
 
@@ -74,6 +80,12 @@ export default async function ReviewPage({ params }: { params: { id: string } })
   // status === 'ok'
   return (
     <Shell jobId={id}>
+      {searchParams.confirmed === '1' && (
+        <div className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-800 ring-1 ring-green-200">
+          <strong>Past job confirmed.</strong> Now leave your review while it is fresh. It stays hidden
+          until you have both submitted, or for 7 days.
+        </div>
+      )}
       {data.reviewerType === 'trade' ? (
         <TradeReviewForm
           jobId={data.jobId}

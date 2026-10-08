@@ -1,4 +1,5 @@
 import { APP_URL } from '@/lib/app-url'
+import { jobLabel, aJobLabel } from '@/lib/trade-types'
 import type { EmailContent } from '@/lib/email/layout'
 
 /**
@@ -10,7 +11,6 @@ import type { EmailContent } from '@/lib/email/layout'
 export const REVIEW_RULE =
   'Neither review is shown until you have both submitted, or 7 days have passed, whichever comes first. Then they go live.'
 
-const lc = (value: string) => value.toLowerCase()
 const job = (id: string) => `${APP_URL}/jobs/${id}`
 
 // ── Job logging and confirmation ───────────────────────────────
@@ -23,10 +23,10 @@ export function jobToConfirmExisting(p: {
 }): EmailContent {
   return {
     subject: `${p.tradeName} has logged a job with you`,
-    preheader: `Confirm the ${lc(p.jobType)} job. It takes a few seconds.`,
-    heading: `Confirm your ${lc(p.jobType)} job`,
+    preheader: `Confirm the ${jobLabel(p.jobType)}. It takes a few seconds.`,
+    heading: `Confirm your ${jobLabel(p.jobType)}`,
     paragraphs: [
-      `**${p.tradeName}** has logged an upcoming ${lc(p.jobType)} job at ${p.postcode} and asked you to confirm it. It takes a few seconds.`,
+      `**${p.tradeName}** has logged an upcoming ${jobLabel(p.jobType)} at ${p.postcode} and asked you to confirm it. It takes a few seconds.`,
       `When the work is done you will each review the other. ${REVIEW_RULE}`,
     ],
     button: { label: 'Confirm the job', url: `${APP_URL}/jobs/confirm/${p.token}` },
@@ -45,7 +45,7 @@ export function jobInviteNewClient(p: {
     preheader: 'Free for clients, always. Confirm the job to continue.',
     heading: `${p.tradeName} is working with you through WorkedWith`,
     paragraphs: [
-      `**${p.tradeName}** has invited you to WorkedWith because they have an upcoming ${lc(p.jobType)} job in ${p.district} for you to confirm.`,
+      `**${p.tradeName}** has invited you to WorkedWith because they have an upcoming ${jobLabel(p.jobType)} in ${p.district} for you to confirm.`,
       `${p.tradeName} is on WorkedWith, where tradespeople build a record of reviews from confirmed jobs, so they take care to protect their reputation. It is free for clients, always.`,
       'Confirm the job and, when the work is done, you will each review the other. Neither review shows until both are in.',
     ],
@@ -66,7 +66,7 @@ export function pastJobExisting(p: {
     preheader: 'Confirm it and you can each leave a review.',
     heading: 'Confirm a past job',
     paragraphs: [
-      `**${p.callerName}** says you worked together on a ${lc(p.jobType)} job in ${p.period}. If that is right, confirm it and you can each leave a review.`,
+      `**${p.callerName}** says you worked together on ${aJobLabel(p.jobType)} in ${p.period}. If that is right, confirm it and you can each leave a review.`,
       REVIEW_RULE,
     ],
     button: { label: 'Confirm the past job', url: `${APP_URL}/jobs/confirm/${p.token}` },
@@ -85,7 +85,7 @@ export function pastJobNew(p: {
     preheader: 'Free to join. Confirm the job to leave a review.',
     heading: `${p.callerName} says you worked together`,
     paragraphs: [
-      `**${p.callerName}** logged a ${lc(p.jobType)} job from ${p.period} and gave us your email address so you can confirm it.`,
+      `**${p.callerName}** logged ${aJobLabel(p.jobType)} from ${p.period} and gave us your email address so you can confirm it.`,
       'WorkedWith is where tradespeople and clients review each other, so both have a reputation to protect. It is free for clients, always.',
     ],
     button: { label: 'See the job and confirm', url: `${APP_URL}/invite/job/${p.token}` },
@@ -104,7 +104,7 @@ export function jobConfirmed(p: {
     subject: `${p.clientName} has confirmed your job`,
     heading: 'Job confirmed',
     paragraphs: [
-      `**${p.clientName}** has confirmed your ${lc(p.jobType)} job at ${p.postcode}.`,
+      `**${p.clientName}** has confirmed your ${jobLabel(p.jobType)} at ${p.postcode}.`,
       'When the work is finished, mark it complete and you will both be asked for a review.',
     ],
     button: { label: 'View the job', url: job(p.jobId) },
@@ -121,19 +121,19 @@ export function pastJobConfirmed(p: {
     subject: `${p.otherName} has confirmed your past job`,
     heading: 'Leave your review',
     paragraphs: [
-      `**${p.otherName}** confirmed your ${lc(p.jobType)} job from ${p.period}. You can both leave a review now.`,
+      `**${p.otherName}** confirmed your ${jobLabel(p.jobType)} from ${p.period}. You can both leave a review now.`,
       REVIEW_RULE,
     ],
-    button: { label: 'Leave your review', url: job(p.jobId) },
+    button: { label: 'Leave your review', url: `${job(p.jobId)}/review` },
   }
 }
 
 export function jobCancelled(p: { otherName: string; jobType: string; jobId: string }): EmailContent {
   return {
-    subject: `Your ${lc(p.jobType)} job with ${p.otherName} was cancelled`,
+    subject: `Your ${jobLabel(p.jobType)} with ${p.otherName} was cancelled`,
     heading: 'Job cancelled',
     paragraphs: [
-      `**${p.otherName}** has cancelled the ${lc(p.jobType)} job you had logged together.`,
+      `**${p.otherName}** has cancelled the ${jobLabel(p.jobType)} you had logged together.`,
       'No reviews are created for a cancelled job. If this is a mistake, log the job again.',
     ],
     button: { label: 'View the job', url: job(p.jobId) },
@@ -165,7 +165,7 @@ export function reviewWaitingOnYou(p: {
     preheader: 'You cannot see it yet. Leave yours and both go live together.',
     heading: 'Have your say',
     paragraphs: [
-      `**${p.reviewerName}** has left a review of your ${lc(p.jobType)} job. You cannot see it yet.`,
+      `**${p.reviewerName}** has left a review of your ${jobLabel(p.jobType)}. You cannot see it yet.`,
       `Leave yours and both reviews go live together straight away. If you do not, theirs goes live on ${p.goesLiveOn}.`,
     ],
     button: { label: 'Leave your review', url: `${APP_URL}/jobs/${p.jobId}/review` },
@@ -183,7 +183,7 @@ export function reviewReminder(p: {
     subject: `${p.daysLeft} days left to review ${p.otherName}`,
     heading: 'Your review is still to do',
     paragraphs: [
-      `You have not yet reviewed ${p.otherName} for the ${lc(p.jobType)} job. You have ${p.daysLeft} days left.`,
+      `You have not yet reviewed ${p.otherName} for the ${jobLabel(p.jobType)}. You have ${p.daysLeft} days left.`,
       `Reviews stay hidden until you have both submitted, or until ${p.goesLiveOn}. After that, anything already submitted goes live without yours.`,
     ],
     button: { label: 'Leave your review', url: `${APP_URL}/jobs/${p.jobId}/review` },
@@ -195,7 +195,7 @@ export function bothReviewsLive(p: { otherName: string; jobType: string; jobId: 
     subject: `Both reviews are live: see what ${p.otherName} said`,
     heading: 'Your reviews are live',
     paragraphs: [
-      `You and **${p.otherName}** have both reviewed the ${lc(p.jobType)} job, and the reviews are now public. See what they said about you.`,
+      `You and **${p.otherName}** have both reviewed the ${jobLabel(p.jobType)}, and the reviews are now public. See what they said about you.`,
     ],
     button: { label: 'View the reviews', url: job(p.jobId) },
   }
@@ -222,7 +222,7 @@ export function theirReviewLive(p: {
     subject: `${p.reviewerName}'s review of you is live`,
     heading: 'A review of you has gone live',
     paragraphs: [
-      `**${p.reviewerName}** reviewed your ${lc(p.jobType)} job. You did not submit one within 7 days, so their review is now on your profile.`,
+      `**${p.reviewerName}** reviewed your ${jobLabel(p.jobType)}. You did not submit one within 7 days, so their review is now on your profile.`,
       p.canReviewUntil
         ? `You can still add your own review until ${p.canReviewUntil}.`
         : 'You can no longer add a review for this job.',
@@ -325,7 +325,7 @@ export function tradeInviteFromClient(p: {
     preheader: 'Claim it and you will each review the other.',
     heading: `${p.callerName} says you did a job for them`,
     paragraphs: [
-      `**${p.callerName}** logged a ${lc(p.jobType)} job from ${p.jobDate} and gave us your contact details. WorkedWith is the directory for tradespeople who want to stand out from the noise.`,
+      `**${p.callerName}** logged ${aJobLabel(p.jobType)} from ${p.jobDate} and gave us your contact details. WorkedWith is the directory for tradespeople who want to stand out from the noise.`,
       'If that is right, claim it and you will each review the other. The job then shows as confirmed by both sides on your own free profile, and you can **check a client\'s record before you take the next job on**. Nothing is published unless you claim it.',
     ],
     button: { label: 'See the job and claim it', url: p.claimUrl },
@@ -344,10 +344,10 @@ export function inviteClaimed(p: {
     subject: `${p.tradeName} has claimed your job`,
     heading: 'Your job has been claimed',
     paragraphs: [
-      `**${p.tradeName}** has claimed the ${lc(p.jobType)} job you logged for ${p.jobDate}. You can now each leave a review.`,
+      `**${p.tradeName}** has claimed the ${jobLabel(p.jobType)} you logged for ${p.jobDate}. You can now each leave a review.`,
       REVIEW_RULE,
     ],
-    button: { label: 'View the job and leave a review', url: job(p.jobId) },
+    button: { label: 'Leave your review', url: `${job(p.jobId)}/review` },
   }
 }
 

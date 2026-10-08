@@ -6,6 +6,7 @@ import { ReportClaimButton } from '@/components/report-claim-button'
 import type { JobStatus } from '@/types/database'
 import { BackLink } from '@/components/back-link'
 import { InviteMessage } from '@/components/invite-message'
+import { VerifyIdPrompt } from '@/components/verify-id-prompt'
 
 export const metadata = { title: 'Job details | WorkedWith' }
 
@@ -82,6 +83,17 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
   const status = job.status as JobStatus
 
+  const { data: viewer } = await admin
+    .from('users')
+    .select('phone_verified, verification_tier, id_verification_status')
+    .eq('id', user.id)
+    .single()
+  const showVerifyPrompt =
+    (status === 'active' || status === 'completed') &&
+    !!viewer &&
+    viewer.verification_tier !== 'fully_verified' &&
+    viewer.id_verification_status !== 'pending'
+
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 space-y-5">
@@ -96,6 +108,8 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             {STATUS_LABELS[status]}
           </span>
         </div>
+
+        {showVerifyPrompt && <VerifyIdPrompt phoneVerified={!!viewer?.phone_verified} />}
 
         {/* Details card */}
         <section className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100">
@@ -149,7 +163,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
                 {reviewWindow.client_review_submitted ? '✓' : '○'} Client review{' '}
                 {reviewWindow.client_review_submitted ? 'submitted' : 'pending'}
               </p>
-              <p className="text-xs text-gray-400 mt-2">Closes {fmt(reviewWindow.window_closes_at)}</p>
+              <p className="text-xs text-gray-400 mt-2">Closes {fmt(reviewWindow.window_closes_at ?? reviewWindow.blind_window_closes_at)}</p>
             </div>
           </section>
         )}
@@ -187,7 +201,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
         {/* Leave review CTA */}
         {status === 'completed' && reviewWindow && !reviewWindow.trade_review_submitted &&
-          reviewWindow.window_closes_at && new Date(reviewWindow.window_closes_at) > new Date() && (
+          (!reviewWindow.window_closes_at || new Date(reviewWindow.window_closes_at) > new Date()) && (
           <a
             href={`/jobs/${job.id}/review`}
             className="block w-full text-center rounded-xl bg-brand-amber px-6 py-4 text-base font-semibold text-brand-navy

@@ -5,6 +5,7 @@ import { sendEmail } from '@/lib/email/send'
 import { jobConfirmed, pastJobConfirmed } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { jobLabel } from '@/lib/trade-types'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -271,12 +272,27 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
     const windowCloses = new Date(nowDate.getTime() + 30 * 24 * 60 * 60 * 1000)
     const blindWindowCloses = new Date(nowDate.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-    await admin.from('review_windows').insert({
-      job_id: job.id,
-      window_opened_at: now,
-      window_closes_at: windowCloses.toISOString(),
-      blind_window_closes_at: blindWindowCloses.toISOString(),
-    })
+    // The person who logged the past job may already have a window (their review is saved).
+    // Keep their submitted flag, but start the clock from confirmation.
+    const { data: existingWindow } = await admin
+      .from('review_windows')
+      .select('id')
+      .eq('job_id', job.id)
+      .maybeSingle()
+
+    if (existingWindow) {
+      await admin.from('review_windows').update({
+        window_closes_at: windowCloses.toISOString(),
+        blind_window_closes_at: blindWindowCloses.toISOString(),
+      }).eq('job_id', job.id)
+    } else {
+      await admin.from('review_windows').insert({
+        job_id: job.id,
+        window_opened_at: now,
+        window_closes_at: windowCloses.toISOString(),
+        blind_window_closes_at: blindWindowCloses.toISOString(),
+      })
+    }
 
     const reviewPromises: PromiseLike<unknown>[] = []
 
@@ -286,8 +302,8 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
           user_id: tradeUserId,
           type: 'review_window_opened',
           title: 'Past job confirmed: leave your review',
-          body: `Your ${job.job_type} job in ${job.backdated_period ?? 'the past'} with ${clientName} has been confirmed. Reviews stay hidden until you have both submitted, or for 7 days.`,
-          link: `/jobs/${job.id}`,
+          body: `Your ${jobLabel(job.job_type)} in ${job.backdated_period ?? 'the past'} with ${clientName} has been confirmed. Reviews stay hidden until you have both submitted, or for 7 days.`,
+          link: `/jobs/${job.id}/review`,
         })
       )
     }
@@ -305,8 +321,8 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
           user_id: clientUserId,
           type: 'review_window_opened',
           title: 'Past job confirmed: leave your review',
-          body: `Your ${job.job_type} job in ${job.backdated_period ?? 'the past'} with ${tradeName} has been confirmed. Reviews stay hidden until you have both submitted, or for 7 days.`,
-          link: `/jobs/${job.id}`,
+          body: `Your ${jobLabel(job.job_type)} in ${job.backdated_period ?? 'the past'} with ${tradeName} has been confirmed. Reviews stay hidden until you have both submitted, or for 7 days.`,
+          link: `/jobs/${job.id}/review`,
         })
       )
     }
@@ -327,7 +343,7 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
           user_id: tradeUserId,
           type: 'job_confirmed',
           title: 'Job confirmed',
-          body: `${clientName} has confirmed your ${job.job_type} job.`,
+          body: `${clientName} has confirmed your ${jobLabel(job.job_type)}.`,
           link: `/jobs/${job.id}`,
         }),
         ...(tradeEmail

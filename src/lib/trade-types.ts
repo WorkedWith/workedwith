@@ -62,3 +62,63 @@ export function parentTrade(specialism: string): TradeType | null {
   }
   return null
 }
+
+/** The work itself, as opposed to the person who does it (Tiler → tiling). */
+const WORK_NAMES: Record<string, string> = {
+  'Bathroom Fitter': 'bathroom fitting',
+  Bricklayer: 'bricklaying',
+  Builder: 'building',
+  Carpenter: 'carpentry',
+  'Cleaning and Clearance': 'cleaning and clearance',
+  'Damp Proofing': 'damp proofing',
+  Drainage: 'drainage',
+  Driveways: 'driveway',
+  Electrician: 'electrical',
+  Fencing: 'fencing',
+  'Fitted Furniture Maker': 'fitted furniture',
+  'Flooring Fitter': 'flooring',
+  'Gas Engineer': 'gas',
+  'Guttering and Fascias': 'guttering and fascia',
+  Handyman: 'handyman',
+  'Heating Engineer': 'heating',
+  Joiner: 'joinery',
+  'Kitchen Fitter': 'kitchen fitting',
+  Landscaper: 'landscaping',
+  Locksmith: 'locksmith',
+  'Painter and Decorator': 'painting and decorating',
+  Paving: 'paving',
+  Plasterer: 'plastering',
+  Plumber: 'plumbing',
+  Roofer: 'roofing',
+  Tiler: 'tiling',
+  'Tree Surgeon': 'tree surgery',
+  'Window Fitter': 'window fitting',
+  'Extension Builder': 'extension building',
+  'Loft Conversion Specialist': 'loft conversion',
+  'Basement and Cellar Conversion Specialist': 'basement conversion',
+  'Conservatory Builder': 'conservatory',
+  Jetwashing: 'jetwashing',
+  'Rubbish and Waste Clearance': 'waste clearance',
+  Tanking: 'tanking',
+  Unblocking: 'unblocking',
+  LVT: 'LVT flooring',
+  'Carpet Fitting': 'carpet fitting',
+  Laminate: 'laminate flooring',
+  'Wood Flooring': 'wood flooring',
+  'Gutter Clearing': 'gutter clearing',
+  'Exterior Decorating': 'exterior decorating',
+  'Venetian Plastering': 'Venetian plastering',
+}
+
+/** "tiling job", "electrical job". Falls back to a lower cased type, or just "job". */
+export function jobLabel(jobType: string | null | undefined): string {
+  if (!jobType || jobType === 'Other') return 'job'
+  const work = WORK_NAMES[jobType] ?? jobType.toLowerCase()
+  return `${work} job`
+}
+
+/** "a tiling job", "an electrical job". */
+export function aJobLabel(jobType: string | null | undefined): string {
+  const label = jobLabel(jobType)
+  return `${/^(?:[aeiou]|LVT)/i.test(label) ? 'an' : 'a'} ${label}`
+}

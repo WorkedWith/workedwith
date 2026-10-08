@@ -172,7 +172,7 @@ export async function claimTradeInvite(claimToken: string): Promise<ClaimTradeIn
           type: 'job_confirmed',
           title: 'Your job invite has been claimed',
           body: `${tradeName} has claimed your ${inv.job_type} invite for ${inv.job_date}. You can now leave each other reviews.`,
-          link: `/jobs/${job.id}`,
+          link: `/jobs/${job.id}/review`,
         }),
       ]
 

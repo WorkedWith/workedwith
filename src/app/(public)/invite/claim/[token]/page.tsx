@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { claimTradeInvite } from '@/actions/claim-trade-invite'
 import type { PendingInvite } from '@/types/database'
+import { jobLabel, aJobLabel } from '@/lib/trade-types'
 
 export const metadata = { title: 'Claim your job invite | WorkedWith', robots: { index: false } }
 
@@ -115,7 +116,7 @@ export default async function ClaimInvitePage({ params }: PageProps) {
           </div>
           <h2 className="text-lg font-semibold text-brand-navy">Job already claimed</h2>
           <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-            This {invite.job_type} job from {clientName} has already been claimed.
+            This {jobLabel(invite.job_type)} from {clientName} has already been claimed.
           </p>
           <a
             href={`/sign-in?next=/jobs/${invite.resulting_job_id}`}
@@ -148,7 +149,7 @@ export default async function ClaimInvitePage({ params }: PageProps) {
             {clientName} says you worked together
           </h1>
           <p className="mt-3 text-base text-white/70 max-w-sm mx-auto leading-relaxed">
-            They logged a <span className="font-medium text-white">{invite.job_type}</span> job in{' '}
+            They logged <span className="font-medium text-white">{aJobLabel(invite.job_type)}</span> in{' '}
             <span className="font-medium text-white">{invite.job_date}</span>. Claim it and the job is confirmed,
             so you can leave each other verified reviews.
           </p>
@@ -220,7 +221,7 @@ export default async function ClaimInvitePage({ params }: PageProps) {
           <p className="mt-2 text-sm text-gray-600 leading-relaxed">
             {result.claimedCount > 1
               ? `You've claimed ${result.claimedCount} pending jobs in one go. You and the clients can now leave each other verified reviews.`
-              : `Your ${invite.job_type} job from ${clientName} is now confirmed. Leave your review now. Reviews go live together once you have both submitted, or after 7 days.`}
+              : `Your ${jobLabel(invite.job_type)} from ${clientName} is now confirmed. Leave your review now. Reviews go live together once you have both submitted, or after 7 days.`}
           </p>
           <a
             href={`/jobs/${primaryJobId}/review`}

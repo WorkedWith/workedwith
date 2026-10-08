@@ -7,6 +7,7 @@ import { outwardCode } from '@/lib/email/format'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TRADE_TYPES } from '@/lib/trade-types'
+import { aJobLabel } from '@/lib/trade-types'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -162,7 +163,7 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
           user_id: existingUser.id,
           type: 'job_invite',
           title: 'New job to confirm',
-          body: `${tradeName} has logged a ${job_type} job and wants you to confirm it.`,
+          body: `${tradeName} has logged ${aJobLabel(job_type)} and wants you to confirm it.`,
           link: `/jobs/confirm/${inviteToken}`,
         }),
         sendEmail(emailTo, jobToConfirmExisting({ tradeName, jobType: job_type, postcode, token: inviteToken })).then(r => {

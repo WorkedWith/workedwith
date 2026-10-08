@@ -36,7 +36,7 @@ export default async function VerifyIdentityPage() {
         <div>
           <h1 className="text-2xl font-bold text-brand-navy">Identity verification</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Earn your Verified badge and build client trust.
+            Clients are more likely to choose a trade with a verified ID. You get a green tag on your profile and in search.
           </p>
         </div>
 

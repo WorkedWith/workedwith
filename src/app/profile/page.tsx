@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AppHeader } from '@/components/app-header'
 import { ProfileForm } from './profile-form'
+import { VerifyIdPrompt } from '@/components/verify-id-prompt'
+import { ClientProfileView } from './client-profile-view'
 import { TradeProfileView } from '@/app/(public)/t/[slug]/profile-view'
 import type { User, TradeProfile, ClientProfile } from '@/types/database'
 
@@ -48,7 +50,33 @@ export default async function ProfilePage() {
         <p className="mx-auto max-w-2xl px-4 pb-4 pt-1 text-sm text-gray-500 sm:px-6">
           This is how clients see you.
         </p>
+        {userData.verification_tier !== 'fully_verified' && userData.id_verification_status !== 'pending' && (
+          <div className="mx-auto max-w-2xl px-4 pb-4 sm:px-6">
+            <VerifyIdPrompt phoneVerified={userData.phone_verified} />
+          </div>
+        )}
         <TradeProfileView slug={tradeProfile.public_slug} preview />
+      </div>
+    )
+  }
+
+  if (!isTrade && clientProfile && userData.user_type === 'client_individual') {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-10">
+        <AppHeader />
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 pt-6 sm:px-6">
+          <h1 className="text-xl font-bold text-brand-navy">My profile</h1>
+          <a
+            href="/profile/edit"
+            className="inline-flex min-h-[44px] items-center rounded-lg bg-brand-amber px-5 text-sm font-semibold text-brand-navy hover:bg-amber-400"
+          >
+            Edit profile
+          </a>
+        </div>
+        <p className="mx-auto max-w-2xl px-4 pb-4 pt-1 text-sm text-gray-500 sm:px-6">
+          This is how trades see you when they look you up.
+        </p>
+        <ClientProfileView userId={user.id} fullName={userData.full_name} clientProfile={clientProfile} />
       </div>
     )
   }

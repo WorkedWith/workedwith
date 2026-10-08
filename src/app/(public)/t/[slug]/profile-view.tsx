@@ -272,6 +272,11 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                 <p className="mt-1 text-sm text-white/60">
                   Member since {memberSinceYear(tradeUser.created_at as string)}
                 </p>
+                {verTier === 'fully_verified' && (
+                  <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs font-semibold text-green-300">
+                    ✓ ID verified
+                  </span>
+                )}
               </div>
             </div>
 

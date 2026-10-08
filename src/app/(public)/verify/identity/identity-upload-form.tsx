@@ -61,7 +61,7 @@ export function IdentityUploadForm() {
       <div>
         <h2 className="text-lg font-bold text-brand-navy">Verify your identity</h2>
         <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-          Upload a photo of your UK driving licence. Your image is reviewed by a WorkedWith team member and deleted immediately after review. Only a secure hash of your licence number is retained.
+          Upload a photo of your UK driving licence. A WorkedWith team member checks it, usually within 1 to 2 working days, then deletes the image. Your licence number is never stored, only a secure scrambled version so nobody can use the same licence twice. Clients never see your licence.
         </p>
       </div>
 

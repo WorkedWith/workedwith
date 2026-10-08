@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TRADE_TYPES } from '@/lib/trade-types'
 import type { JobInitiatedBy, RedFlagReason } from '@/types/database'
+import { aJobLabel } from '@/lib/trade-types'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -245,7 +246,7 @@ export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogB
           user_id: existingUser.id,
           type: 'job_invite',
           title: 'Past job to confirm',
-          body: `${callerName} says you worked together on a ${job_type} job in ${period}. Confirm it to leave reviews.`,
+          body: `${callerName} says you worked together on ${aJobLabel(job_type)} in ${period}. Confirm it to leave reviews.`,
           link: `/jobs/confirm/${inviteToken}`,
         }),
         sendEmail(emailTo, pastJobExisting({ callerName, jobType: job_type, period, token: inviteToken })).then(r => {

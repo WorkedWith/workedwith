@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { submitReview } from '@/actions/submit-review'
+import { jobLabel } from '@/lib/trade-types'
 
 type Props = {
   jobId: string
@@ -64,7 +65,7 @@ export function ClientReviewForm({ jobId, revieweeName, jobType }: Props) {
         Review: {revieweeName}
       </h2>
       <p className="text-sm text-gray-500 mb-6">
-        {jobType} job · Your review won&apos;t be visible until {revieweeName} submits theirs.
+        {jobLabel(jobType)} · Your review won&apos;t be visible until {revieweeName} submits theirs.
       </p>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-6">

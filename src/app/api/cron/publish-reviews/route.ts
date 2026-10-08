@@ -4,6 +4,7 @@ import { sendEmail } from '@/lib/email/send'
 import { bothReviewsLive, reviewReminder, theirReviewLive, yourReviewLive } from '@/lib/email/templates'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { ReviewWindow, Job, User, TradeProfile, ClientProfile } from '@/types/database'
+import { jobLabel } from '@/lib/trade-types'
 
 // ── Score helpers ─────────────────────────────────────────────
 
@@ -250,7 +251,7 @@ async function processWindow(
     promises.push(admin.from('notifications').insert({
       user_id: nonSubmitterUserId, type: 'reviews_published',
       title: 'You missed your review window',
-      body: `${reviewerName}'s review of your ${job.job_type} job is now live. Your window to review them has closed.`,
+      body: `${reviewerName}'s review of your ${jobLabel(job.job_type)} is now live. Your window to review them has closed.`,
       link: `/jobs/${job_id}`,
     }))
   }
@@ -311,7 +312,7 @@ async function publishBoth(p: {
     promises.push(admin.from('notifications').insert({
       user_id: tradeUserId, type: 'reviews_published',
       title: 'Your reviews are now live',
-      body: `Both reviews for your ${job.job_type} job are published. See what ${clientName} said.`,
+      body: `Both reviews for your ${jobLabel(job.job_type)} are published. See what ${clientName} said.`,
       link: `/jobs/${job_id}`,
     }))
   }
@@ -322,7 +323,7 @@ async function publishBoth(p: {
     promises.push(admin.from('notifications').insert({
       user_id: clientUserId, type: 'reviews_published',
       title: 'Your reviews are now live',
-      body: `Both reviews for your ${job.job_type} job are published. See what ${tradeName} said.`,
+      body: `Both reviews for your ${jobLabel(job.job_type)} are published. See what ${tradeName} said.`,
       link: `/jobs/${job_id}`,
     }))
   }

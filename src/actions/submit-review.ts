@@ -6,6 +6,7 @@ import { formatDateLong } from '@/lib/email/format'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { ReviewerType, RedFlagReason } from '@/types/database'
+import { jobLabel } from '@/lib/trade-types'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -235,7 +236,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
             user_id: nonSubmitterUserId,
             type: 'review_reminder',
             title: "Don't forget: leave your review",
-            body: `${reviewerName} has reviewed your ${job.job_type} job. Leave yours before it goes live without it.`,
+            body: `${reviewerName} has reviewed your ${jobLabel(job.job_type)}. Leave yours before it goes live without it.`,
             link: reviewUrl,
           })
         )
@@ -294,7 +295,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
       publishedPromises.push(admin.from('notifications').insert({
         user_id: tradeUserId, type: 'reviews_published',
         title: 'Your reviews are now live',
-        body: `Both reviews for your ${job.job_type} job are published. See what ${clientName} said.`,
+        body: `Both reviews for your ${jobLabel(job.job_type)} are published. See what ${clientName} said.`,
         link: `/jobs/${input.job_id}`,
       }))
     }
@@ -305,7 +306,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
       publishedPromises.push(admin.from('notifications').insert({
         user_id: clientUserId, type: 'reviews_published',
         title: 'Your reviews are now live',
-        body: `Both reviews for your ${job.job_type} job are published. See what ${tradeName} said.`,
+        body: `Both reviews for your ${jobLabel(job.job_type)} are published. See what ${tradeName} said.`,
         link: `/jobs/${input.job_id}`,
       }))
     }
@@ -368,7 +369,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
     singlePromises.push(admin.from('notifications').insert({
       user_id: nonSubmitterUserId, type: 'reviews_published',
       title: 'You missed your review window',
-      body: `${reviewerName}'s review of your ${job.job_type} job is now live. Your window to review them has closed.`,
+      body: `${reviewerName}'s review of your ${jobLabel(job.job_type)} is now live. Your window to review them has closed.`,
       link: `/jobs/${input.job_id}`,
     }))
   }

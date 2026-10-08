@@ -185,6 +185,8 @@ export default async function ConfirmJobPage({ params }: { params: { token: stri
   const result = await confirmJob(token)
 
   if (result.success) {
+    // Past jobs: go straight to the review form so confirming and reviewing is one visit.
+    if (result.isBackdated) redirect(`/jobs/${result.jobId}/review?confirmed=1`)
     return (
       <Shell>
         <SuccessCard

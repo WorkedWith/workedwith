@@ -44,5 +44,6 @@ export async function completeJob(formData: FormData): Promise<void> {
     blind_window_closes_at: blindWindowCloses.toISOString(),
   })
 
-  redirect(`/jobs/${jobId}`)
+  // Straight to the review form: marking complete and reviewing is one visit.
+  redirect(`/jobs/${jobId}/review`)
 }
