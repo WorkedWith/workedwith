@@ -5,6 +5,7 @@ import { completeJob } from '@/actions/complete-job'
 import { ReportClaimButton } from '@/components/report-claim-button'
 import type { JobStatus } from '@/types/database'
 import { BackLink } from '@/components/back-link'
+import { InviteMessage } from '@/components/invite-message'
 
 export const metadata = { title: 'Job details | WorkedWith' }
 
@@ -150,6 +151,20 @@ export default async function JobDetailPage({ params }: { params: { id: string }
               </p>
               <p className="text-xs text-gray-400 mt-2">Closes {fmt(reviewWindow.window_closes_at)}</p>
             </div>
+          </section>
+        )}
+
+        {/* Waiting on the client */}
+        {status === 'pending_confirmation' && (
+          <section className="space-y-3 rounded-2xl border border-amber-200 bg-white p-5">
+            <div>
+              <h2 className="text-base font-semibold text-brand-navy">Your client has not confirmed yet</h2>
+              <p className="mt-1 text-sm leading-relaxed text-gray-600">
+                Until they confirm, this job gives you no agreed record and does not count towards your reputation.
+                A quick message from you is the best way to get it confirmed.
+              </p>
+            </div>
+            <InviteMessage />
           </section>
         )}
 

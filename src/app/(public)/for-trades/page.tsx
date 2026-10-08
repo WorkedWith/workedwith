@@ -125,6 +125,41 @@ export default function ForTradesPage() {
         </div>
       </section>
 
+      {/* ── Cover your back ──────────────────────────────────── */}
+      <section className="bg-white px-4 py-16 sm:py-20 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center text-sm font-semibold uppercase tracking-widest text-brand-amber">
+            Cover your back
+          </h2>
+          <p className="mt-4 text-center text-3xl font-bold text-brand-navy sm:text-4xl">
+            A job your client has confirmed is a job on record.
+          </p>
+          <div className="mt-12 grid gap-6 sm:grid-cols-3">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
+              <p className="text-lg font-bold text-brand-navy">Agreed before you start</p>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                Your client confirms the job on WorkedWith before you pick up a tool. You both have a dated record that it was agreed. A job that is never confirmed gives you nothing to point to.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
+              <p className="text-lg font-bold text-brand-navy">Check before you commit</p>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                Look up a client by email or mobile number and see what other tradespeople have said about them. Pro members also see payment reliability and any red flags.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
+              <p className="text-lg font-bold text-brand-navy">Clients have a reputation too</p>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                Every client is reviewed as well, so they have a reason to pay on time and be straight with you. The ones who will not join are worth a second look.
+              </p>
+            </div>
+          </div>
+          <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-relaxed text-gray-500">
+            Tell your client you use WorkedWith before the job starts. It is free for them and takes a minute to confirm.
+          </p>
+        </div>
+      </section>
+
       {/* ── Mid-page CTA ─────────────────────────────────────── */}
       <section className="bg-brand-amber py-12">
         <div className="max-w-3xl mx-auto px-4 text-center">

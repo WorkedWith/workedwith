@@ -1,5 +1,6 @@
 'use client'
 
+import { InviteMessage } from '@/components/invite-message'
 import { useState, useTransition } from 'react'
 import { TRADE_TYPES } from '@/lib/trade-types'
 import { logJob, type LogJobInput } from '@/actions/log-job'
@@ -73,6 +74,12 @@ export function LogJobForm() {
           Invite sent to <span className="font-medium text-brand-navy">{success.inviteeSentTo}</span>.
           They&apos;ll receive an email to confirm the job on WorkedWith.
         </p>
+        <p className="mt-3 text-sm text-gray-600">
+          Until your client confirms, this job gives you no agreed record and does not count towards your reputation.
+        </p>
+        <div className="mt-5">
+          <InviteMessage />
+        </div>
         <div className="mt-6 flex flex-col gap-3">
           <a
             href={`/jobs/${success.jobId}`}
