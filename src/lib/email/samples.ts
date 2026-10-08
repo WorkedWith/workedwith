@@ -16,8 +16,8 @@ const seed = {
 }
 
 export const EMAIL_SAMPLES: EmailSample[] = [
-  { id: 'E1', group: 'Jobs', label: 'Job to confirm (existing client)', to: 'Client with an account', content: t.jobToConfirmExisting({ tradeName: 'RG Tiling Services', jobType: 'Tiling', postcode: 'M20 3HD', startDate: '12th October', token: 'sample' }) },
-  { id: 'E2', group: 'Jobs', label: 'Job logged (client not on WorkedWith)', to: 'Stranger', content: t.jobInviteNewClient({ tradeName: 'RG Tiling Services', jobType: 'Tiling', district: 'M20', startDate: '12th October', token: 'sample' }) },
+  { id: 'E1', group: 'Jobs', label: 'Job to confirm (existing client)', to: 'Client with an account', content: t.jobToConfirmExisting({ tradeName: 'RG Tiling Services', jobType: 'Tiling', postcode: 'M20 3HD', token: 'sample' }) },
+  { id: 'E2', group: 'Jobs', label: 'Job logged (client not on WorkedWith)', to: 'Stranger', content: t.jobInviteNewClient({ tradeName: 'RG Tiling Services', jobType: 'Tiling', district: 'M20', token: 'sample' }) },
   { id: 'E3', group: 'Jobs', label: 'Past job to confirm (existing user)', to: 'User with an account', content: t.pastJobExisting({ callerName: 'Raul Garcia', jobType: 'Tiling', period: 'March 2026', token: 'sample' }) },
   { id: 'E4', group: 'Jobs', label: 'Past job (not on WorkedWith)', to: 'Stranger', content: t.pastJobNew({ callerName: 'Raul Garcia', jobType: 'Tiling', period: 'March 2026', token: 'sample' }) },
   { id: 'E5', group: 'Jobs', label: 'Job confirmed', to: 'Tradesperson', content: t.jobConfirmed({ clientName: 'Sam Patel', jobType: 'Tiling', postcode: 'M20 3HD', jobId: 'sample' }) },

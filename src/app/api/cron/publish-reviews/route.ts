@@ -33,11 +33,12 @@ export async function GET(request: Request) {
   const now = new Date()
   const nowIso = now.toISOString()
 
-  // Find windows where blind window has closed, not yet processed, and overall window not expired
+  // Find windows not yet processed where either the blind window has closed, or both sides have
+  // already submitted (catches any pair that was held by an earlier version of the rules).
   const { data: rawWindows } = await admin
     .from('review_windows')
     .select('*')
-    .lt('blind_window_closes_at', nowIso)
+    .or(`blind_window_closes_at.lt.${nowIso},and(trade_review_submitted.eq.true,client_review_submitted.eq.true)`)
     .is('both_submitted_at', null)
 
   const windows = ((rawWindows ?? [])

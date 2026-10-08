@@ -3,7 +3,7 @@
 import { headers } from 'next/headers'
 import { sendEmail } from '@/lib/email/send'
 import { jobInviteNewClient, jobToConfirmExisting } from '@/lib/email/templates'
-import { formatDateLong, outwardCode } from '@/lib/email/format'
+import { outwardCode } from '@/lib/email/format'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TRADE_TYPES } from '@/lib/trade-types'
@@ -155,7 +155,6 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
   const inviteeSentTo = invitee_email ?? invitee_phone ?? ''
 
   if (emailTo) {
-    const startDate = formatDateLong(started_at)
     if (existingUser) {
       // Existing user: send straight to the confirm page
       await Promise.all([
@@ -166,7 +165,7 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
           body: `${tradeName} has logged a ${job_type} job and wants you to confirm it.`,
           link: `/jobs/confirm/${inviteToken}`,
         }),
-        sendEmail(emailTo, jobToConfirmExisting({ tradeName, jobType: job_type, postcode, startDate, token: inviteToken })).then(r => {
+        sendEmail(emailTo, jobToConfirmExisting({ tradeName, jobType: job_type, postcode, token: inviteToken })).then(r => {
           if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
         }),
       ])
@@ -174,7 +173,7 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
       // New user: send to the branded invite landing page. Only the district is shown.
       const r = await sendEmail(
         emailTo,
-        jobInviteNewClient({ tradeName, jobType: job_type, district: outwardCode(postcode), startDate, token: inviteToken }),
+        jobInviteNewClient({ tradeName, jobType: job_type, district: outwardCode(postcode), token: inviteToken }),
       )
       if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
     }

@@ -48,9 +48,9 @@ export default async function FindPage({ searchParams }: PageProps) {
       <SiteHeader />
 
       {/* ── Navy header with embedded search ─────────────────── */}
-      <header className="bg-brand-navy px-4 py-16 sm:px-6">
+      <header className="bg-brand-navy px-4 py-10 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-4xl">
-          <h1 className="mt-4 text-4xl font-bold text-white sm:text-5xl">
+          <h1 className="text-3xl font-bold text-white sm:text-5xl">
             Find a tradesperson
           </h1>
           <p className="mt-3 text-base text-white/70">
@@ -58,7 +58,7 @@ export default async function FindPage({ searchParams }: PageProps) {
           </p>
 
           {/* Search card */}
-          <div className="mt-8 rounded-2xl bg-white/10 backdrop-blur-sm p-5 shadow-xl ring-1 ring-white/20">
+          <div className="mt-6 rounded-2xl bg-white/10 backdrop-blur-sm p-5 shadow-xl ring-1 ring-white/20">
             <FindForm
               defaultTrade={trade}
               defaultPostcode={postcode}
@@ -68,7 +68,7 @@ export default async function FindPage({ searchParams }: PageProps) {
       </header>
 
       {/* ── Results ──────────────────────────────────────────── */}
-      <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
 
         {/* No search yet */}
         {!hasSearch && (
@@ -188,9 +188,6 @@ function ResultCard({ result }: { result: TradesearchResult }) {
         <Avatar name={result.company_name || result.full_name} photoUrl={result.photo_url} sizeClass="h-12 w-12" textClass="text-base" />
         <div className="min-w-0 flex-1">
           <h2 className="text-lg font-bold text-brand-navy leading-snug">{result.company_name || result.full_name}</h2>
-          {result.company_name && result.company_name !== result.full_name && (
-            <p className="text-sm text-gray-500">{result.full_name}</p>
-          )}
           {result.verification_tier === 'fully_verified' && (
             <span className="mt-1.5 inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
               ID Verified

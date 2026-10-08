@@ -48,6 +48,26 @@ export function SettingsContent({ email, userType }: { email: string; userType: 
   return (
     <div className="space-y-6">
 
+      {/* Edit profile */}
+      {userType && (
+        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-1 text-base font-semibold text-brand-navy">Your profile</h2>
+          <p className="mb-4 text-sm text-gray-500">
+            {userType === 'trade' || userType === 'both'
+              ? 'Update your trades, areas covered, bio and photo.'
+              : userType === 'client_business'
+                ? 'Update your organisation details.'
+                : 'Update your name, username and photo.'}
+          </p>
+          <a
+            href={userType === 'client_business' ? '/org/profile' : '/profile/edit'}
+            className="inline-flex min-h-[44px] items-center rounded-xl bg-brand-navy px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+          >
+            Edit profile
+          </a>
+        </section>
+      )}
+
       {/* Plan and billing (trades only) */}
       {(userType === 'trade' || userType === 'both') && (
         <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">

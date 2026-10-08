@@ -19,7 +19,6 @@ export function jobToConfirmExisting(p: {
   tradeName: string
   jobType: string
   postcode: string
-  startDate?: string | null
   token: string
 }): EmailContent {
   return {
@@ -27,7 +26,7 @@ export function jobToConfirmExisting(p: {
     preheader: `Confirm the ${lc(p.jobType)} job. It takes a few seconds.`,
     heading: `Confirm your ${lc(p.jobType)} job`,
     paragraphs: [
-      `**${p.tradeName}** has logged a ${lc(p.jobType)} job at ${p.postcode}${p.startDate ? `, starting around ${p.startDate}` : ''}, and asked you to confirm it. It takes a few seconds.`,
+      `**${p.tradeName}** has logged an upcoming ${lc(p.jobType)} job at ${p.postcode} and asked you to confirm it. It takes a few seconds.`,
       `When the work is done you will each review the other. ${REVIEW_RULE}`,
     ],
     button: { label: 'Confirm the job', url: `${APP_URL}/jobs/confirm/${p.token}` },
@@ -39,7 +38,6 @@ export function jobInviteNewClient(p: {
   tradeName: string
   jobType: string
   district: string
-  startDate?: string | null
   token: string
 }): EmailContent {
   return {
@@ -47,7 +45,7 @@ export function jobInviteNewClient(p: {
     preheader: 'Free for clients, always. Confirm the job to continue.',
     heading: `${p.tradeName} is working with you through WorkedWith`,
     paragraphs: [
-      `**${p.tradeName}** has logged a ${lc(p.jobType)} job in ${p.district}${p.startDate ? `, starting around ${p.startDate}` : ''} and asked you to confirm it.`,
+      `**${p.tradeName}** has invited you to WorkedWith because they have an upcoming ${lc(p.jobType)} job in ${p.district} for you to confirm.`,
       `${p.tradeName} is on WorkedWith, where tradespeople build a record of reviews from confirmed jobs, so they take care to protect their reputation. It is free for clients, always.`,
       'Confirm the job and, when the work is done, you will each review the other. Neither review shows until both are in.',
     ],

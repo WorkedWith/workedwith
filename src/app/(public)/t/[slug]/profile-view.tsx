@@ -224,8 +224,8 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
   // JSON-LD structured data
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Person',
-    name: tradeUser.full_name as string,
+    '@type': 'LocalBusiness',
+    name: displayName,
     jobTitle: tradeTypes.length > 0 ? tradeTypes.join(', ') : 'Tradesperson',
     areaServed: ((tradeProfile.operating_areas as string[] | null) ?? []).map(code => ({
       '@type': 'Place',
@@ -270,9 +270,6 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
               <div className="min-w-0">
                 <h1 className="text-xl font-bold leading-tight text-white sm:text-3xl">{displayName}</h1>
                 <p className="mt-1 text-sm text-white/60">
-                  {tradeProfile.company_name && (tradeUser.full_name as string) !== displayName
-                    ? `${tradeUser.full_name as string} · `
-                    : ''}
                   Member since {memberSinceYear(tradeUser.created_at as string)}
                 </p>
               </div>
@@ -299,36 +296,55 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
 
           {/* ── Trust card ───────────────────────────────────── */}
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-5">
-              <div className="shrink-0 text-center">
-                {(tradeProfile.total_reviews as number) > 0 ? (
-                  <>
-                    <p className="text-4xl font-bold leading-none text-brand-navy">
-                      {(tradeProfile.average_rating as number).toFixed(1)}
-                    </p>
-                    <div className="mt-1.5"><Stars rating={tradeProfile.average_rating as number} size="lg" /></div>
-                  </>
-                ) : (
-                  <p className="text-2xl font-bold leading-none text-brand-navy">New</p>
-                )}
-              </div>
-              <div className="text-sm leading-relaxed text-gray-600">
-                {(tradeProfile.total_reviews as number) > 0 ? (
+            {(tradeProfile.total_reviews as number) > 0 ? (
+              <div className="flex items-center gap-5">
+                <div className="shrink-0 text-center">
+                  <p className="text-4xl font-bold leading-none text-brand-navy">
+                    {(tradeProfile.average_rating as number).toFixed(1)}
+                  </p>
+                  <div className="mt-1.5"><Stars rating={tradeProfile.average_rating as number} size="lg" /></div>
+                </div>
+                <div className="text-sm leading-relaxed text-gray-600">
                   <p>
                     <span className="font-semibold text-brand-navy">{tradeProfile.total_reviews as number}</span>{' '}
                     review{(tradeProfile.total_reviews as number) !== 1 ? 's' : ''} confirmed by both sides
                   </p>
-                ) : (
-                  <p>No reviews yet. They appear once both sides have submitted.</p>
-                )}
-                {(tradeProfile.total_jobs as number) > 0 && (
-                  <p>
-                    <span className="font-semibold text-brand-navy">{tradeProfile.total_jobs as number}</span>{' '}
-                    job{(tradeProfile.total_jobs as number) !== 1 ? 's' : ''} confirmed on WorkedWith
-                  </p>
-                )}
+                  {(tradeProfile.total_jobs as number) > 0 && (
+                    <p>
+                      <span className="font-semibold text-brand-navy">{tradeProfile.total_jobs as number}</span>{' '}
+                      job{(tradeProfile.total_jobs as number) !== 1 ? 's' : ''} confirmed on WorkedWith
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Reviews</p>
+                <h2 className="mt-1 text-lg font-bold text-brand-navy">New on WorkedWith</h2>
+                <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                  {displayName} has no reviews yet because they have only just joined. On WorkedWith, every review
+                  comes from a real job that both sides agreed took place.
+                </p>
+                <ol className="mt-4 space-y-3 text-sm text-gray-700">
+                  <li className="flex gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-navy text-xs font-bold text-white">1</span>
+                    <span>The tradesperson logs the job and the client confirms it.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-navy text-xs font-bold text-white">2</span>
+                    <span>When the work is done, each side reviews the other without seeing what the other wrote.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-navy text-xs font-bold text-white">3</span>
+                    <span>Both reviews go live together, so neither side can write back in revenge.</span>
+                  </li>
+                </ol>
+                <p className="mt-4 text-sm leading-relaxed text-gray-600">
+                  Their first reviews will appear here after their first confirmed jobs. Until then, the checks
+                  below show what we have verified.
+                </p>
+              </div>
+            )}
             {((verTier === 'phone_verified' || verTier === 'fully_verified') || (tradeProfile.subscription_tier as string) === 'pro' || (tradeProfile.subscription_tier as string) === 'standard') && (
               <ul className="mt-4 space-y-2.5 border-t border-gray-100 pt-4">
                 {(verTier === 'phone_verified' || verTier === 'fully_verified') && (
