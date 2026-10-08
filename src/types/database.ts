@@ -333,7 +333,7 @@ export interface Notification {
 
 // ── Pending invites (client-initiated trade claim flow) ───────
 
-export type PendingInviteStatus = 'sent' | 'expired' | 'claimed' | 'disputed'
+export type PendingInviteStatus = 'sent' | 'expired' | 'claimed' | 'disputed' | 'declined'
 
 export interface PendingInvite {
   id: string
@@ -454,6 +454,7 @@ export interface SeededProfile {
   slug: string
   business_name: string
   trade_category: string
+  trade_categories: string[]
   operating_areas: string[]
   contact_phone: string | null
   contact_email: string | null

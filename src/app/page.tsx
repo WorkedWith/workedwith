@@ -44,6 +44,9 @@ export default function HomePage() {
           <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/60 text-balance sm:text-lg">
             The only platform where both tradespeople and clients have a reputation to protect.
           </p>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/50 text-balance">
+            Every job is confirmed by both sides before it starts, then both sides review it. Free for clients, always.
+          </p>
 
           {/* Audience cards */}
           <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -58,7 +61,7 @@ export default function HomePage() {
               </div>
               <h2 className="mt-5 text-xl font-bold text-white">I&apos;m a tradesperson</h2>
               <p className="mt-2 text-sm leading-relaxed text-white/70 flex-1">
-                Build your verified reputation, vet clients before you commit, and grow your business with trust.
+                Build a reputation from jobs your clients have confirmed, check clients before you commit, and add the work you have already done.
               </p>
               <span className="mt-6 w-full rounded-xl bg-brand-amber py-3 text-center text-sm font-bold text-brand-navy group-hover:bg-amber-400 transition-colors">
                 Get started
@@ -75,7 +78,7 @@ export default function HomePage() {
               </div>
               <h2 className="mt-5 text-xl font-bold text-brand-navy">I&apos;m looking for a tradesperson</h2>
               <p className="mt-2 text-sm leading-relaxed text-brand-navy/70 flex-1">
-                Find verified tradespeople in your area with genuine mutual reviews from real jobs.
+                Find tradespeople with reviews from real jobs, confirmed by both sides. You review them too, so everyone has something to protect.
               </p>
               <span className="mt-6 w-full rounded-xl bg-brand-navy py-3 text-center text-sm font-bold text-white group-hover:bg-brand-navy/90 transition-colors">
                 Find a tradesperson

@@ -127,7 +127,7 @@ export default async function SeededProfilesPage() {
                       </a>
                       <p className="text-xs text-gray-400 font-mono">/t/{p.slug}</p>
                     </td>
-                    <td className="px-4 py-3 text-gray-700">{p.trade_category}</td>
+                    <td className="px-4 py-3 text-gray-700">{(p.trade_categories?.length ? p.trade_categories : [p.trade_category]).join(', ')}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs font-mono">
                       {p.operating_areas.join(', ')}
                     </td>

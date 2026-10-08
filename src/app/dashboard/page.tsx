@@ -4,6 +4,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { AppHeader } from '@/components/app-header'
 import { UsernameCard } from '@/components/username-card'
 import { getJobHistory } from '@/actions/get-job-history'
+import { getTradeRequests } from '@/actions/get-trade-requests'
+import { getJobRequests } from '@/actions/get-job-requests'
+import type { JobRequest } from '@/actions/get-job-requests'
+import type { TradeRequest } from '@/actions/get-trade-requests'
+import { InviteDecision } from '@/components/invite-decision'
+import { aJobLabel } from '@/lib/trade-types'
 import { JobHistory } from '@/components/job-history'
 import { TradeSearchForm } from './trade-search-form'
 import { ClientLookupForm } from '@/components/client-lookup-form'
@@ -41,8 +47,9 @@ export default async function DashboardPage() {
     { data: rawNotifications },
     { data: tradeProfile },
     { data: clientProfile },
-    { count: pendingJobsCount },
     jobHistory,
+    tradeRequests,
+    jobRequests,
   ] = await Promise.all([
     admin
       .from('notifications')
@@ -56,16 +63,9 @@ export default async function DashboardPage() {
     isClient
       ? admin.from('client_profiles').select('id, average_rating, total_reviews, total_jobs, username').eq('user_id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
-    isTrade
-      ? admin.from('jobs')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'active')
-          .not('trade_profile_id', 'is', null)
-      : admin.from('jobs')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending_confirmation')
-          .eq('initiated_by', 'trade'),
     getJobHistory(),
+    isTrade ? getTradeRequests() : Promise.resolve([] as TradeRequest[]),
+    getJobRequests(),
   ])
 
   const notifications = (rawNotifications ?? []) as unknown as Notification[]
@@ -124,7 +124,7 @@ export default async function DashboardPage() {
     user_type === 'client_business' ? 'Business client' :
     user_type === 'both' ? 'Tradesperson & Client' : 'Account'
 
-  const pendingCount = pendingJobsCount ?? 0
+  const pendingCount = jobRequests.length
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -144,7 +144,7 @@ export default async function DashboardPage() {
               </div>
               {pendingCount > 0 && (
                 <a
-                  href="#your-jobs"
+                  href="#your-requests"
                   className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
                 >
                   <span className="text-base leading-none">⏳</span>
@@ -174,6 +174,11 @@ export default async function DashboardPage() {
         ══════════════════════════════════════════════ */}
         {isTrade && (
           <>
+            {/* Requests waiting on this trade */}
+            {(tradeRequests.length > 0 || jobRequests.length > 0) && (
+              <RequestsBox tradeRequests={tradeRequests} jobRequests={jobRequests} />
+            )}
+
             {/* 0. Why WorkedWith */}
             <section className="rounded-xl border border-brand-navy/10 bg-brand-navy/5 p-5">
               <p className="text-sm font-semibold text-brand-navy">Why WorkedWith?</p>
@@ -221,7 +226,7 @@ export default async function DashboardPage() {
                 )}
                 {tradeHasReviews ? (
                   <p className="text-sm text-gray-500 mt-1.5">
-                    ★ {(tradeProfile?.average_rating ?? 0).toFixed(1)} · {tradeProfile?.total_reviews ?? 0} verified review{(tradeProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
+                    ★ {(tradeProfile?.average_rating ?? 0).toFixed(1)} · {tradeProfile?.total_reviews ?? 0} review{(tradeProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
                   </p>
                 ) : (
                   <p className="text-sm text-gray-400 mt-1.5">No reviews yet</p>
@@ -330,7 +335,7 @@ export default async function DashboardPage() {
                     <div className="space-y-1 text-sm text-gray-500">
                       <p>
                         <span className="font-semibold text-brand-navy">{tradeProfile?.total_reviews ?? 0}</span>{' '}
-                        verified review{(tradeProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
+                        review{(tradeProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
                       </p>
                       <p>
                         <span className="font-semibold text-brand-navy">{tradeProfile?.total_jobs ?? 0}</span>{' '}
@@ -414,7 +419,7 @@ export default async function DashboardPage() {
                       <div className="space-y-1 text-sm text-gray-500">
                         <p>
                           <span className="font-semibold text-brand-navy">{clientProfile?.total_reviews ?? 0}</span>{' '}
-                          verified review{(clientProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
+                          review{(clientProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
                         </p>
                         <p>
                           <span className="font-semibold text-brand-navy">{clientProfile?.total_jobs ?? 0}</span>{' '}
@@ -497,30 +502,8 @@ export default async function DashboardPage() {
               <UsernameCard username={clientProfile.username} />
             )}
 
-            {/* 2. Pending actions banner — only jobs logged BY the tradesperson */}
-            {pendingCount > 0 && (
-              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-4">
-                <div className="shrink-0 mt-0.5 h-9 w-9 rounded-full bg-amber-100 flex items-center justify-center">
-                  <svg className="h-5 w-5 text-amber-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h3a.75.75 0 000-1.5H10.75V5z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-amber-800 text-sm">
-                    You have {pendingCount} job{pendingCount !== 1 ? 's' : ''} to confirm
-                  </p>
-                  <p className="mt-1 text-sm text-amber-700 leading-relaxed">
-                    A tradesperson has logged a job with you. Review and confirm it happened.
-                  </p>
-                </div>
-                <a
-                  href="#your-jobs"
-                  className="shrink-0 self-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition-colors"
-                >
-                  View jobs
-                </a>
-              </div>
-            )}
+            {/* 2. Jobs waiting for this client to accept */}
+            {jobRequests.length > 0 && <RequestsBox tradeRequests={[]} jobRequests={jobRequests} />}
 
             {/* 3. Your reputation */}
             <section>
@@ -545,7 +528,7 @@ export default async function DashboardPage() {
                     <div className="space-y-1 text-sm text-gray-500">
                       <p>
                         <span className="font-semibold text-brand-navy">{clientProfile?.total_reviews ?? 0}</span>{' '}
-                        verified review{(clientProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
+                        review{(clientProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
                       </p>
                       <p>
                         <span className="font-semibold text-brand-navy">{clientProfile?.total_jobs ?? 0}</span>{' '}
@@ -658,4 +641,38 @@ function timeAgo(iso: string): string {
   if (days === 1) return 'yesterday'
   if (days < 7) return `${days}d ago`
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
+function RequestsBox({ tradeRequests, jobRequests }: { tradeRequests: TradeRequest[]; jobRequests: JobRequest[] }) {
+  const total = tradeRequests.length + jobRequests.length
+  return (
+    <section id="your-requests" className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+      <p className="text-sm font-semibold text-amber-900">
+        {total === 1 ? '1 job waiting for you to accept' : `${total} jobs waiting for you to accept`}
+      </p>
+      <p className="mt-1 text-sm text-amber-800">
+        Accept a job you really did together and you can both leave a review. Decline it if it is not right.
+      </p>
+      <ul className="mt-4 space-y-4">
+        {tradeRequests.map(r => (
+          <li key={r.id} className="rounded-lg bg-white p-4 shadow-sm">
+            <p className="text-sm font-semibold text-brand-navy break-words">{r.clientName}</p>
+            <p className="mt-0.5 text-sm text-gray-600">{aJobLabel(r.jobType)}, {r.jobDate}</p>
+            {r.description && <p className="mt-1 text-sm text-gray-500 break-words">{r.description}</p>}
+            <div className="mt-3"><InviteDecision token={r.token} compact /></div>
+          </li>
+        ))}
+        {jobRequests.map(r => (
+          <li key={r.id} className="rounded-lg bg-white p-4 shadow-sm">
+            <p className="text-sm font-semibold text-brand-navy break-words">{r.fromName}</p>
+            <p className="mt-0.5 text-sm text-gray-600">
+              {aJobLabel(r.jobType)}{r.when ? `, ${r.when}` : ''}{r.isBackdated ? ' (already finished)' : ''}
+            </p>
+            {r.description && <p className="mt-1 text-sm text-gray-500 break-words">{r.description}</p>}
+            <div className="mt-3"><InviteDecision token={r.token} kind="job" compact /></div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
 }

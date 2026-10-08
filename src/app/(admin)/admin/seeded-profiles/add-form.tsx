@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { TradePicker } from '@/components/trade-picker'
 import { createSeededProfile } from '@/actions/admin/create-seeded-profile'
 
 const UK_DISTRICT_RE = /^[A-Z]{1,2}\d[A-Z0-9]?$/i
@@ -14,7 +14,7 @@ export function AddSeededProfileForm() {
   const [success, setSuccess] = useState<string | null>(null)
 
   const [businessName, setBusinessName] = useState('')
-  const [tradeCategory, setTradeCategory] = useState('')
+  const [tradeCategories, setTradeCategories] = useState<string[]>([])
   const [areasRaw, setAreasRaw] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
@@ -42,7 +42,7 @@ export function AddSeededProfileForm() {
     startTransition(async () => {
       const result = await createSeededProfile({
         business_name: businessName,
-        trade_category: tradeCategory,
+        trade_categories: tradeCategories,
         operating_areas: areas,
         contact_phone: phone.trim() || null,
         contact_email: email.trim() || null,
@@ -58,7 +58,7 @@ export function AddSeededProfileForm() {
           : 'No email or phone, so nothing was sent.'
         setSuccess(`Created: /t/${result.profile.slug}. ${note}`)
         setBusinessName('')
-        setTradeCategory('')
+        setTradeCategories([])
         setAreasRaw('')
         setPhone('')
         setEmail('')
@@ -92,17 +92,29 @@ export function AddSeededProfileForm() {
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Trade category <span className="text-red-500">*</span>
           </label>
-          <select
-            required
-            value={tradeCategory}
-            onChange={e => setTradeCategory(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
-          >
-            <option value="" disabled>Select trade</option>
-            {TRADE_TYPES.map(t => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
+          <TradePicker
+            value=""
+            onChange={v => setTradeCategories(prev => (prev.includes(v) || prev.length >= 8 ? prev : [...prev, v]))}
+            placeholder={tradeCategories.length === 0 ? 'Select trade' : 'Add another trade'}
+          />
+          {tradeCategories.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {tradeCategories.map(t => (
+                <span key={t} className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">
+                  {t}
+                  <button
+                    type="button"
+                    onClick={() => setTradeCategories(prev => prev.filter(x => x !== t))}
+                    aria-label={`Remove ${t}`}
+                    className="text-amber-700 hover:text-amber-900"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <p className="mt-1 text-xs text-gray-400">Add every trade they do. A specialism also adds its main trade.</p>
         </div>
       </div>
 

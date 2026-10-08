@@ -14,11 +14,10 @@ const SOCIAL_PROOF_TRADES = [
 ]
 
 const COMPARISON_ROWS: { feature: string; ww: boolean; ca: boolean; gr: boolean }[] = [
-  { feature: 'Verified tradesperson reviews', ww: true,  ca: true,  gr: false },
-  { feature: 'Client reviews of tradespeople', ww: true,  ca: false, gr: false },
-  { feature: 'Both parties verified',          ww: true,  ca: false, gr: false },
+  { feature: 'Reviews linked to a confirmed job', ww: true,  ca: false,  gr: false },
+  { feature: 'Tradespeople review clients too', ww: true,  ca: false, gr: false },
+  { feature: 'Both sides confirm the job first', ww: true,  ca: false, gr: false },
   { feature: 'Blind review submission',        ww: true,  ca: false, gr: false },
-  { feature: 'Pre-confirmed jobs',             ww: true,  ca: false, gr: false },
   { feature: 'Client reputation profile',      ww: true,  ca: false, gr: false },
 ]
 
@@ -73,7 +72,7 @@ export default function ForTradesPage() {
             </span>
           </h1>
           <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-white/70 text-balance">
-            Build a verified work history, vet clients before you commit, and get found by homeowners who value quality over price.
+            Build a work history from jobs your clients have confirmed, check clients before you commit, and add the jobs you have already done.
           </p>
           <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <a
@@ -96,7 +95,7 @@ export default function ForTradesPage() {
       <section className="bg-gray-50 border-b border-gray-100 px-4 py-8 sm:px-6">
         <div className="mx-auto max-w-5xl">
           <p className="mb-5 text-center text-xs font-semibold uppercase tracking-widest text-gray-400">
-            Tradespeople on WorkedWith include
+            Built for UK tradespeople including
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {SOCIAL_PROOF_TRADES.map(trade => (
@@ -115,12 +114,12 @@ export default function ForTradesPage() {
             How it works
           </h2>
           <p className="mt-4 text-center text-3xl font-bold text-brand-navy sm:text-4xl">
-            Three steps. Total accountability.
+            Three steps. Both sides on record.
           </p>
           <div className="mt-14 grid gap-6 sm:grid-cols-3">
-            <StepCard number="01" icon={<ClipboardIcon />} title="Log your job" body="Log the job and invite your client to confirm. Both parties know a review is coming before a single tool is picked up." />
-            <StepCard number="02" icon={<WrenchIcon />} title="Complete the work" body="Complete the work knowing your reputation is being built in real time. No surprises. No ambiguity." />
-            <StepCard number="03" icon={<StarIcon />} title="Leave mutual reviews" body="Each party submits their review privately. Neither can see the other's until both go live. Honest. Fair." />
+            <StepCard number="01" icon={<ClipboardIcon />} title="Log the job and invite your client" body="Tell us about the job and invite your client. They confirm it on WorkedWith, so you both know a review is coming. Already finished the work? Add it as a past job and invite your client to confirm it." />
+            <StepCard number="02" icon={<WrenchIcon />} title="Do the work" body="Get on with the job knowing it is on record. When it is done, mark it complete." />
+            <StepCard number="03" icon={<StarIcon />} title="You both leave a review" body="Each side reviews privately. Neither can see the other's until both are in, so nobody can review in revenge. Honest. Fair." />
           </div>
         </div>
       </section>
@@ -138,7 +137,7 @@ export default function ForTradesPage() {
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
               <p className="text-lg font-bold text-brand-navy">Agreed before you start</p>
               <p className="mt-2 text-sm leading-relaxed text-gray-600">
-                Your client confirms the job on WorkedWith before you pick up a tool. You both have a dated record that it was agreed. A job that is never confirmed gives you nothing to point to.
+                Your client confirms the job on WorkedWith before you start. You both have a dated record that it was agreed. A job that is never confirmed gives you nothing to point to.
               </p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
@@ -160,17 +159,6 @@ export default function ForTradesPage() {
         </div>
       </section>
 
-      {/* ── Mid-page CTA ─────────────────────────────────────── */}
-      <section className="bg-brand-amber py-12">
-        <div className="max-w-3xl mx-auto px-4 text-center">
-          <p className="text-brand-navy font-bold text-xl mb-2">Ready to build your verified reputation?</p>
-          <p className="text-brand-navy/80 mb-6">Join free in under 2 minutes. No credit card required.</p>
-          <a href="/join/trade" className="inline-block bg-brand-navy text-white font-bold rounded-lg px-8 py-3 hover:bg-brand-navy/90 transition-colors">
-            Join free as a tradesperson
-          </a>
-        </div>
-      </section>
-
       {/* ── Two-sided value ───────────────────────────────────── */}
       <section className="px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-5xl">
@@ -187,9 +175,9 @@ export default function ForTradesPage() {
               <p className="text-xs font-semibold uppercase tracking-widest text-white/40">For you</p>
               <h3 className="mt-3 text-2xl font-bold">Build the profile you deserve.</h3>
               <ul className="mt-6 space-y-4">
-                <BulletPoint text="Every review linked to a confirmed real job, no fake five-stars" />
-                <BulletPoint text="Build a verified work record you own, not locked to any platform" />
-                <BulletPoint text="Get found by clients searching for your trade in your area" />
+                <BulletPoint text="Every review is linked to a job both sides confirmed, so no fake five stars" />
+                <BulletPoint text="Add past jobs and start with a full history on day one" />
+                <BulletPoint text="Go Pro to get a searchable profile and be found by clients in your area" />
               </ul>
               <a
                 href="/join/trade"
@@ -209,7 +197,7 @@ export default function ForTradesPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold text-brand-navy">D. Harrison</p>
-                    <p className="text-sm text-gray-500">Chester · 5 confirmed jobs</p>
+                    <p className="text-sm text-gray-500">Chester, 5 confirmed jobs</p>
                   </div>
                   <div className="text-right">
                     <div className="flex text-brand-amber text-base">★★★★★</div>
@@ -228,10 +216,10 @@ export default function ForTradesPage() {
                 <p className="mt-4 text-sm text-gray-600 italic line-clamp-2">
                   &ldquo;Really easy client, brief was clear from day one. Paid same day.&rdquo;
                 </p>
-                <p className="mt-1 text-xs text-gray-400">— Plumber, April 2026</p>
+                <p className="mt-1 text-xs text-gray-400">Plumber, April 2026</p>
               </div>
               <p className="mt-5 text-sm text-gray-600 leading-relaxed">
-                Standard and Pro subscribers see full client profiles before they commit to a quote.
+                Free accounts can look clients up too. Pro and Team add payment reliability and red flags.
               </p>
             </div>
 
@@ -246,7 +234,7 @@ export default function ForTradesPage() {
             How WorkedWith compares
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-base text-gray-500">
-            Most platforms only protect one side. WorkedWith is the only platform where both parties have a reputation to protect.
+            Most review sites only protect one side. On WorkedWith both the tradesperson and the client have a reputation to protect. Comparison is general and based on how most sites work.
           </p>
           <div className="mt-12 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <div className="rounded-xl shadow-sm border border-gray-200">
@@ -255,17 +243,17 @@ export default function ForTradesPage() {
                   <tr>
                     <th className="bg-gray-50 px-6 py-4 text-left font-semibold text-gray-600 w-1/2">Feature</th>
                     <th className="bg-brand-amber px-6 py-4 text-center font-bold text-brand-navy">WorkedWith</th>
-                    <th className="bg-gray-50 px-6 py-4 text-center font-semibold text-gray-500">Checkatrade</th>
-                    <th className="bg-gray-50 px-6 py-4 text-center font-semibold text-gray-500">Google Reviews</th>
+                    <th className="bg-gray-50 px-6 py-4 text-center font-semibold text-gray-500">Typical trade directory</th>
+                    <th className="bg-gray-50 px-6 py-4 text-center font-semibold text-gray-500">Open review sites</th>
                   </tr>
                 </thead>
                 <tbody>
                   {COMPARISON_ROWS.map((row, i) => (
                     <tr key={row.feature} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="px-6 py-4 text-gray-700 font-medium">{row.feature}</td>
-                      <td className="px-6 py-4 text-center text-lg">{row.ww ? '✅' : '❌'}</td>
-                      <td className="px-6 py-4 text-center text-lg">{row.ca ? '✅' : '❌'}</td>
-                      <td className="px-6 py-4 text-center text-lg">{row.gr ? '✅' : '❌'}</td>
+                      <td className="px-6 py-4 text-center text-lg">{row.ww ? <Tick /> : <Cross />}</td>
+                      <td className="px-6 py-4 text-center text-lg">{row.ca ? <Tick /> : <Cross />}</td>
+                      <td className="px-6 py-4 text-center text-lg">{row.gr ? <Tick /> : <Cross />}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -279,10 +267,10 @@ export default function ForTradesPage() {
       <section className="bg-gray-50 px-4 py-16 sm:py-20 sm:px-6">
         <div className="mx-auto max-w-5xl">
           <h2 className="text-center text-3xl font-bold text-brand-navy sm:text-4xl">
-            What clients say about tradespeople on WorkedWith
+            What clients say about tradespeople
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-base text-gray-500">
-            Every review is linked to a confirmed real job. These are example reviews showing the format.
+            Every review is linked to a job both sides confirmed. These are example reviews showing the format.
           </p>
           <div className="mt-12 grid gap-6 sm:grid-cols-3">
             <SampleReviewCard
@@ -344,9 +332,9 @@ export default function ForTradesPage() {
             Why WorkedWith
           </h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <TrustCard icon={<ShieldIcon />} title="Verified identities" body="Phone verification as standard. Optional ID check for your Verified badge." />
+            <TrustCard icon={<ShieldIcon />} title="Real people" body="Every account has a verified phone number. Add a photo ID and a selfie for your ID verified badge." />
             <TrustCard icon={<EyeIcon />} title="Blind reviews" body="Neither party can see the other's review until both are published. No retaliation." />
-            <TrustCard icon={<HandshakeIcon />} title="Confirmed jobs first" body="Both parties confirm the job exists before reviews are possible." />
+            <TrustCard icon={<HandshakeIcon />} title="Confirmed jobs first" body="Both sides confirm the job before any review is possible." />
             <TrustCard icon={<FlagIcon />} title="UK trades focused" body="Built specifically for the UK trades market and how it actually works." />
           </div>
         </div>
@@ -446,4 +434,11 @@ function HandshakeIcon() {
 }
 function FlagIcon() {
   return <svg className="h-7 w-7 text-brand-navy" viewBox="0 0 20 20" fill="currentColor"><path d="M3.5 2.75a.75.75 0 0 0-1.5 0v14.5a.75.75 0 0 0 1.5 0v-4.392l1.657-.348a6.449 6.449 0 0 1 4.271.572 7.948 7.948 0 0 0 5.965.524l2.078-.64A.75.75 0 0 0 18 12.25v-8.5a.75.75 0 0 0-.904-.734l-2.38.501a7.25 7.25 0 0 1-4.186-.363l-.502-.2a8.75 8.75 0 0 0-5.053-.439L3.5 3.16V2.75Z" /></svg>
+}
+
+function Tick() {
+  return <svg className="mx-auto h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor" aria-label="Yes"><path fillRule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7.5 7.5a1 1 0 01-1.4 0L3.3 9.7a1 1 0 011.4-1.4l3.8 3.8 6.8-6.8a1 1 0 011.4 0z" clipRule="evenodd" /></svg>
+}
+function Cross() {
+  return <svg className="mx-auto h-5 w-5 text-gray-300" viewBox="0 0 20 20" fill="currentColor" aria-label="No"><path d="M5.3 5.3a1 1 0 011.4 0L10 8.6l3.3-3.3a1 1 0 111.4 1.4L11.4 10l3.3 3.3a1 1 0 01-1.4 1.4L10 11.4l-3.3 3.3a1 1 0 01-1.4-1.4L8.6 10 5.3 6.7a1 1 0 010-1.4z" /></svg>
 }

@@ -24,9 +24,11 @@ function SeededProfilePage({ profile, signedIn }: { profile: SeededProfile; slug
           <h1 className="text-3xl font-bold text-white sm:text-4xl">{profile.business_name}</h1>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            <span className="rounded-full bg-brand-amber/20 px-3 py-1 text-sm font-medium text-brand-amber">
-              {profile.trade_category}
-            </span>
+            {(profile.trade_categories?.length ? profile.trade_categories : [profile.trade_category]).map(t => (
+              <span key={t} className="rounded-full bg-brand-amber/20 px-3 py-1 text-sm font-medium text-brand-amber">
+                {t}
+              </span>
+            ))}
           </div>
         </div>
       </header>

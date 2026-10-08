@@ -56,7 +56,8 @@ export default async function JobDetailPage({ params }: { params: { id: string }
     .eq('id', job.trade_profile_id)
     .single()
 
-  if (!tradeProfile || tradeProfile.user_id !== user.id) redirect('/dashboard')
+  // Clients cannot open the trade's job page. Their reviews, and the dispute link, live on My profile.
+  if (!tradeProfile || tradeProfile.user_id !== user.id) redirect('/profile')
 
   // Fetch invite, client profile, review window, and pending claim in parallel
   const [{ data: invite }, { data: reviewWindow }, { data: pendingInviteClaim }] = await Promise.all([
@@ -64,6 +65,22 @@ export default async function JobDetailPage({ params }: { params: { id: string }
     admin.from('review_windows').select('*').eq('job_id', id).maybeSingle(),
     admin.from('pending_invites').select('id, status').eq('resulting_job_id', id).maybeSingle(),
   ])
+
+  // The client's published review of this trade, if there is one
+  const { data: receivedRaw } = await admin
+    .from('reviews')
+    .select('id, overall_rating, written_review, dispute_status, submitted_at')
+    .eq('job_id', id)
+    .eq('reviewee_id', user.id)
+    .eq('reviewee_type', 'trade')
+    .eq('is_visible', true)
+    .maybeSingle()
+  const receivedReview = receivedRaw as unknown as {
+    id: string; overall_rating: number | null; written_review: string | null; dispute_status: string; submitted_at: string
+  } | null
+  const liveSinceIso = (reviewWindow?.both_submitted_at as string | null | undefined) ?? receivedReview?.submitted_at ?? null
+  const disputeClosesAt = liveSinceIso ? new Date(new Date(liveSinceIso).getTime() + 14 * 24 * 60 * 60 * 1000).toISOString() : null
+  const disputeOpen = disputeClosesAt ? new Date(disputeClosesAt) > new Date() : false
 
   // Client details if confirmed
   let clientUser: { full_name: string; email: string } | null = null
@@ -200,6 +217,44 @@ export default async function JobDetailPage({ params }: { params: { id: string }
               You will both be asked for a review. Reviews stay hidden until you have both submitted, or for 7 days.
             </p>
           </form>
+        )}
+
+        {/* Review you received */}
+        {receivedReview && (
+          <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-base font-semibold text-brand-navy">Review from your client</h2>
+            </div>
+            <div className="px-6 py-4 space-y-2">
+              {receivedReview.overall_rating !== null && (
+                <p className="text-sm font-semibold text-brand-navy">
+                  <span className="text-brand-amber">{'★'.repeat(Math.round(receivedReview.overall_rating))}</span>
+                  <span className="text-gray-200">{'★'.repeat(5 - Math.round(receivedReview.overall_rating))}</span>{' '}
+                  {receivedReview.overall_rating.toFixed(1)}
+                </p>
+              )}
+              {receivedReview.written_review && (
+                <p className="text-sm leading-relaxed text-gray-700">{receivedReview.written_review}</p>
+              )}
+              <p className="pt-1 text-xs text-gray-500">
+                {receivedReview.dispute_status === 'none' ? (
+                  disputeOpen ? (
+                    <>
+                      Think this review is unfair or wrong?{' '}
+                      <a href={`/reviews/${receivedReview.id}/dispute`} className="font-semibold text-brand-navy underline">
+                        Dispute this review
+                      </a>{' '}
+                      (open until {fmt(disputeClosesAt)})
+                    </>
+                  ) : (
+                    'The 14 day window to dispute this review has closed.'
+                  )
+                ) : (
+                  'This review has a dispute on record. Our team will be in touch.'
+                )}
+              </p>
+            </div>
+          </section>
         )}
 
         {/* Leave review CTA */}

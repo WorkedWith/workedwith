@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { TRADE_TYPES, SPECIALISMS } from '@/lib/trade-types'
 import { DemoProfileCard } from '@/components/demo/demo-profile-card'
 import { SampleReviewCard } from '@/components/demo/sample-review-card'
 import { DEMO_TRADE_PROFILES, DEMO_TRADESPERSON_REVIEWS } from '@/lib/demo-data'
@@ -10,12 +10,12 @@ export const metadata: Metadata = {
 }
 
 const TRUST_PILLS = [
-  'Verified reviews',
-  'Mutual accountability',
-  'Free to use',
+  'Reviews from confirmed jobs',
+  'Both sides reviewed',
+  'Free for clients',
   'UK trades only',
   'No hidden fees',
-  'Genuine past jobs',
+  'Add past jobs',
 ]
 
 export default function ForClientsPage() {
@@ -69,7 +69,7 @@ export default function ForClientsPage() {
             </span>
           </h1>
           <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-white/70 text-balance">
-            Every review on WorkedWith is verified and mutual. Tradespeople review clients too, so only the best trades want to work with the best clients.
+            Every review on WorkedWith comes from a job both sides confirmed. Tradespeople review clients too, so good trades want to work with good clients.
           </p>
 
           {/* Search bar */}
@@ -81,7 +81,15 @@ export default function ForClientsPage() {
                 className="h-12 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
               >
                 <option value="" disabled>Select a trade type</option>
-                {TRADE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                {TRADE_TYPES.filter(t => t !== 'Other').map(t => (
+                  [
+                    <option key={t} value={t}>{t}</option>,
+                    ...(SPECIALISMS[t] ?? []).map(sp => (
+                      <option key={sp} value={sp}>{`${sp} (${t})`}</option>
+                    )),
+                  ]
+                ))}
+                <option value="Other">Other</option>
               </select>
               <input
                 name="postcode"
@@ -109,7 +117,7 @@ export default function ForClientsPage() {
             href="/join/client/individual"
             className="mt-4 inline-block text-sm font-medium text-brand-amber hover:underline"
           >
-            Join free to see full profiles and contact tradespeople →
+            Join free and invite a tradesperson to your job →
           </a>
         </div>
       </section>
@@ -118,7 +126,7 @@ export default function ForClientsPage() {
       <section className="bg-gray-50 border-b border-gray-100 px-4 py-8 sm:px-6">
         <div className="mx-auto max-w-5xl">
           <p className="mb-5 text-center text-xs font-semibold uppercase tracking-widest text-gray-400">
-            Trusted by homeowners across the UK
+            Built for homeowners, landlords and property firms across the UK
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {TRUST_PILLS.map(pill => (
@@ -137,26 +145,26 @@ export default function ForClientsPage() {
             How it works
           </h2>
           <p className="mt-4 text-center text-3xl font-bold text-brand-navy sm:text-4xl">
-            Three steps to a tradesperson you can trust.
+            Three steps to a job on record.
           </p>
           <div className="mt-14 grid gap-6 sm:grid-cols-3">
             <StepCard
               number="01"
               icon={<SearchIcon />}
-              title="Search for a tradesperson"
-              body="Find verified trades in your area by trade type and postcode. Every profile is built from real confirmed jobs."
+              title="Find a tradesperson"
+              body="Search by trade and postcode, or invite the tradesperson you already have in mind. Profiles are built from jobs both sides confirmed."
             />
             <StepCard
               number="02"
               icon={<StarIcon />}
-              title="Check their verified reviews"
-              body="Every review is linked to a confirmed real job. No fake five-stars. No anonymous complaints."
+              title="Confirm the job together"
+              body="Invite them to the job, or confirm the one they invite you to. It is free, takes a minute, and gives you both a dated record."
             />
             <StepCard
               number="03"
               icon={<HandshakeIcon />}
-              title="Hire with confidence"
-              body="Both you and the tradesperson build a reputation. Everyone shows up properly."
+              title="Review each other"
+              body="When the work is done you both leave a review, hidden until both are in. Your reputation builds too, so the good trades want to work with you."
             />
           </div>
         </div>
@@ -225,7 +233,7 @@ export default function ForClientsPage() {
             What WorkedWith profiles look like
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-base text-gray-500">
-            Every tradesperson on WorkedWith has a verified profile built from real confirmed jobs.
+            Every tradesperson on WorkedWith has a profile built from jobs both sides confirmed.
           </p>
           <div className="mt-12 grid gap-6 sm:grid-cols-3">
             {DEMO_TRADE_PROFILES.map(profile => (
@@ -252,13 +260,13 @@ export default function ForClientsPage() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             <TrustCard
               icon={<ShieldIcon />}
-              title="Verified reviews"
-              body="Every review is linked to a confirmed job. No anonymous complaints, no fake five stars."
+              title="Reviews from real jobs"
+              body="Every review is linked to a job both sides confirmed. No anonymous complaints, no fake five stars."
             />
             <TrustCard
               icon={<FreeIcon />}
               title="Free forever"
-              body="Searching and contacting tradespeople is always free for clients. No subscriptions, no hidden fees."
+              body="Clients never pay. Searching, confirming jobs and leaving reviews are free, for homeowners, landlords and businesses."
             />
             <TrustCard
               icon={<StarIcon />}
@@ -266,6 +274,19 @@ export default function ForClientsPage() {
               body="Tradespeople can see how you treat people. The good ones want to work with good clients."
             />
           </div>
+        </div>
+      </section>
+
+      {/* ── Business clients ─────────────────────────────────── */}
+      <section className="bg-white px-4 py-12 sm:px-6">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-gray-200 bg-gray-50 p-8 text-center">
+          <h2 className="text-xl font-bold text-brand-navy">Landlord, estate manager or building firm?</h2>
+          <p className="mt-2 text-sm leading-relaxed text-gray-600">
+            Business accounts are free too. Verify your company, add your team, and build a record of the trades you use.
+          </p>
+          <a href="/join/client/business" className="mt-5 inline-flex min-h-[48px] items-center rounded-xl bg-brand-navy px-6 text-sm font-semibold text-white hover:bg-brand-navy/90 transition-colors">
+            Set up a business account
+          </a>
         </div>
       </section>
 

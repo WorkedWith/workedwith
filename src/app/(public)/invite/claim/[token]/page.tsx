@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { claimTradeInvite } from '@/actions/claim-trade-invite'
+import { InviteDecision } from '@/components/invite-decision'
+import { inviteMatchesUser } from '@/lib/invite-match'
 import type { PendingInvite } from '@/types/database'
 import { jobLabel, aJobLabel } from '@/lib/trade-types'
 
@@ -202,68 +203,49 @@ export default async function ClaimInvitePage({ params }: PageProps) {
     )
   }
 
-  // Execute the claim
-  const result = await claimTradeInvite(token)
-
-  if (result.success) {
-    const primaryJobId = result.jobIds[0]
+  // Declined already
+  if (invite.status === 'declined') {
     return (
       <Shell>
-        <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-            <svg className="h-7 w-7 text-green-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
-              <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-brand-navy">
-            {result.claimedCount > 1 ? `${result.claimedCount} jobs claimed` : 'Job claimed'}
-          </h2>
-          <p className="mt-2 text-sm text-gray-600 leading-relaxed">
-            {result.claimedCount > 1
-              ? `You've claimed ${result.claimedCount} pending jobs in one go. You and the clients can now leave each other verified reviews.`
-              : `Your ${jobLabel(invite.job_type)} from ${clientName} is now confirmed. Leave your review now. Reviews go live together once you have both submitted, or after 7 days.`}
-          </p>
-          <a
-            href={`/jobs/${primaryJobId}/review`}
-            className="mt-6 inline-block w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy text-center hover:opacity-90 transition-opacity"
-          >
-            Leave your review
-          </a>
-          {result.claimedCount > 1 && (
-            <a
-              href="/dashboard"
-              className="mt-3 inline-block w-full text-center text-sm text-gray-500 hover:text-brand-navy transition-colors"
-            >
-              Go to dashboard to see all jobs
-            </a>
-          )}
-        </div>
+        <ErrorCard title="Request declined" message="You have already declined this request." />
       </Shell>
     )
   }
 
-  // Claim failed
-  const errorMessages: Record<string, string> = {
-    no_match: result.error,
-    no_profile: 'You need a trade profile to claim this invite.',
-    already_claimed: 'This invite has already been claimed.',
-    expired: 'This invite has expired.',
-    server_error: 'Something went wrong. Please try again or contact support.',
+  // Ask first. Nothing is accepted until the trade chooses.
+  const { data: me } = await admin.from('users').select('email, phone, phone_verified').eq('id', user.id).single()
+  if (!me || !inviteMatchesUser(invite, me as unknown as { email: string | null; phone: string | null; phone_verified: boolean })) {
+    return (
+      <Shell>
+        <ErrorCard
+          title="Request sent to someone else"
+          message="This request was sent to a different account. Sign in with the email or phone number the client used."
+        />
+        <p className="mt-4 text-center text-xs text-gray-400">
+          If you think this is a mistake, contact{' '}
+          <a href="mailto:hello@workedwith.co.uk" className="underline">hello@workedwith.co.uk</a>.
+        </p>
+      </Shell>
+    )
   }
 
   return (
     <Shell>
-      <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-8 text-center">
-        <ErrorCard
-          title={result.code === 'no_match' ? 'Invite sent to someone else' : 'Unable to claim'}
-          message={errorMessages[result.code] ?? result.error}
-        />
-        {result.code === 'no_match' && (
-          <p className="mt-4 text-xs text-gray-400">
-            If you believe this is an error, please contact{' '}
-            <a href="mailto:hello@workedwith.co.uk" className="underline">hello@workedwith.co.uk</a>.
-          </p>
-        )}
+      <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-8">
+        <h2 className="text-xl font-semibold text-brand-navy">{clientName} says you did a job together</h2>
+        <dl className="mt-5 space-y-2 text-sm">
+          <div className="flex justify-between gap-4"><dt className="text-gray-500">Job</dt><dd className="text-right font-medium text-brand-navy">{jobLabel(invite.job_type)}</dd></div>
+          <div className="flex justify-between gap-4"><dt className="text-gray-500">When</dt><dd className="text-right font-medium text-brand-navy">{invite.job_date}</dd></div>
+          {invite.description && (
+            <div className="flex justify-between gap-4"><dt className="text-gray-500">Details</dt><dd className="text-right text-gray-700">{invite.description}</dd></div>
+          )}
+        </dl>
+        <p className="mt-5 text-sm leading-relaxed text-gray-600">
+          If you did this job, accept it and you can both leave a review. If you did not, decline and we will let them know.
+        </p>
+        <div className="mt-6">
+          <InviteDecision token={token} />
+        </div>
       </div>
     </Shell>
   )

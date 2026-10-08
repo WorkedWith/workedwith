@@ -4,6 +4,7 @@ import { sendEmail } from '@/lib/email/send'
 import { inviteClaimed } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { inviteMatchesUser } from '@/lib/invite-match'
 import type { PendingInvite } from '@/types/database'
 
 // ── Types ─────────────────────────────────────────────────────
@@ -51,15 +52,10 @@ export async function claimTradeInvite(claimToken: string): Promise<ClaimTradeIn
   if (!userData) return { success: false, error: 'User not found.', code: 'server_error' }
 
   // Verify the claiming user matches the invite contact
-  const phoneMatch = invite.contact_phone && userData.phone === invite.contact_phone && userData.phone_verified
-  const emailMatch = !invite.contact_phone && invite.contact_email && userData.email === invite.contact_email
-
-  if (!phoneMatch && !emailMatch) {
+  if (!inviteMatchesUser(invite, userData as unknown as { email: string | null; phone: string | null; phone_verified: boolean })) {
     return {
       success: false,
-      error: invite.contact_phone
-        ? 'This invite was sent to a different phone number. Sign in with the account that has that number verified.'
-        : 'This invite was sent to a different email address. Sign in with that email account to claim it.',
+      error: 'This request was sent to a different account. Sign in with the email or phone number the client used.',
       code: 'no_match',
     }
   }
@@ -75,33 +71,8 @@ export async function claimTradeInvite(claimToken: string): Promise<ClaimTradeIn
     return { success: false, error: 'A trade profile is required to claim this invite.', code: 'no_profile' }
   }
 
-  // Collect all stacked invites (same contact_phone or contact_email, still sent)
+  // Each request is accepted or declined on its own.
   const invitesToClaim: PendingInvite[] = [invite]
-
-  if (invite.contact_phone) {
-    const { data: stacked } = await admin
-      .from('pending_invites')
-      .select('*')
-      .eq('contact_phone', invite.contact_phone)
-      .eq('status', 'sent')
-      .neq('id', invite.id)
-    if (stacked) invitesToClaim.push(...(stacked as unknown as PendingInvite[]))
-  }
-
-  if (invite.contact_email) {
-    const { data: stacked } = await admin
-      .from('pending_invites')
-      .select('*')
-      .eq('contact_email', invite.contact_email)
-      .eq('status', 'sent')
-      .neq('id', invite.id)
-    if (stacked) {
-      const existingIds = new Set(invitesToClaim.map(i => i.id))
-      for (const s of stacked as unknown as PendingInvite[]) {
-        if (!existingIds.has(s.id)) invitesToClaim.push(s)
-      }
-    }
-  }
 
   const tradeName =
     (tradeProfile as { company_name: string | null }).company_name ?? userData.full_name

@@ -271,9 +271,11 @@ function SeededResultCard({ result }: { result: SeededSearchResult }) {
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600">
-          {result.trade_category}
-        </span>
+        {result.trade_categories.map(t => (
+          <span key={t} className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600">
+            {t}
+          </span>
+        ))}
       </div>
 
       <div className="mt-5 flex justify-end">

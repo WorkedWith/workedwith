@@ -169,9 +169,15 @@ export async function ClientProfileView({ userId, fullName, clientProfile, photo
                   )}
                   <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                     <span>{tradeNames.get(r.reviewer_id) ?? 'A tradesperson'} · Confirmed by both sides</span>
-                    <Link href={`/reviews/${r.id}/dispute`} className="font-semibold text-gray-500 underline">
-                      Dispute
-                    </Link>
+                    {r.dispute_status && r.dispute_status !== 'none' ? (
+                      <span className="font-semibold text-amber-700">Dispute raised</span>
+                    ) : Date.now() - new Date(r.submitted_at).getTime() > 14 * 24 * 60 * 60 * 1000 ? (
+                      <span className="text-gray-400">Dispute window closed</span>
+                    ) : (
+                      <Link href={`/reviews/${r.id}/dispute`} className="font-semibold text-gray-500 underline">
+                        Dispute this review
+                      </Link>
+                    )}
                   </div>
                 </li>
               ))}

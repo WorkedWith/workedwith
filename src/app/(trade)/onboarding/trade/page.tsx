@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TradeOnboardingForm } from './trade-onboarding-form'
+import { parentTrade } from '@/lib/trade-types'
 
 export const metadata = { title: 'Create your trade profile | WorkedWith' }
 
@@ -58,7 +59,7 @@ export default async function TradeOnboardingPage({ searchParams }: PageProps) {
     if (rawSeeded) {
       seededData = {
         businessName: rawSeeded.business_name as string,
-        tradeCategory: rawSeeded.trade_category as string,
+        tradeCategory: parentTrade(rawSeeded.trade_category as string) ?? (rawSeeded.trade_category as string),
         slug: rawSeeded.slug as string,
         operatingAreas: (rawSeeded.operating_areas as string[]) ?? [],
       }

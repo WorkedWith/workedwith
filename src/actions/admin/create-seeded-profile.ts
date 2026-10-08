@@ -3,14 +3,14 @@
 import { randomBytes } from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { ALL_TRADE_TERMS, parentTrade } from '@/lib/trade-types'
 import { normaliseBusinessName, normalisePhone, normaliseEmail, sha256 } from '@/lib/seeded-hash'
 import { sendSeededOutreach, SEEDED_LIFETIME_DAYS } from '@/lib/seeded-outreach'
 import type { SeededProfile } from '@/types/database'
 
 export type CreateSeededProfileInput = {
   business_name: string
-  trade_category: string
+  trade_categories: string[]
   operating_areas: string[]
   contact_phone: string | null
   contact_email: string | null
@@ -49,8 +49,16 @@ export async function createSeededProfile(
   if (!businessName) {
     return { success: false, error: 'Business name is required.', code: 'validation' }
   }
-  if (!(TRADE_TYPES as readonly string[]).includes(input.trade_category)) {
-    return { success: false, error: 'Please select a valid trade category.', code: 'validation' }
+  const picked = Array.from(new Set(input.trade_categories))
+  if (picked.length === 0 || picked.length > 8 || !picked.every(t => ALL_TRADE_TERMS.includes(t))) {
+    return { success: false, error: 'Please choose between 1 and 8 valid trades.', code: 'validation' }
+  }
+  // A specialism always brings its main trade with it, so the listing also
+  // shows up when someone searches the main trade.
+  const tradeCategories = [...picked]
+  for (const t of picked) {
+    const parent = parentTrade(t)
+    if (parent && !tradeCategories.includes(parent)) tradeCategories.push(parent)
   }
   if (input.operating_areas.length === 0) {
     return { success: false, error: 'At least one operating area is required.', code: 'validation' }
@@ -142,7 +150,8 @@ export async function createSeededProfile(
     .insert({
       slug,
       business_name: businessName,
-      trade_category: input.trade_category,
+      trade_category: tradeCategories[0],
+      trade_categories: tradeCategories,
       operating_areas: input.operating_areas.map(a => a.trim().toUpperCase()),
       contact_phone: input.contact_phone || null,
       contact_email: input.contact_email || null,

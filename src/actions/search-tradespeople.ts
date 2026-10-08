@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { SPECIALISMS } from '@/lib/trade-types'
 import type { SubscriptionTier, VerificationTier, SeededProfile } from '@/types/database'
 
 const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}$/i
@@ -38,6 +39,7 @@ export type SeededSearchResult = {
   id: string
   business_name: string
   trade_category: string
+  trade_categories: string[]
   operating_areas: string[]
   public_slug: string
   is_seeded: true
@@ -165,9 +167,9 @@ export async function searchTradespeople(
     const seededSlots = DENSITY_THRESHOLD - realResults.length
     const { data: rawSeeded } = await admin
       .from('seeded_profiles')
-      .select('id, slug, business_name, trade_category, operating_areas')
+      .select('id, slug, business_name, trade_category, trade_categories, operating_areas')
       .eq('status', 'unclaimed')
-      .eq('trade_category', tradeType)
+      .overlaps('trade_categories', [tradeType, ...((SPECIALISMS as Record<string, readonly string[] | undefined>)[tradeType] ?? [])])
       .contains('operating_areas', [district])
       .limit(seededSlots)
 
@@ -176,6 +178,7 @@ export async function searchTradespeople(
         id: sp.id,
         business_name: sp.business_name,
         trade_category: sp.trade_category,
+        trade_categories: (sp.trade_categories as string[] | null)?.length ? (sp.trade_categories as string[]) : [sp.trade_category],
         operating_areas: sp.operating_areas,
         public_slug: sp.slug,
         is_seeded: true as const,
