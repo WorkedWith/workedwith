@@ -4,7 +4,7 @@ import { APP_HOST } from '@/lib/app-url'
 import { useState, useTransition } from 'react'
 import { updateProfile } from '@/actions/update-profile'
 import { uploadProfilePhoto } from '@/actions/upload-profile-photo'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { TRADE_TYPES, SPECIALISMS, parentTrade } from '@/lib/trade-types'
 import type { User, TradeProfile, ClientProfile } from '@/types/database'
 
 type Props = {
@@ -58,7 +58,17 @@ export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
   const [isPending, startTransition] = useTransition()
 
   function toggleTradeType(t: string) {
-    setTradeTypes(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
+    setTradeTypes(prev => {
+      if (prev.includes(t)) {
+        // Unticking a main trade also clears its specialisms
+        const children = (SPECIALISMS as Record<string, readonly string[] | undefined>)[t] ?? []
+        return prev.filter(x => x !== t && !children.includes(x))
+      }
+      // Ticking a specialism also ticks its main trade so search finds them either way
+      const parent = parentTrade(t)
+      const next = [...prev, t]
+      return parent && !next.includes(parent) ? [...next, parent] : next
+    })
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -233,17 +243,39 @@ export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
             <p className="block text-sm font-medium text-gray-700 mb-2">Trade types</p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {TRADE_TYPES.map(t => (
-                <label key={t} className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={tradeTypes.includes(t)}
-                    onChange={() => toggleTradeType(t)}
-                    className="h-4 w-4 rounded border-gray-300 text-brand-amber accent-brand-amber"
-                  />
-                  <span className="text-sm text-gray-700">{t}</span>
-                </label>
+                <div key={t} className="contents">
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={tradeTypes.includes(t)}
+                      onChange={() => toggleTradeType(t)}
+                      className="h-4 w-4 rounded border-gray-300 text-brand-amber accent-brand-amber"
+                    />
+                    <span className="text-sm text-gray-700">{t}</span>
+                  </label>
+                </div>
               ))}
             </div>
+            {TRADE_TYPES.filter(t => tradeTypes.includes(t) && SPECIALISMS[t]).map(t => (
+              <div key={t} className="mt-4">
+                <p className="mb-2 text-xs font-medium text-gray-500">
+                  {t} specialisms <span className="font-normal text-gray-400">(optional)</span>
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {SPECIALISMS[t]!.map(sp => (
+                    <label key={sp} className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={tradeTypes.includes(sp)}
+                        onChange={() => toggleTradeType(sp)}
+                        className="h-4 w-4 rounded border-gray-300 text-brand-amber accent-brand-amber"
+                      />
+                      <span className="text-sm text-gray-700">{sp}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
           <div>

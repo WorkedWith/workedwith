@@ -17,9 +17,9 @@ function daysRemaining(expiresAt: string): number {
 function outreachSent(profile: SeededProfile): string {
   const sent: string[] = []
   if (profile.initial_invite_sent_at) sent.push('Day 0')
-  if (profile.reminder_21_sent_at) sent.push('21')
-  if (profile.reminder_42_sent_at) sent.push('42')
-  if (profile.reminder_56_sent_at) sent.push('56')
+  if (profile.reminder_1_sent_at) sent.push('3')
+  if (profile.reminder_2_sent_at) sent.push('7')
+  if (profile.reminder_3_sent_at) sent.push('14')
   if (sent.length === 0) return profile.contact_email || profile.contact_phone ? 'Pending' : 'No contact'
   return sent.join(', ')
 }

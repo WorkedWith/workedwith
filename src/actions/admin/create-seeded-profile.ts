@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { TRADE_TYPES } from '@/lib/trade-types'
 import { normaliseBusinessName, normalisePhone, normaliseEmail, sha256 } from '@/lib/seeded-hash'
+import { sendSeededOutreach, SEEDED_LIFETIME_DAYS } from '@/lib/seeded-outreach'
 import type { SeededProfile } from '@/types/database'
 
 export type CreateSeededProfileInput = {
@@ -14,10 +15,11 @@ export type CreateSeededProfileInput = {
   contact_phone: string | null
   contact_email: string | null
   source_note: string | null
+  bio?: string | null
 }
 
 export type CreateSeededProfileResult =
-  | { success: true; profile: SeededProfile }
+  | { success: true; profile: SeededProfile; outreach: 'sent' | 'queued' | 'switched_off' | 'no_contact' }
   | { success: false; error: string; code: 'unauthorized' | 'do_not_reseed' | 'validation' | 'server_error' }
 
 function slugify(name: string): string {
@@ -52,6 +54,11 @@ export async function createSeededProfile(
   }
   if (input.operating_areas.length === 0) {
     return { success: false, error: 'At least one operating area is required.', code: 'validation' }
+  }
+
+  const bio = (input.bio ?? '').trim()
+  if (bio.length > 300) {
+    return { success: false, error: 'Bio must be 300 characters or fewer.', code: 'validation' }
   }
 
   // ── do_not_reseed check (fail closed) ─────────────────────────
@@ -140,6 +147,7 @@ export async function createSeededProfile(
       contact_phone: input.contact_phone || null,
       contact_email: input.contact_email || null,
       source_note: input.source_note || null,
+      bio: bio || null,
       claim_token: claimToken,
       expires_at: expiresAt,
     })
@@ -151,8 +159,29 @@ export async function createSeededProfile(
     return { success: false, error: 'Failed to create the listing. Please try again.', code: 'server_error' }
   }
 
-  // Day 0 outreach is handled by the cron (initial_invite_sent_at IS NULL).
-  // No fire-and-forget here — this keeps creation synchronous and the cron responsible.
+  // Day 0 goes out the moment the profile is saved. If sending fails, the daily
+  // cron picks it up (initial_invite_sent_at stays null), so nothing is lost.
+  const profile = inserted as unknown as SeededProfile
+  let outreach: 'sent' | 'queued' | 'switched_off' | 'no_contact' = 'no_contact'
 
-  return { success: true, profile: inserted as unknown as SeededProfile }
+  if (profile.contact_email || profile.contact_phone) {
+    if (process.env.SEEDED_OUTREACH_ENABLED !== 'true') {
+      outreach = 'switched_off'
+    } else {
+      const sentAt = new Date()
+      const removesAt = new Date(sentAt.getTime() + SEEDED_LIFETIME_DAYS * 86_400_000).toISOString()
+      const result = await sendSeededOutreach({ ...profile, expires_at: removesAt }, 'day0')
+      if (result.sent) {
+        await admin
+          .from('seeded_profiles')
+          .update({ initial_invite_sent_at: sentAt.toISOString(), expires_at: removesAt })
+          .eq('id', profile.id)
+        outreach = 'sent'
+      } else {
+        outreach = 'queued'
+      }
+    }
+  }
+
+  return { success: true, profile, outreach }
 }

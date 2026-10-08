@@ -33,6 +33,16 @@ function SeededProfilePage({ profile }: { profile: SeededProfile; slug: string }
 
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 space-y-5">
 
+        {/* Bio, from the business's own public page */}
+        {profile.bio && (
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              About
+            </h2>
+            <p className="whitespace-pre-line text-sm leading-relaxed text-gray-700">{profile.bio}</p>
+          </section>
+        )}
+
         {/* Operating areas */}
         {profile.operating_areas.length > 0 && (
           <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -56,9 +66,8 @@ function SeededProfilePage({ profile }: { profile: SeededProfile; slug: string }
         <section className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-5">
           <p className="text-sm font-semibold text-amber-900">This business has not joined WorkedWith yet</p>
           <p className="mt-1 text-sm leading-relaxed text-amber-700">
-            WorkedWith is a platform where tradespeople build a verified work history and clients leave
-            genuine reviews. This listing was created to help clients find local tradespeople. The business
-            has been invited to claim it for free.
+            WorkedWith is where clients and tradespeople review each other after every job. This listing
+            was created to help clients find local tradespeople. The business has been invited to claim it.
           </p>
         </section>
 

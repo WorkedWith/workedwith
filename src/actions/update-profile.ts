@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { ALL_TRADE_TERMS } from '@/lib/trade-types'
 import { validateUsername } from '@/lib/username'
 
 const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}$/i
@@ -54,7 +54,7 @@ export async function updateProfile(input: UpdateProfileInput): Promise<UpdatePr
   if (isTrade) {
     const trade_types = input.trade_types ?? []
     if (trade_types.length === 0) return { success: false, error: 'Select at least one trade type.', field: 'trade_types' }
-    const invalid = trade_types.filter(t => !(TRADE_TYPES as readonly string[]).includes(t))
+    const invalid = trade_types.filter(t => !(ALL_TRADE_TERMS as readonly string[]).includes(t))
     if ((input.company_name ?? '').length > 80) return { success: false, error: 'Company name must be 80 characters or fewer.', field: 'company_name' }
     if (invalid.length > 0) return { success: false, error: 'Invalid trade type selected.', field: 'trade_types' }
 

@@ -46,15 +46,15 @@ export const EMAIL_SAMPLES: EmailSample[] = [
   { id: 'E26', group: 'Alerts to us', label: 'Incorrect claim reported', to: 'Admin', content: t.adminIncorrectClaim({ reportedBy: 'the inviting client', inviteId: 'abc123', jobId: 'def456' }) },
   { id: 'E27', group: 'Alerts to us', label: 'ID check waiting', to: 'Admin', content: t.adminIdSubmitted({ name: 'Raul Garcia', email: 'raul@example.com' }) },
   { id: 'E29', group: 'Seeded outreach', label: 'Day 0', to: 'Stranger', content: t.seededOutreach({ day: 'day0', ...seed }) },
-  { id: 'E30', group: 'Seeded outreach', label: 'Day 21', to: 'Stranger', content: t.seededOutreach({ day: 'day21', ...seed }) },
-  { id: 'E31', group: 'Seeded outreach', label: 'Day 42', to: 'Stranger', content: t.seededOutreach({ day: 'day42', ...seed }) },
-  { id: 'E32', group: 'Seeded outreach', label: 'Day 56', to: 'Stranger', content: t.seededOutreach({ day: 'day56', ...seed }) },
+  { id: 'E30', group: 'Seeded outreach', label: 'Day 3', to: 'Stranger', content: t.seededOutreach({ day: 'day3', ...seed }) },
+  { id: 'E31', group: 'Seeded outreach', label: 'Day 7', to: 'Stranger', content: t.seededOutreach({ day: 'day7', ...seed }) },
+  { id: 'E32', group: 'Seeded outreach', label: 'Day 14', to: 'Stranger', content: t.seededOutreach({ day: 'day14', ...seed }) },
 ]
 
 export const SMS_SAMPLES: SmsSample[] = [
   { id: 'S1', label: 'Client invites a tradesperson', to: 'Stranger', text: tradeInviteSms({ callerName: 'Sam Patel', jobType: 'Tiling', token: 'sample', days: 60 }) },
   { id: 'S2', label: 'Seeded, day 0', to: 'Stranger', text: seededSms({ day: 'day0', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
-  { id: 'S3', label: 'Seeded, day 21', to: 'Stranger', text: seededSms({ day: 'day21', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
-  { id: 'S4', label: 'Seeded, day 42', to: 'Stranger', text: seededSms({ day: 'day42', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
-  { id: 'S5', label: 'Seeded, day 56', to: 'Stranger', text: seededSms({ day: 'day56', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
+  { id: 'S3', label: 'Seeded, day 3', to: 'Stranger', text: seededSms({ day: 'day3', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
+  { id: 'S4', label: 'Seeded, day 7', to: 'Stranger', text: seededSms({ day: 'day7', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
+  { id: 'S5', label: 'Seeded, day 14', to: 'Stranger', text: seededSms({ day: 'day14', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
 ]

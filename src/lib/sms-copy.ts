@@ -18,11 +18,11 @@ export function seededSms(p: {
   switch (p.day) {
     case 'day0':
       return `WorkedWith: we set up a free page for ${p.name} from public business details. ${tail}`
-    case 'day21':
+    case 'day3':
       return `WorkedWith: your free page for ${p.name} is still unclaimed. ${tail}`
-    case 'day42':
+    case 'day7':
       return `WorkedWith: the page for ${p.name} is removed on ${p.removesOn} unless claimed. ${tail}`
-    case 'day56':
+    case 'day14':
     default:
       return `WorkedWith: last message. The page for ${p.name} is removed on ${p.removesOn} unless claimed. ${tail}`
   }

@@ -6,7 +6,13 @@ import { formatDateLong } from '@/lib/email/format'
 import twilio from 'twilio'
 import type { SeededProfile } from '@/types/database'
 
-export type OutreachDay = 'day0' | 'day21' | 'day42' | 'day56'
+export type OutreachDay = 'day0' | 'day3' | 'day7' | 'day14'
+
+/** Days after the first message that each follow up goes out. */
+export const SEEDED_FOLLOW_UPS = { day3: 3, day7: 7, day14: 14 } as const
+
+/** An unclaimed page is removed this many days after the first message. */
+export const SEEDED_LIFETIME_DAYS = 21
 
 
 
@@ -25,6 +31,7 @@ function seededFields(profile: SeededProfile, day: OutreachDay) {
     day,
     name: profile.business_name,
     source: profile.source_note?.trim() || 'a public business listing',
+    hasBio: Boolean(profile.bio?.trim()),
     sentOn: formatDateLong(profile.initial_invite_sent_at ?? profile.created_at) ?? '',
     removesOn: formatDateLong(profile.expires_at) ?? '',
     claimUrl: claimUrl(profile.claim_token),

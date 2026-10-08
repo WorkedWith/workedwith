@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { TRADE_TYPES, SPECIALISMS } from '@/lib/trade-types'
 
 type Props = {
   defaultTrade?: string
@@ -39,9 +39,15 @@ export function FindForm({ defaultTrade = '', defaultPostcode = '' }: Props) {
         className="h-12 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-sm text-brand-navy focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
       >
         <option value="" disabled>Select a trade type</option>
-        {TRADE_TYPES.map(t => (
-          <option key={t} value={t}>{t}</option>
+        {TRADE_TYPES.filter(t => t !== 'Other').map(t => (
+          <optgroup key={t} label={t}>
+            <option value={t}>{t}</option>
+            {(SPECIALISMS[t] ?? []).map(sp => (
+              <option key={sp} value={sp}>{sp}</option>
+            ))}
+          </optgroup>
         ))}
+        <option value="Other">Other</option>
       </select>
 
       <label htmlFor="postcode" className="sr-only">Your postcode</label>

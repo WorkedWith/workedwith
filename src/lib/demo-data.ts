@@ -65,7 +65,7 @@ export const DEMO_TRADE_PROFILES: DemoTradeProfile[] = [
   {
     id: 'demo-2',
     full_name: 'Sarah Moran',
-    trade_types: ['Plasterer', 'Decorator'],
+    trade_types: ['Plasterer', 'Painter and Decorator'],
     postcode: 'M1',
     location: 'Manchester',
     years_experience: 8,
@@ -155,7 +155,7 @@ export const DEMO_REVIEWS_SARAH: DemoReview[] = [
   {
     job_title: 'Feature wall and full lounge redecoration',
     reviewer_label: 'Verified client',
-    trade_type: 'Decorator',
+    trade_type: 'Painter and Decorator',
     overall_rating: 5,
     quality_score: 5,
     communication_score: 5,

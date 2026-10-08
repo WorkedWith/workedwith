@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendSeededOutreach } from '@/lib/seeded-outreach'
+import { sendSeededOutreach, SEEDED_FOLLOW_UPS, SEEDED_LIFETIME_DAYS, type OutreachDay } from '@/lib/seeded-outreach'
 import { normaliseBusinessName, normalisePhone, normaliseEmail, sha256 } from '@/lib/seeded-hash'
 import type { SeededProfile } from '@/types/database'
 
@@ -50,10 +50,15 @@ export async function GET(request: Request) {
     const profiles = (rawProfiles ?? []) as unknown as SeededProfile[]
 
     let day0Sent = 0
-    let reminders21 = 0
-    let reminders42 = 0
-    let reminders56 = 0
     let expired = 0
+    const followUps = { day3: 0, day7: 0, day14: 0 }
+
+    // Latest follow up first, so a profile only ever gets one message per run
+    const steps: { day: Exclude<OutreachDay, 'day0'>; column: 'reminder_1_sent_at' | 'reminder_2_sent_at' | 'reminder_3_sent_at' }[] = [
+      { day: 'day14', column: 'reminder_3_sent_at' },
+      { day: 'day7', column: 'reminder_2_sent_at' },
+      { day: 'day3', column: 'reminder_1_sent_at' },
+    ]
 
     for (const profile of profiles) {
       const age = daysSince(profile.created_at)
@@ -81,64 +86,43 @@ export async function GET(request: Request) {
       // Outbound sending is gated; expiry above runs regardless
       if (process.env.SEEDED_OUTREACH_ENABLED !== 'true') continue
 
-      // Day 0: send initial invite to any profile not yet contacted
+      // Day 0: send the first message to any profile not yet contacted.
+      // The removal date counts from the day this goes out.
       if (!profile.initial_invite_sent_at) {
-        const result = await sendSeededOutreach(profile, 'day0')
+        const sentAt = new Date()
+        const removesAt = new Date(sentAt.getTime() + SEEDED_LIFETIME_DAYS * 86_400_000).toISOString()
+        const result = await sendSeededOutreach({ ...profile, expires_at: removesAt }, 'day0')
         if (result.sent) {
           await admin
             .from('seeded_profiles')
-            .update({ initial_invite_sent_at: new Date().toISOString() })
+            .update({ initial_invite_sent_at: sentAt.toISOString(), expires_at: removesAt })
             .eq('id', profile.id)
           day0Sent++
         }
-        // Do not process reminders until the initial invite has been sent
+        // Follow ups wait until the first message has gone
         continue
       }
 
-      // Day 56 reminder (final notice: removed in 4 days)
-      if (age >= 56 && !profile.reminder_56_sent_at) {
-        const result = await sendSeededOutreach(profile, 'day56')
-        if (result.sent) {
-          await admin
-            .from('seeded_profiles')
-            .update({ reminder_56_sent_at: new Date().toISOString() })
-            .eq('id', profile.id)
-          reminders56++
-        }
-        continue
-      }
-
-      // Day 42 reminder
-      if (age >= 42 && !profile.reminder_42_sent_at) {
-        const result = await sendSeededOutreach(profile, 'day42')
-        if (result.sent) {
-          await admin
-            .from('seeded_profiles')
-            .update({ reminder_42_sent_at: new Date().toISOString() })
-            .eq('id', profile.id)
-          reminders42++
-        }
-        continue
-      }
-
-      // Day 21 reminder
-      if (age >= 21 && !profile.reminder_21_sent_at) {
-        const result = await sendSeededOutreach(profile, 'day21')
-        if (result.sent) {
-          await admin
-            .from('seeded_profiles')
-            .update({ reminder_21_sent_at: new Date().toISOString() })
-            .eq('id', profile.id)
-          reminders21++
+      const sinceSent = daysSince(profile.initial_invite_sent_at)
+      for (const step of steps) {
+        if (sinceSent >= SEEDED_FOLLOW_UPS[step.day] && !profile[step.column]) {
+          const result = await sendSeededOutreach(profile, step.day)
+          if (result.sent) {
+            const patch: Partial<SeededProfile> = {}
+            patch[step.column] = new Date().toISOString()
+            await admin.from('seeded_profiles').update(patch).eq('id', profile.id)
+            followUps[step.day]++
+          }
+          break
         }
       }
     }
 
     console.log(
-      `seeded-profiles: expired=${expired} day0=${day0Sent} rem21=${reminders21} rem42=${reminders42} rem56=${reminders56}`,
+      `seeded-profiles: expired=${expired} day0=${day0Sent} day3=${followUps.day3} day7=${followUps.day7} day14=${followUps.day14}`,
     )
     results.seededExpired = expired
-    results.seededReminders = { day0: day0Sent, day21: reminders21, day42: reminders42, day56: reminders56 }
+    results.seededReminders = { day0: day0Sent, ...followUps }
   }
 
   // ── 3. Rate limit event cleanup (> 24 hours) ─────────────────

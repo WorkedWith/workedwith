@@ -19,6 +19,7 @@ export function AddSeededProfileForm() {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [sourceNote, setSourceNote] = useState('')
+  const [bio, setBio] = useState('')
 
   function parseAreas(raw: string): string[] {
     return raw
@@ -46,16 +47,23 @@ export function AddSeededProfileForm() {
         contact_phone: phone.trim() || null,
         contact_email: email.trim() || null,
         source_note: sourceNote.trim() || null,
+        bio: bio.trim() || null,
       })
 
       if (result.success) {
-        setSuccess(`Created: /t/${result.profile.slug}`)
+        const note =
+          result.outreach === 'sent' ? 'First message sent.'
+          : result.outreach === 'queued' ? 'Message could not be sent now. It will be retried tonight.'
+          : result.outreach === 'switched_off' ? 'Outreach is switched off, so nothing was sent.'
+          : 'No email or phone, so nothing was sent.'
+        setSuccess(`Created: /t/${result.profile.slug}. ${note}`)
         setBusinessName('')
         setTradeCategory('')
         setAreasRaw('')
         setPhone('')
         setEmail('')
         setSourceNote('')
+        setBio('')
         router.refresh()
       } else {
         setError(result.error)
@@ -148,13 +156,27 @@ export function AddSeededProfileForm() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Source note <span className="font-normal text-gray-400">(optional, internal only)</span>
+          Bio <span className="font-normal text-gray-400">(optional, shown on their page. Paste it from their own Facebook, Instagram or website)</span>
+        </label>
+        <textarea
+          value={bio}
+          onChange={e => setBio(e.target.value.slice(0, 300))}
+          rows={4}
+          placeholder="What they say about themselves"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+        />
+        <p className="mt-1 text-xs text-gray-400">{bio.length}/300</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          Where you found their details <span className="font-normal text-gray-400">(shown to them in the email, so write it as a phrase)</span>
         </label>
         <input
           type="text"
           value={sourceNote}
           onChange={e => setSourceNote(e.target.value)}
-          placeholder="Yell.com listing, retrieved 2026-10-06"
+          placeholder="your public Facebook page"
           className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
         />
       </div>

@@ -451,15 +451,16 @@ export interface SeededProfile {
   contact_phone: string | null
   contact_email: string | null
   source_note: string | null
+  bio: string | null
   status: SeededProfileStatus
   claim_token: string
   created_at: string
   expires_at: string
   claimed_by_user_id: string | null
   initial_invite_sent_at: string | null
-  reminder_21_sent_at: string | null
-  reminder_42_sent_at: string | null
-  reminder_56_sent_at: string | null
+  reminder_1_sent_at: string | null
+  reminder_2_sent_at: string | null
+  reminder_3_sent_at: string | null
 }
 
 export interface DoNotReseed {

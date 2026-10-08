@@ -48,7 +48,7 @@ export function jobInviteNewClient(p: {
     heading: `${p.tradeName} is working with you through WorkedWith`,
     paragraphs: [
       `**${p.tradeName}** has logged a ${lc(p.jobType)} job in ${p.district}${p.startDate ? `, starting around ${p.startDate}` : ''} and asked you to confirm it.`,
-      `${p.tradeName} is on WorkedWith, where tradespeople build a record of verified reviews, so they take care to protect their reputation. It is free for clients, always.`,
+      `${p.tradeName} is on WorkedWith, where tradespeople build a record of reviews from confirmed jobs, so they take care to protect their reputation. It is free for clients, always.`,
       'Confirm the job and, when the work is done, you will each review the other. Neither review shows until both are in.',
     ],
     button: { label: 'See the job and confirm', url: `${APP_URL}/invite/job/${p.token}` },
@@ -328,7 +328,7 @@ export function tradeInviteFromClient(p: {
     heading: `${p.callerName} says you did a job for them`,
     paragraphs: [
       `**${p.callerName}** logged a ${lc(p.jobType)} job from ${p.jobDate} and gave us your contact details. WorkedWith is the directory for tradespeople who want to stand out from the noise.`,
-      'If that is right, claim it and you will each review the other. The job then shows as verified on your own free profile, and you can **check a client\'s record before you take the next job on**. Nothing is published unless you claim it.',
+      'If that is right, claim it and you will each review the other. The job then shows as confirmed by both sides on your own free profile, and you can **check a client\'s record before you take the next job on**. Nothing is published unless you claim it.',
     ],
     button: { label: 'See the job and claim it', url: p.claimUrl },
     small: [`The invite expires in ${p.days} days.`],
@@ -490,81 +490,73 @@ export function adminIdSubmitted(p: { name: string; email: string }): EmailConte
 
 // ── Seeded profile outreach ────────────────────────────────────
 
-export type SeededDay = 'day0' | 'day21' | 'day42' | 'day56'
+export type SeededDay = 'day0' | 'day3' | 'day7' | 'day14'
 
 export function seededOutreach(p: {
   day: SeededDay
   name: string
   source: string
+  hasBio?: boolean
   sentOn: string
   removesOn: string
   claimUrl: string
   removeUrl: string
 }): EmailContent {
   const stranger = {
-    why: `We set up this page using your business details from ${p.source}. It shows only your business name, your trade and the areas you cover.`,
+    why: `We set up this page using your business details from ${p.source}. It shows only your business name, your trade, the areas you cover${p.hasBio ? ' and the description from your own public page' : ''}.`,
     removeUrl: p.removeUrl,
   }
-  const button = { label: 'Claim your free page', url: p.claimUrl }
+  const button = { label: 'Claim your page', url: p.claimUrl }
 
   switch (p.day) {
     case 'day0':
       return {
         subject: `A free WorkedWith page for ${p.name}`,
-        preheader: 'Verified reviews from real jobs, for tradespeople who want to stand out.',
+        preheader: 'Good work deserves a reputation that follows you.',
         heading: `${p.name} is on WorkedWith`,
         paragraphs: [
           'Hello,',
-          `We have set up a free page for **${p.name}** on WorkedWith, the directory for tradespeople who want to stand out from the noise.`,
-          'You review your clients too, so you can **check a client\'s record before you take the job on** and steer clear of non payers and difficult customers.',
-          'Every review is tied to a real job that both sides confirmed, so it is genuine and stays on your page for good. Neither side sees the other\'s review until both are in.',
-          'Claim your page and you can:',
-        ],
-        list: [
-          'Show verified reviews from real jobs',
-          'Be found by clients searching your trade and area, on any plan',
-          'Add past jobs, so you start with a track record',
-          'Share your page link anywhere, including local groups',
-        ],
-        closing: [
-          'It is free, with unlimited jobs and reviews, and takes a few minutes.',
+          '**Good work deserves a reputation that follows you.**',
+          `We have set up an unclaimed page for **${p.name}** on WorkedWith, where clients and tradespeople review each other after every job.`,
+          'Claim it and you can **check a client\'s record before you take the job on**, and build a reputation from jobs both sides have confirmed.',
+          'It takes a couple of minutes, at no cost.',
         ],
         button,
         small: [`If nobody claims it, the page is removed on ${p.removesOn}.`],
         stranger,
       }
-    case 'day21':
+    case 'day3':
       return {
-        subject: `Your free WorkedWith page for ${p.name}`,
-        heading: 'Your page is still unclaimed',
+        subject: `Trust should work both ways, ${p.name}`,
+        heading: 'Trust should work both ways',
         paragraphs: [
-          `We set up a free page for **${p.name}** on WorkedWith on ${p.sentOn}. It has not been claimed yet.`,
-          'Once it is, you can **check a client\'s record before you take the job on**, show verified reviews from real jobs, and be found by clients searching your trade and area.',
-          'It is free and takes a few minutes. If you do not want it, there is nothing to do.',
+          `On ${p.sentOn} we set up a free page for **${p.name}** on WorkedWith. It is still unclaimed.`,
+          'Clients can check up on tradespeople everywhere. On WorkedWith, you can check up on clients too. **Before your next job, see what other tradespeople say about working with that client**, so late payers and difficult customers are easier to spot before they cost you.',
+          'If you do not want the page, there is nothing to do.',
         ],
         button,
         small: [`If nobody claims it, the page is removed on ${p.removesOn}.`],
         stranger,
       }
-    case 'day42':
+    case 'day7':
       return {
         subject: `Your WorkedWith page for ${p.name} is removed on ${p.removesOn}`,
         heading: `Your page is removed on ${p.removesOn}`,
         paragraphs: [
           `The free page for **${p.name}** has not been claimed, so it will be removed on ${p.removesOn}.`,
-          'Claim it before then and you can check a client\'s record before you take the job on, and build up verified reviews that win you work.',
+          'Claim it and clients searching for your trade and area can find you, on any plan. Add your past jobs and collect reviews from jobs both sides have confirmed, so your best work builds a reputation that stays with you.',
         ],
         button,
         stranger,
       }
-    case 'day56':
+    case 'day14':
     default:
       return {
         subject: `Last message about your WorkedWith page for ${p.name}`,
         heading: 'This is our last message',
         paragraphs: [
-          `The free page for **${p.name}** is removed on ${p.removesOn} unless you claim it. We will not email you again about it.`,
-          'If you want to check a client\'s record before you take the job on, claim it before then.',
+          `This is our last message about the page for **${p.name}**. If WorkedWith is not for you, do nothing and it is removed on ${p.removesOn}.`,
+          'If you would like to build a reputation and check who you are working for, claim it before then.',
         ],
         button,
         stranger,
