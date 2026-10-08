@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email/send'
-import { jobToConfirmExisting, jobInviteNewClient } from '@/lib/email/templates'
+import { jobToConfirmExisting, jobInviteNewClient, pastJobExisting, pastJobNew } from '@/lib/email/templates'
 import { outwardCode } from '@/lib/email/format'
 
 export type RemindClientResult = { success: true } | { success: false; error: string }
@@ -12,7 +12,7 @@ export type RemindClientResult = { success: true } | { success: false; error: st
 const MAX_REMINDERS = 2
 const MIN_HOURS_BETWEEN = 48
 
-/** Sends the original confirm email again. Trade owner only, pending jobs only, limited. */
+/** Sends the original confirm email again. Only the person who sent the invite, pending jobs only, limited. */
 export async function remindClient(jobId: string): Promise<RemindClientResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -21,18 +21,13 @@ export async function remindClient(jobId: string): Promise<RemindClientResult> {
   const admin = createAdminClient()
 
   const { data: job } = await admin.from('jobs').select('*').eq('id', jobId).maybeSingle()
-  if (!job || !job.trade_profile_id) return { success: false, error: 'Job not found.' }
+  if (!job) return { success: false, error: 'Job not found.' }
   if (job.status !== 'pending_confirmation') return { success: false, error: 'This job is no longer waiting for confirmation.' }
 
-  const { data: tradeProfile } = await admin
-    .from('trade_profiles')
-    .select('id, user_id, company_name')
-    .eq('id', job.trade_profile_id)
-    .maybeSingle()
-  if (!tradeProfile || tradeProfile.user_id !== user.id) return { success: false, error: 'Job not found.' }
-
   const { data: invite } = await admin.from('job_invites').select('*').eq('job_id', jobId).maybeSingle()
-  if (!invite || invite.status !== 'pending' || !invite.invite_token) {
+  // Only the person who sent the invite can nudge the other side
+  if (!invite || invite.inviter_id !== user.id) return { success: false, error: 'Job not found.' }
+  if (invite.status !== 'pending' || !invite.invite_token) {
     return { success: false, error: 'There is no open invite for this job.' }
   }
   if (new Date(invite.expires_at) < new Date()) {
@@ -62,14 +57,29 @@ export async function remindClient(jobId: string): Promise<RemindClientResult> {
     return { success: false, error: 'We only have a phone number for this client, so we cannot email a reminder. Send them a message yourself.' }
   }
 
-  const { data: tradeUser } = await admin.from('users').select('full_name').eq('id', user.id).maybeSingle()
-  const tradeName = (tradeProfile.company_name as string | null) ?? (tradeUser?.full_name as string | undefined) ?? 'Your tradesperson'
+  // Name the sender the same way the original email did
+  const { data: me } = await admin.from('users').select('full_name').eq('id', user.id).maybeSingle()
+  let callerName = (me?.full_name as string | undefined) ?? 'Someone'
+  if (job.initiated_by === 'trade') {
+    const { data: tp } = await admin.from('trade_profiles').select('company_name').eq('user_id', user.id).maybeSingle()
+    callerName = (tp?.company_name as string | null) ?? callerName
+  } else {
+    const { data: cp } = await admin.from('client_profiles').select('display_name').eq('user_id', user.id).maybeSingle()
+    callerName = (cp?.display_name as string | null) ?? callerName
+  }
+
+  const jobType = job.job_type as string
   const postcode = (job.postcode as string | null) ?? ''
   const token = invite.invite_token as string
+  const period = (job.backdated_period as string | null) ?? 'the past'
 
-  const content = existing
-    ? jobToConfirmExisting({ tradeName, jobType: job.job_type as string, postcode, token })
-    : jobInviteNewClient({ tradeName, jobType: job.job_type as string, district: outwardCode(postcode), token })
+  const content = job.is_backdated
+    ? (existing
+        ? pastJobExisting({ callerName, jobType, period, token })
+        : pastJobNew({ callerName, jobType, period, token }))
+    : (existing
+        ? jobToConfirmExisting({ tradeName: callerName, jobType, postcode, token })
+        : jobInviteNewClient({ tradeName: callerName, jobType, district: outwardCode(postcode), token }))
 
   const r = await sendEmail(emailTo, content)
   if (!r.ok) return { success: false, error: 'The email could not be sent. Please try again.' }

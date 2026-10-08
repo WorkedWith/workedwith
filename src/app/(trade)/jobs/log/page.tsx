@@ -27,12 +27,17 @@ export default async function LogJobPage() {
     <main className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">Log a job</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Log a job with a client</h1>
           <p className="mt-2 text-sm text-white/60">
             {isFirstJob
-              ? 'Log your first job to start building your WorkedWith profile. Your client confirms it, then mutual reviews unlock once the job is done.'
-              : 'Invite your client to confirm the job. Both parties can leave verified reviews once it\'s done.'}
+              ? 'Log your first job to start building your WorkedWith profile.'
+              : 'Invite your client to join the job on WorkedWith.'}
           </p>
+          <ol className="mx-auto mt-4 grid max-w-xs gap-2 text-left text-sm text-white/80">
+            <li className="flex items-center gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-amber text-xs font-bold text-brand-navy">1</span>You invite your client</li>
+            <li className="flex items-center gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-amber text-xs font-bold text-brand-navy">2</span>They confirm the job</li>
+            <li className="flex items-center gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-amber text-xs font-bold text-brand-navy">3</span>When it is done, you both leave a review</li>
+          </ol>
         </div>
         <LogJobForm />
         <div className="mt-4 text-center">

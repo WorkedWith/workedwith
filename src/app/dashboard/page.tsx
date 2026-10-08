@@ -281,20 +281,25 @@ export default async function DashboardPage() {
             {/* 3. Quick actions */}
             <section>
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Quick actions</p>
-              <div className="flex flex-wrap gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <a
                   href="/jobs/log"
-                  className="rounded-lg bg-brand-amber px-6 py-3 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
+                  className="flex min-h-[44px] flex-col items-center justify-center rounded-lg bg-brand-amber px-4 py-3 text-center text-brand-navy hover:bg-amber-400 transition-colors"
                 >
-                  + Log a job
+                  <span className="text-sm font-semibold">+ Log a job with a client</span>
+                  <span className="mt-0.5 text-xs font-medium text-brand-navy/70">Work coming up or under way</span>
                 </a>
                 <a
                   href="/jobs/log/backdated"
-                  className="rounded-lg border-2 border-brand-navy px-6 py-3 text-sm font-semibold text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
+                  className="flex min-h-[44px] flex-col items-center justify-center rounded-lg border-2 border-brand-navy px-4 py-3 text-center text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
                 >
-                  + Add a past job
+                  <span className="text-sm font-semibold">+ Add a past job</span>
+                  <span className="mt-0.5 text-xs font-medium opacity-70">Work you have already finished</span>
                 </a>
               </div>
+              <p className="mt-3 text-sm leading-relaxed text-gray-500">
+                You invite your client, they confirm the job on WorkedWith, and when the work is done you both leave a review.
+              </p>
             </section>
 
             {/* 4. Client lookup */}

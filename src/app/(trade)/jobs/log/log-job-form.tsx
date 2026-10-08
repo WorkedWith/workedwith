@@ -237,7 +237,7 @@ export function LogJobForm() {
           className="w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy
             transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {isPending ? 'Sending invite…' : 'Log job and send invite'}
+          {isPending ? 'Sending…' : 'Log job and invite client'}
         </button>
       </form>
     </div>

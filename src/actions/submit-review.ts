@@ -207,6 +207,16 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   const logSend = (r: { ok: boolean; error?: string }) => { if (!r.ok) console.error('Email send failed (non-fatal):', r.error) }
   const now = new Date().toISOString()
 
+  // The reviewer has now left their review, so any "leave a review" prompts
+  // for this job are done with. Mark them read so they do not linger.
+  await admin
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('user_id', user.id)
+    .eq('is_read', false)
+    .in('type', ['review_window_opened', 'review_reminder'])
+    .like('link', `%${input.job_id}%`)
+
   // ── Blind window still open and only one side has reviewed — hold ──
   // Once both sides have submitted, reviews publish together immediately.
   if (!blindWindowClosed && !bothSubmitted) {

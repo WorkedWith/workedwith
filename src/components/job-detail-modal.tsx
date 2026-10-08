@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import type { JobHistoryItem } from '@/actions/get-job-history'
 import { completeJob } from '@/actions/complete-job'
 import { workTitle } from '@/lib/trade-types'
+import { RemindClientButton } from './remind-client-button'
 
 interface Props {
   job: JobHistoryItem
@@ -110,6 +111,11 @@ export function JobDetailModal({ job, onClose }: Props) {
                 <p className="text-sm text-gray-600">
                   This job is waiting for the other party to confirm.
                 </p>
+                {((job.my_role === 'trade' && job.initiated_by === 'trade') || (job.my_role === 'client' && job.initiated_by === 'client')) && (
+                  <div className="mt-3">
+                    <RemindClientButton jobId={job.id} canEmail />
+                  </div>
+                )}
               </div>
             )}
 
