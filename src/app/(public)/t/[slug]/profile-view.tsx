@@ -1,6 +1,7 @@
 import { SiteHeader } from '@/components/site-header'
 import { Avatar } from '@/components/avatar'
 import { formatAreas } from '@/lib/format-areas'
+import { ALL_SPECIALISMS } from '@/lib/trade-types'
 import { APP_HOST, APP_URL } from '@/lib/app-url'
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -211,12 +212,15 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
   const profileUrl = `${APP_URL}/t/${slug}`
   // Contact details are only sent to signed in viewers
   const contactPhone = currentUser && tradeUser.phone_verified && typeof tradeUser.phone === 'string' ? tradeUser.phone : null
+  const mainTrades = tradeTypes.filter(t => !ALL_SPECIALISMS.includes(t))
+  const specialisms = tradeTypes.filter(t => ALL_SPECIALISMS.includes(t))
   const mailtoHref = (() => {
     const subject = `Enquiry via WorkedWith: ${displayName}`
     const body = `Hello,\n\nI found your profile on WorkedWith (${profileUrl}) and would like to ask about some work.\n\nThe job:\nMy postcode:\nWhen I need it done:\n\nThank you`
     return `mailto:${tradeUser.email as string}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   })()
   const contactEmail = currentUser && typeof tradeUser.email === 'string' ? tradeUser.email : null
+  const hasContactBar = Boolean(currentUser) ? Boolean(contactPhone || contactEmail) : true
 
   // JSON-LD structured data
   const jsonLd = {
@@ -254,158 +258,119 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
 
       <main className={preview ? 'bg-gray-50' : 'min-h-screen bg-gray-50'}>
         {/* ── Header ─────────────────────────────────────────── */}
-        <header className={preview ? 'mx-auto max-w-2xl px-4 pt-2 sm:px-6' : 'bg-brand-navy px-4 pb-8 pt-10 sm:px-6'}>
+        <header className={preview ? 'mx-auto max-w-2xl px-4 pt-2 sm:px-6' : 'bg-brand-navy px-4 pb-8 pt-8 sm:px-6'}>
           <div className={preview ? 'rounded-2xl bg-brand-navy px-6 pb-7 pt-7' : 'mx-auto max-w-2xl'}>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col items-center gap-3 text-center">
               <Avatar
                 name={displayName}
                 photoUrl={typeof tradeUser.profile_photo_url === 'string' ? tradeUser.profile_photo_url : null}
-                sizeClass="h-20 w-20"
-                textClass="text-2xl"
-                ringClass="border-2 border-white/20"
+                sizeClass="h-24 w-24"
+                textClass="text-3xl"
+                ringClass="border-[3px] border-white/20"
               />
-              <div className="min-w-0">
-                <h1 className="text-3xl font-bold text-white sm:text-4xl">{displayName}</h1>
-                {tradeProfile.company_name && (tradeUser.full_name as string) !== displayName && (
-                  <p className="mt-1 text-sm text-white/60">{tradeUser.full_name as string}</p>
-                )}
-              </div>
-            </div>
+              <h1 className="mt-1 text-2xl font-bold leading-tight text-white sm:text-4xl">{displayName}</h1>
+              {tradeProfile.company_name && (tradeUser.full_name as string) !== displayName && (
+                <p className="-mt-1 text-sm text-white/60">{tradeUser.full_name as string}</p>
+              )}
 
-            {/* Trade type pills */}
-            {tradeTypes.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {tradeTypes.map(t => (
-                  <span
-                    key={t}
-                    className="rounded-full bg-brand-amber/20 px-3 py-1 text-sm font-medium text-brand-amber"
-                  >
-                    {t}
+              {mainTrades.length > 0 && (
+                <p className="text-base font-medium text-brand-amber">{mainTrades.join(' · ')}</p>
+              )}
+
+              <div className="flex flex-wrap justify-center gap-2">
+                {/* Subscription badge: Pro supersedes Verified, never show both */}
+                {(tradeProfile.subscription_tier as string) === 'pro' && (
+                  <span className="inline-flex items-center rounded-full bg-brand-amber px-3 py-1 text-xs font-bold text-brand-navy">
+                    Pro
                   </span>
-                ))}
+                )}
+                {(tradeProfile.subscription_tier as string) === 'standard' && (
+                  <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white">
+                    Verified
+                  </span>
+                )}
+                {(verTier === 'phone_verified' || verTier === 'fully_verified') && (
+                  <VerifiedBadge>✓ Phone verified</VerifiedBadge>
+                )}
+                {verTier === 'fully_verified' && (
+                  <VerifiedBadge>✓ ID verified</VerifiedBadge>
+                )}
               </div>
-            )}
 
-            {/* Verification and plan badges */}
-            <div className="mt-3 flex flex-wrap gap-2">
-              {/* Subscription badge: Pro supersedes Verified, never show both */}
-              {(tradeProfile.subscription_tier as string) === 'pro' && (
-                <span className="inline-flex items-center rounded-full bg-brand-amber px-3 py-1 text-xs font-bold text-brand-navy">
-                  Pro
-                </span>
-              )}
-              {(tradeProfile.subscription_tier as string) === 'standard' && (
-                <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white">
-                  Verified
-                </span>
-              )}
-              {(verTier === 'phone_verified' || verTier === 'fully_verified') && (
-                <VerifiedBadge>✓ Phone Verified</VerifiedBadge>
-              )}
-              {verTier === 'fully_verified' && (
-                <VerifiedBadge>✓ ID Verified</VerifiedBadge>
-              )}
-            </div>
-
-            {/* Location */}
-            {formatAreas(tradeProfile.operating_areas as string[] | null) && (
-              <p className="mt-4 text-sm text-white/60">
-                📍 {formatAreas(tradeProfile.operating_areas as string[] | null)}
-              </p>
-            )}
-
-            {/* Facts, only the ones with something to say */}
-            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-white/10 pt-4 text-sm text-white/80">
-              <span className="font-semibold text-white">
+              <p className="text-sm font-semibold text-white">
                 {(tradeProfile.total_reviews as number) > 0
-                  ? `★ ${(tradeProfile.average_rating as number).toFixed(1)} (${tradeProfile.total_reviews as number} review${(tradeProfile.total_reviews as number) !== 1 ? 's' : ''})`
-                  : 'New to WorkedWith'}
-              </span>
-              {(tradeProfile.total_jobs as number) > 0 && (
-                <span>
-                  {tradeProfile.total_jobs as number} confirmed job{(tradeProfile.total_jobs as number) !== 1 ? 's' : ''}
-                </span>
-              )}
-              {(tradeProfile.years_experience as number | null) !== null && (
-                <span>{tradeProfile.years_experience as number} years in the trade</span>
-              )}
-              <span>Member since {memberSinceYear(tradeUser.created_at as string)}</span>
-            </div>
+                  ? `★ ${(tradeProfile.average_rating as number).toFixed(1)} · ${tradeProfile.total_reviews as number} review${(tradeProfile.total_reviews as number) !== 1 ? 's' : ''}`
+                  : (tradeProfile.total_jobs as number) > 0 ? '' : 'New to WorkedWith'}
+                {(tradeProfile.total_reviews as number) > 0 && (tradeProfile.total_jobs as number) > 0 ? ' · ' : ''}
+                {(tradeProfile.total_jobs as number) > 0
+                  ? `${tradeProfile.total_jobs as number} confirmed job${(tradeProfile.total_jobs as number) !== 1 ? 's' : ''}`
+                  : ''}
+              </p>
 
-            {/* Contact, signed in members only */}
-            {currentUser && (contactPhone || contactEmail) && (
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                {contactPhone && (
-                  <a
-                    href={`tel:${contactPhone.replace(/\s+/g, '')}`}
-                    className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl bg-brand-amber px-5 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
-                  >
-                    Call {contactPhone}
-                  </a>
-                )}
-                {contactEmail && (
-                  <a
-                    href={mailtoHref}
-                    className="inline-flex min-h-[44px] flex-1 items-center justify-center break-all rounded-xl border border-white/30 px-5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
-                  >
-                    Email {contactEmail}
-                  </a>
-                )}
-              </div>
-            )}
+              <p className="text-sm text-white/60">
+                {[
+                  formatAreas(tradeProfile.operating_areas as string[] | null),
+                  (tradeProfile.years_experience as number | null) !== null
+                    ? `${tradeProfile.years_experience as number} years in the trade`
+                    : null,
+                  `Member since ${memberSinceYear(tradeUser.created_at as string)}`,
+                ].filter(Boolean).join(' · ')}
+              </p>
+            </div>
           </div>
         </header>
 
-        <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 space-y-5">
+        <div className={`mx-auto max-w-2xl px-4 py-6 sm:px-6 space-y-4 ${hasContactBar && !preview ? 'pb-32' : ''}`}>
 
-          {/* ── Sign up prompt for signed out viewers ─────────── */}
-          {!currentUser && (
-            <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
-              <h2 className="text-sm font-semibold text-brand-navy">Want to get in touch?</h2>
-              <p className="mt-1 text-sm text-gray-600">
-                Contact details are shown to signed in members only. It is free to join.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-3">
-                <a
-                  href="/join/client"
-                  className="inline-flex min-h-[44px] items-center rounded-xl bg-brand-amber px-5 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
-                >
-                  Create a free account
-                </a>
-                <a
-                  href="/sign-in"
-                  className="inline-flex min-h-[44px] items-center rounded-xl border border-gray-300 bg-white px-5 text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors"
-                >
-                  Sign in
-                </a>
-              </div>
-            </section>
-          )}
-
-          {/* ── About and areas ──────────────────────────────── */}
-          {((typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim()) || ((tradeProfile.operating_areas as string[]) ?? []).length > 0) && (
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          {/* ── About, specialisms and areas ─────────────────── */}
+          {((typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim()) || specialisms.length > 0 || ((tradeProfile.operating_areas as string[]) ?? []).length > 0) && (
+            <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               {typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim() && (
                 <>
-                  <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">About</h2>
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-gray-700">{tradeProfile.bio}</p>
+                  <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">About</h2>
+                  <p className="whitespace-pre-line text-[15px] leading-relaxed text-gray-700">{tradeProfile.bio}</p>
                 </>
               )}
-              {((tradeProfile.operating_areas as string[]) ?? []).length > 0 && (
+              {specialisms.length > 0 && (
                 <div className={typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim() ? 'mt-5 border-t border-gray-100 pt-5' : ''}>
-                  <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Areas covered</h2>
+                  <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Specialisms</h2>
                   <div className="flex flex-wrap gap-1.5">
-                    {(tradeProfile.operating_areas as string[]).map(district => (
-                      <span
-                        key={district}
-                        className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600"
-                      >
-                        {district}
+                    {specialisms.map(sp => (
+                      <span key={sp} className="rounded-full bg-brand-amber/15 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                        {sp}
                       </span>
                     ))}
                   </div>
                 </div>
               )}
+              {((tradeProfile.operating_areas as string[]) ?? []).length > 0 && (() => {
+                const areas = tradeProfile.operating_areas as string[]
+                const shown = areas.slice(0, 6)
+                const rest = areas.slice(6)
+                const hasAbove = Boolean((typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim()) || specialisms.length > 0)
+                return (
+                  <div className={hasAbove ? 'mt-5 border-t border-gray-100 pt-5' : ''}>
+                    <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Areas covered</h2>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {shown.map(d => (
+                        <span key={d} className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{d}</span>
+                      ))}
+                    </div>
+                    {rest.length > 0 && (
+                      <details className="group mt-2">
+                        <summary className="cursor-pointer list-none text-sm font-semibold text-amber-700 group-open:hidden">
+                          Show all {areas.length}
+                        </summary>
+                        <div className="flex flex-wrap gap-1.5">
+                          {rest.map(d => (
+                            <span key={d} className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{d}</span>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                )
+              })()}
             </section>
           )}
 
@@ -579,6 +544,49 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
 
         </div>
       </main>
+      {/* ── Contact bar ───────────────────────────────────── */}
+      {hasContactBar && (
+        <div className={preview ? 'mx-auto max-w-2xl px-4 pb-6 sm:px-6' : 'fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white shadow-[0_-4px_16px_rgba(15,31,61,0.08)]'}>
+          <div className={preview ? 'flex gap-3' : 'mx-auto flex max-w-2xl gap-3 px-4 pb-5 pt-3 sm:px-6'}>
+            {currentUser ? (
+              <>
+                {contactPhone && (
+                  <a
+                    href={`tel:${contactPhone.replace(/\s+/g, '')}`}
+                    className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-brand-amber px-4 text-[15px] font-bold text-brand-navy hover:bg-amber-400 transition-colors"
+                  >
+                    Call
+                  </a>
+                )}
+                {contactEmail && (
+                  <a
+                    href={mailtoHref}
+                    className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl border-2 border-brand-navy px-4 text-[15px] font-bold text-brand-navy hover:bg-gray-50 transition-colors"
+                  >
+                    Email
+                  </a>
+                )}
+              </>
+            ) : (
+              <>
+                <a
+                  href="/join/client"
+                  className="inline-flex min-h-[48px] flex-[2] items-center justify-center rounded-xl bg-brand-amber px-4 text-[15px] font-bold text-brand-navy hover:bg-amber-400 transition-colors"
+                >
+                  Sign up free to get in touch
+                </a>
+                <a
+                  href="/sign-in"
+                  className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-xl border-2 border-brand-navy px-4 text-[15px] font-bold text-brand-navy hover:bg-gray-50 transition-colors"
+                >
+                  Sign in
+                </a>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
     </>
   )
 }
