@@ -1,6 +1,5 @@
 import { SiteHeader } from '@/components/site-header'
 import { Avatar } from '@/components/avatar'
-import { formatAreas } from '@/lib/format-areas'
 import { ALL_SPECIALISMS } from '@/lib/trade-types'
 import { APP_HOST, APP_URL } from '@/lib/app-url'
 import { notFound } from 'next/navigation'
@@ -258,72 +257,92 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
 
       <main className={preview ? 'bg-gray-50' : 'min-h-screen bg-gray-50'}>
         {/* ── Header ─────────────────────────────────────────── */}
-        <header className={preview ? 'mx-auto max-w-2xl px-4 pt-2 sm:px-6' : 'bg-brand-navy px-4 pb-8 pt-8 sm:px-6'}>
-          <div className={preview ? 'rounded-2xl bg-brand-navy px-6 pb-7 pt-7' : 'mx-auto max-w-2xl'}>
-            <div className="flex flex-col items-center gap-3 text-center">
+        <header className={preview ? 'mx-auto max-w-2xl px-4 pt-2 sm:px-6' : 'bg-brand-navy px-4 pb-6 pt-6 sm:px-6'}>
+          <div className={preview ? 'rounded-2xl bg-brand-navy px-5 pb-5 pt-5' : 'mx-auto max-w-2xl'}>
+            <div className="flex items-center gap-4">
               <Avatar
                 name={displayName}
                 photoUrl={typeof tradeUser.profile_photo_url === 'string' ? tradeUser.profile_photo_url : null}
-                sizeClass="h-24 w-24"
-                textClass="text-3xl"
-                ringClass="border-[3px] border-white/20"
+                sizeClass="h-16 w-16 sm:h-20 sm:w-20"
+                textClass="text-xl sm:text-2xl"
+                ringClass="border-2 border-white/20"
               />
-              <h1 className="mt-1 text-2xl font-bold leading-tight text-white sm:text-4xl">{displayName}</h1>
-              {tradeProfile.company_name && (tradeUser.full_name as string) !== displayName && (
-                <p className="-mt-1 text-sm text-white/60">{tradeUser.full_name as string}</p>
-              )}
+              <div className="min-w-0">
+                <h1 className="text-xl font-bold leading-tight text-white sm:text-3xl">{displayName}</h1>
+                <p className="mt-1 text-sm text-white/60">
+                  {tradeProfile.company_name && (tradeUser.full_name as string) !== displayName
+                    ? `${tradeUser.full_name as string} · `
+                    : ''}
+                  Member since {memberSinceYear(tradeUser.created_at as string)}
+                </p>
+              </div>
+            </div>
 
-              {mainTrades.length > 0 && (
-                <p className="text-base font-medium text-brand-amber">{mainTrades.join(' · ')}</p>
-              )}
-
-              <div className="flex flex-wrap justify-center gap-2">
-                {/* Subscription badge: Pro supersedes Verified, never show both */}
-                {(tradeProfile.subscription_tier as string) === 'pro' && (
-                  <span className="inline-flex items-center rounded-full bg-brand-amber px-3 py-1 text-xs font-bold text-brand-navy">
-                    Pro
+            {mainTrades.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {mainTrades.slice(0, 3).map(t => (
+                  <span key={t} className="rounded-full bg-brand-amber/20 px-3 py-1 text-sm font-semibold text-brand-amber">
+                    {t}
                   </span>
-                )}
-                {(tradeProfile.subscription_tier as string) === 'standard' && (
-                  <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white">
-                    Verified
+                ))}
+                {mainTrades.length > 3 && (
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white/80">
+                    +{mainTrades.length - 3} more
                   </span>
-                )}
-                {(verTier === 'phone_verified' || verTier === 'fully_verified') && (
-                  <VerifiedBadge>✓ Phone verified</VerifiedBadge>
-                )}
-                {verTier === 'fully_verified' && (
-                  <VerifiedBadge>✓ ID verified</VerifiedBadge>
                 )}
               </div>
-
-              <p className="text-sm font-semibold text-white">
-                {(tradeProfile.total_reviews as number) > 0
-                  ? `★ ${(tradeProfile.average_rating as number).toFixed(1)} · ${tradeProfile.total_reviews as number} review${(tradeProfile.total_reviews as number) !== 1 ? 's' : ''}`
-                  : (tradeProfile.total_jobs as number) > 0 ? '' : 'New to WorkedWith'}
-                {(tradeProfile.total_reviews as number) > 0 && (tradeProfile.total_jobs as number) > 0 ? ' · ' : ''}
-                {(tradeProfile.total_jobs as number) > 0
-                  ? `${tradeProfile.total_jobs as number} confirmed job${(tradeProfile.total_jobs as number) !== 1 ? 's' : ''}`
-                  : ''}
-              </p>
-
-              <p className="text-sm text-white/60">
-                {[
-                  formatAreas(tradeProfile.operating_areas as string[] | null),
-                  (tradeProfile.years_experience as number | null) !== null
-                    ? `${tradeProfile.years_experience as number} years in the trade`
-                    : null,
-                  `Member since ${memberSinceYear(tradeUser.created_at as string)}`,
-                ].filter(Boolean).join(' · ')}
-              </p>
-            </div>
+            )}
           </div>
         </header>
 
         <div className={`mx-auto max-w-2xl px-4 py-6 sm:px-6 space-y-4 ${hasContactBar && !preview ? 'pb-32' : ''}`}>
 
+          {/* ── Trust card ───────────────────────────────────── */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-5">
+              <div className="shrink-0 text-center">
+                {(tradeProfile.total_reviews as number) > 0 ? (
+                  <>
+                    <p className="text-4xl font-bold leading-none text-brand-navy">
+                      {(tradeProfile.average_rating as number).toFixed(1)}
+                    </p>
+                    <div className="mt-1.5"><Stars rating={tradeProfile.average_rating as number} size="lg" /></div>
+                  </>
+                ) : (
+                  <p className="text-2xl font-bold leading-none text-brand-navy">New</p>
+                )}
+              </div>
+              <div className="text-sm leading-relaxed text-gray-600">
+                {(tradeProfile.total_reviews as number) > 0 ? (
+                  <p>
+                    <span className="font-semibold text-brand-navy">{tradeProfile.total_reviews as number}</span>{' '}
+                    review{(tradeProfile.total_reviews as number) !== 1 ? 's' : ''} confirmed by both sides
+                  </p>
+                ) : (
+                  <p>No reviews yet. They appear once both sides have submitted.</p>
+                )}
+                {(tradeProfile.total_jobs as number) > 0 && (
+                  <p>
+                    <span className="font-semibold text-brand-navy">{tradeProfile.total_jobs as number}</span>{' '}
+                    job{(tradeProfile.total_jobs as number) !== 1 ? 's' : ''} confirmed on WorkedWith
+                  </p>
+                )}
+              </div>
+            </div>
+            {((verTier === 'phone_verified' || verTier === 'fully_verified') || (tradeProfile.subscription_tier as string) === 'pro' || (tradeProfile.subscription_tier as string) === 'standard') && (
+              <ul className="mt-4 space-y-2.5 border-t border-gray-100 pt-4">
+                {(verTier === 'phone_verified' || verTier === 'fully_verified') && (
+                  <TrustTick>Phone number verified</TrustTick>
+                )}
+                {verTier === 'fully_verified' && <TrustTick>ID checked by WorkedWith</TrustTick>}
+                {(tradeProfile.subscription_tier as string) === 'pro' && <TrustTick amber>Pro member</TrustTick>}
+                {(tradeProfile.subscription_tier as string) === 'standard' && <TrustTick amber>Verified member</TrustTick>}
+              </ul>
+            )}
+          </section>
+
           {/* ── About, specialisms and areas ─────────────────── */}
-          {((typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim()) || specialisms.length > 0 || ((tradeProfile.operating_areas as string[]) ?? []).length > 0) && (
+          {((typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim()) || mainTrades.length > 0 || specialisms.length > 0 || ((tradeProfile.operating_areas as string[]) ?? []).length > 0) && (
             <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               {typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim() && (
                 <>
@@ -331,8 +350,20 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                   <p className="whitespace-pre-line text-[15px] leading-relaxed text-gray-700">{tradeProfile.bio}</p>
                 </>
               )}
-              {specialisms.length > 0 && (
+              {mainTrades.length > 0 && (
                 <div className={typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim() ? 'mt-5 border-t border-gray-100 pt-5' : ''}>
+                  <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    Trades{(tradeProfile.years_experience as number | null) !== null ? ` · ${tradeProfile.years_experience as number} years in the trade` : ''}
+                  </h2>
+                  <div className="flex flex-wrap gap-1.5">
+                    {mainTrades.map(t => (
+                      <span key={t} className="rounded-full bg-brand-navy/10 px-2.5 py-1 text-xs font-semibold text-brand-navy">{t}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {specialisms.length > 0 && (
+                <div className={(typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim()) || mainTrades.length > 0 ? 'mt-5 border-t border-gray-100 pt-5' : ''}>
                   <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Specialisms</h2>
                   <div className="flex flex-wrap gap-1.5">
                     {specialisms.map(sp => (
@@ -347,7 +378,7 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                 const areas = tradeProfile.operating_areas as string[]
                 const shown = areas.slice(0, 6)
                 const rest = areas.slice(6)
-                const hasAbove = Boolean((typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim()) || specialisms.length > 0)
+                const hasAbove = Boolean((typeof tradeProfile.bio === 'string' && tradeProfile.bio.trim()) || mainTrades.length > 0 || specialisms.length > 0)
                 return (
                   <div className={hasAbove ? 'mt-5 border-t border-gray-100 pt-5' : ''}>
                     <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Areas covered</h2>
@@ -372,41 +403,6 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                 )
               })()}
             </section>
-          )}
-
-          {/* ── WorkedWith Score ──────────────────────────────── */}
-          {(tradeProfile.total_reviews as number) > 0 && (
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-gray-400">
-              WorkedWith Score
-            </h2>
-            {(tradeProfile.total_reviews as number) === 0 ? null : (
-              <div className="flex items-start gap-6">
-                <div>
-                  <p className="text-5xl font-bold leading-none text-brand-navy">
-                    {(tradeProfile.average_rating as number).toFixed(1)}
-                  </p>
-                  <div className="mt-1.5">
-                    <Stars rating={tradeProfile.average_rating as number} size="lg" />
-                  </div>
-                </div>
-                <div className="space-y-1.5 pt-1">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-semibold text-brand-navy">
-                      {tradeProfile.total_reviews as number}
-                    </span>{' '}
-                    verified review{(tradeProfile.total_reviews as number) !== 1 ? 's' : ''}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <span className="font-semibold text-brand-navy">
-                      {tradeProfile.total_jobs as number}
-                    </span>{' '}
-                    confirmed job{(tradeProfile.total_jobs as number) !== 1 ? 's' : ''}
-                  </p>
-                </div>
-              </div>
-            )}
-          </section>
           )}
 
           {/* ── Review history ────────────────────────────────── */}
@@ -628,11 +624,14 @@ function SubScoreRow({ label, score }: { label: string; score: number }) {
   )
 }
 
-function VerifiedBadge({ children }: { children: React.ReactNode }) {
+function TrustTick({ children, amber = false }: { children: React.ReactNode; amber?: boolean }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-green-500/20 px-3 py-1 text-xs font-semibold text-green-300">
+    <li className="flex items-center gap-2.5 text-sm font-medium text-brand-navy">
+      <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${amber ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+        ✓
+      </span>
       {children}
-    </span>
+    </li>
   )
 }
 
