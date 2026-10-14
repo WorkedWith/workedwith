@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { FeaturedJobPublic } from '@/actions/featured-jobs/get-featured-jobs'
+import { ReportPhotoButton } from '@/components/report-photo-button'
 
 type Props = {
   jobs: FeaturedJobPublic[]
@@ -20,7 +21,7 @@ export function FeaturedWorkSection({ jobs, supabaseUrl }: Props) {
   return (
     <section>
       <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 px-1">
-        Featured work
+        Photos from confirmed jobs
       </h2>
       <div className="space-y-4">
         {jobs.map(job => {
@@ -37,7 +38,7 @@ export function FeaturedWorkSection({ jobs, supabaseUrl }: Props) {
                   <h3 className="font-semibold text-brand-navy">{job.title}</h3>
                   {job.job_id && (
                     <span className="mt-1 inline-flex items-center rounded-full bg-green-50 border border-green-200 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                      Linked to verified job
+                      Confirmed job
                     </span>
                   )}
                 </div>
@@ -68,6 +69,7 @@ export function FeaturedWorkSection({ jobs, supabaseUrl }: Props) {
                       {img.caption && (
                         <p className="text-xs text-gray-500 leading-relaxed">{img.caption}</p>
                       )}
+                      <ReportPhotoButton kind="featured" imageId={img.id} />
                     </div>
                   ))}
                 </div>

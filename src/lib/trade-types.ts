@@ -21,10 +21,10 @@ export const TRADE_TYPES = [
   'Landscaper',
   'Locksmith',
   'Painter and Decorator',
-  'Paving',
   'Plasterer',
   'Plumber',
   'Roofer',
+  'Scaffolder',
   'Tiler',
   'Tree Surgeon',
   'Window Fitter',
@@ -36,27 +36,39 @@ export type TradeType = (typeof TRADE_TYPES)[number]
 // Specialisms: optional extras a tradesperson can tick under a main trade.
 // They are stored in the same trade_types list as the main trades.
 export const SPECIALISMS: Partial<Record<TradeType, readonly string[]>> = {
+  Bricklayer: ['Repointing'],
   Builder: [
-    'Extension Builder',
-    'Loft Conversion Specialist',
-    'Basement and Cellar Conversion Specialist',
-    'Conservatory Builder',
+    'Extensions',
+    'Loft Conversions',
+    'Basement Conversions',
+    'Conservatories',
   ],
-  'Cleaning and Clearance': ['Jetwashing', 'Rubbish and Waste Clearance'],
-  'Damp Proofing': ['Tanking'],
-  Drainage: ['Unblocking'],
+  'Cleaning and Clearance': ['Jetwashing', 'Rubbish and Waste Clearance', 'Gutter Clearing'],
   'Flooring Fitter': ['LVT', 'Carpet Fitting', 'Laminate', 'Wood Flooring'],
-  'Guttering and Fascias': ['Gutter Clearing'],
-  'Painter and Decorator': ['Exterior Decorating'],
+  Landscaper: [
+    'Paving',
+    'Patios',
+    'Driveways',
+    'Fencing',
+    'Decking',
+    'Artificial Grass',
+    'Turfing and Lawns',
+    'Garden Walls',
+    'Garden Design',
+  ],
+  'Painter and Decorator': ['Interior Decorating', 'Exterior Decorating', 'Wallpapering'],
   Plasterer: ['Venetian Plastering'],
+  'Window Fitter': ['Conservatories'],
 }
 
-export const ALL_SPECIALISMS: readonly string[] = Object.values(SPECIALISMS).flat()
+export const ALL_SPECIALISMS: readonly string[] = Array.from(new Set(Object.values(SPECIALISMS).flat()))
 
 // Everything a tradesperson can hold on their profile.
-export const ALL_TRADE_TERMS: readonly string[] = [...TRADE_TYPES, ...ALL_SPECIALISMS]
+export const ALL_TRADE_TERMS: readonly string[] = Array.from(new Set<string>([...TRADE_TYPES, ...ALL_SPECIALISMS]))
 
 export function parentTrade(specialism: string): TradeType | null {
+  // A term that is also a main trade (Fencing, Driveways) is its own trade, not a child
+  if ((TRADE_TYPES as readonly string[]).includes(specialism)) return null
   for (const [trade, list] of Object.entries(SPECIALISMS)) {
     if (list?.includes(specialism)) return trade as TradeType
   }
@@ -90,23 +102,31 @@ const WORK_NAMES: Record<string, string> = {
   Plasterer: 'plastering',
   Plumber: 'plumbing',
   Roofer: 'roofing',
+  Scaffolder: 'scaffolding',
   Tiler: 'tiling',
   'Tree Surgeon': 'tree surgery',
   'Window Fitter': 'window fitting',
-  'Extension Builder': 'extension building',
-  'Loft Conversion Specialist': 'loft conversion',
-  'Basement and Cellar Conversion Specialist': 'basement conversion',
-  'Conservatory Builder': 'conservatory',
+  Extensions: 'extension',
+  'Loft Conversions': 'loft conversion',
+  'Basement Conversions': 'basement conversion',
+  Conservatories: 'conservatory',
   Jetwashing: 'jetwashing',
   'Rubbish and Waste Clearance': 'waste clearance',
-  Tanking: 'tanking',
-  Unblocking: 'unblocking',
   LVT: 'LVT flooring',
   'Carpet Fitting': 'carpet fitting',
   Laminate: 'laminate flooring',
   'Wood Flooring': 'wood flooring',
   'Gutter Clearing': 'gutter clearing',
+  'Interior Decorating': 'interior decorating',
   'Exterior Decorating': 'exterior decorating',
+  Wallpapering: 'wallpapering',
+  Repointing: 'repointing',
+  Patios: 'patio',
+  Decking: 'decking',
+  'Artificial Grass': 'artificial grass',
+  'Turfing and Lawns': 'turfing',
+  'Garden Walls': 'garden wall',
+  'Garden Design': 'garden design',
   'Venetian Plastering': 'Venetian plastering',
 }
 

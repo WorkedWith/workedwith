@@ -2,14 +2,10 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getUserTier, isStandardOrAbove } from '@/lib/stripe/get-tier'
+import { getUserTier, isProTier } from '@/lib/stripe/get-tier'
+import { FEATURED_IMAGES_PER_JOB } from '@/lib/gallery-limits'
 import { moderateImage } from '@/lib/moderation/rekognition'
-import type { ModerationStatus, SubscriptionTier } from '@/types/database'
-
-const IMAGE_LIMITS: Partial<Record<SubscriptionTier, number>> = {
-  standard: 5,
-  pro: 10,
-}
+import type { ModerationStatus } from '@/types/database'
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const MAX_BYTES = 10 * 1024 * 1024
@@ -24,8 +20,8 @@ export async function uploadFeaturedImage(formData: FormData): Promise<UploadFea
   if (!user) return { success: false, error: 'You must be signed in.' }
 
   const tier = await getUserTier(user.id)
-  if (!isStandardOrAbove(tier)) {
-    return { success: false, error: 'Featured job images require a Standard or Pro subscription.' }
+  if (!isProTier(tier)) {
+    return { success: false, error: 'Photos linked to a job need a Pro plan.' }
   }
 
   const featuredJobId = formData.get('featuredJobId')
@@ -71,11 +67,10 @@ export async function uploadFeaturedImage(formData: FormData): Promise<UploadFea
     .select('id', { count: 'exact', head: true })
     .eq('featured_job_id', featuredJobId)
 
-  const limit = IMAGE_LIMITS[tier] ?? 5
-  if ((count ?? 0) >= limit) {
+  if ((count ?? 0) >= FEATURED_IMAGES_PER_JOB) {
     return {
       success: false,
-      error: `You have reached the ${tier === 'pro' ? 'Pro' : 'Standard'} limit of ${limit} images per featured job.`,
+      error: `You have reached the limit of ${FEATURED_IMAGES_PER_JOB} photos for this job.`,
     }
   }
 

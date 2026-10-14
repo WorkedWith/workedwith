@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getUserTier, isStandardOrAbove } from '@/lib/stripe/get-tier'
+import { getUserTier, isProTier } from '@/lib/stripe/get-tier'
+import { FEATURED_IMAGES_PER_JOB } from '@/lib/gallery-limits'
 import { FeaturedJobsClient } from './featured-jobs-client'
-import type { ModerationStatus, SubscriptionTier } from '@/types/database'
+import type { ModerationStatus } from '@/types/database'
 import { BackLink } from '@/components/back-link'
 
 export const metadata = { title: 'Featured jobs | WorkedWith' }
@@ -31,16 +32,13 @@ export type CompletedJobOption = {
   completed_at: string | null
 }
 
-const JOB_LIMITS: Partial<Record<SubscriptionTier, number>> = { standard: 3, pro: 5 }
-const IMAGE_LIMITS: Partial<Record<SubscriptionTier, number>> = { standard: 5, pro: 10 }
-
 export default async function FeaturedJobsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/sign-in')
 
   const tier = await getUserTier(user.id)
-  if (!isStandardOrAbove(tier)) redirect('/subscription')
+  if (!isProTier(tier)) redirect('/profile/gallery')
 
   const admin = createAdminClient()
 
@@ -109,30 +107,27 @@ export default async function FeaturedJobsPage() {
     completed_at: j.completed_at as string | null,
   }))
 
-  const jobLimit = JOB_LIMITS[tier] ?? 3
-  const imageLimit = IMAGE_LIMITS[tier] ?? 5
-  const atJobLimit = featuredJobs.length >= jobLimit
+  const imageLimit = FEATURED_IMAGES_PER_JOB
+  const usedJobIds = new Set(featuredJobs.map(j => j.job_id).filter((v): v is string => !!v))
+  const availableJobs = completedJobs.filter(j => !usedJobIds.has(j.id))
 
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <BackLink href="/profile" label="Back to profile" />
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-brand-navy">Featured jobs</h1>
+          <h1 className="text-2xl font-bold text-brand-navy">Photos from your confirmed jobs</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Showcase your best work with photos.{' '}
-            {tier === 'pro'
-              ? `Pro: up to ${jobLimit} featured jobs, ${imageLimit} images each.`
-              : `Standard: up to ${jobLimit} featured jobs, ${imageLimit} images each.`}
+            Pro members can add up to {imageLimit} photos to any job completed on WorkedWith. These show on your profile with a
+            &ldquo;confirmed job&rdquo; tick, because the client confirmed the job happened. Want general photos of your work instead?{' '}
+            <a href="/profile/gallery" className="font-semibold text-brand-navy underline">Go to your gallery</a>.
           </p>
         </div>
 
         <FeaturedJobsClient
           featuredJobs={featuredJobs}
-          completedJobs={completedJobs}
-          jobLimit={jobLimit}
+          completedJobs={availableJobs}
           imageLimit={imageLimit}
-          atJobLimit={atJobLimit}
           supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}
         />
       </div>

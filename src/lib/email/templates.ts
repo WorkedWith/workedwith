@@ -488,6 +488,19 @@ export function accountDeleted(): EmailContent {
 
 // ── Alerts to us ───────────────────────────────────────────────
 
+export function adminPhotoReported(p: { where: string; reason: string }): EmailContent {
+  return {
+    subject: 'Photo reported',
+    heading: 'Photo reported',
+    internal: true,
+    paragraphs: [
+      `A visitor reported a photo on a ${p.where}.`,
+      p.reason ? `Reason given: ${p.reason}` : 'No reason given.',
+    ],
+    button: { label: 'Review in admin', url: `${APP_URL}/admin/flags` },
+  }
+}
+
 export function adminIncorrectClaim(p: { reportedBy: string; inviteId: string; jobId: string }): EmailContent {
   return {
     subject: 'Incorrect claim reported',

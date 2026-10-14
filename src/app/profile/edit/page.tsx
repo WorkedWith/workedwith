@@ -60,7 +60,7 @@ export default async function EditProfilePage() {
         <h1 className="mb-2 text-2xl font-bold text-brand-navy">Edit your profile</h1>
         <p className="mb-6 text-sm text-gray-500">
           Also edit <a href="/profile/areas" className="font-semibold text-brand-navy underline">where you work</a> or add{' '}
-          <a href="/profile/featured-jobs" className="font-semibold text-brand-navy underline">photos of your work</a>.
+          <a href="/profile/gallery" className="font-semibold text-brand-navy underline">photos of your work</a>.
         </p>
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <ProfileForm

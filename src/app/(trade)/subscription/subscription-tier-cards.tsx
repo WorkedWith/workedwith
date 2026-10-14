@@ -37,7 +37,7 @@ export function SubscriptionTierCards({ currentTier }: Props) {
           name="Standard"
           price={period === 'monthly' ? '£9.99' : '£99.90'}
           priceSuffix={period === 'monthly' ? 'per month' : 'per year'}
-          description="Full client lookup, verified badge, and featured job images."
+          description="Full client lookup, verified badge, and a photo gallery."
           highlight={currentTier === 'standard'}
           isCurrent={currentTier === 'standard'}
           cta={

@@ -427,6 +427,26 @@ export interface FeaturedJobImage {
   created_at: string
 }
 
+export interface ProfileGalleryImage {
+  id: string
+  trade_profile_id: string
+  storage_path: string
+  caption: string | null
+  display_order: number
+  moderation_status: ModerationStatus
+  created_at: string
+}
+
+export interface PhotoReport {
+  id: string
+  gallery_image_id: string | null
+  featured_image_id: string | null
+  reporter_id: string | null
+  reason: string | null
+  status: 'open' | 'dismissed' | 'removed'
+  created_at: string
+}
+
 // ── Rate limit events ─────────────────────────────────────────
 
 export interface BoostEventRow {
@@ -613,6 +633,18 @@ export interface Database {
         Row: WithIndex<FeaturedJobImage>
         Insert: { featured_job_id: string; storage_path: string } & Partial<Omit<FeaturedJobImage, 'featured_job_id' | 'storage_path' | 'id' | 'created_at'>>
         Update: Partial<FeaturedJobImage>
+        Relationships: []
+      }
+      profile_gallery_images: {
+        Row: WithIndex<ProfileGalleryImage>
+        Insert: { id?: string; trade_profile_id: string; storage_path: string } & Partial<Omit<ProfileGalleryImage, 'trade_profile_id' | 'storage_path' | 'id' | 'created_at'>>
+        Update: Partial<ProfileGalleryImage>
+        Relationships: []
+      }
+      photo_reports: {
+        Row: WithIndex<PhotoReport>
+        Insert: Partial<Omit<PhotoReport, 'id' | 'created_at'>>
+        Update: Partial<PhotoReport>
         Relationships: []
       }
       pending_invites: {

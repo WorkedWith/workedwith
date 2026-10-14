@@ -143,7 +143,7 @@ export default function ForTradesPage() {
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
               <p className="text-lg font-bold text-brand-navy">Check before you commit</p>
               <p className="mt-2 text-sm leading-relaxed text-gray-600">
-                Look up a client by email or mobile number and see what other tradespeople have said about them. Pro members also see payment reliability and any red flags.
+                Look up a client by username, email or mobile number and see what other tradespeople have said about them. Standard and Pro members also see payment reliability and any red flags.
               </p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
@@ -177,7 +177,7 @@ export default function ForTradesPage() {
               <ul className="mt-6 space-y-4">
                 <BulletPoint text="Every review is linked to a job both sides confirmed, so no fake five stars" />
                 <BulletPoint text="Add past jobs and start with a full history on day one" />
-                <BulletPoint text="Go Pro to get a searchable profile and be found by clients in your area" />
+                <BulletPoint text="Appear in client search for the trades and areas you cover, on every plan, free included" />
               </ul>
               <a
                 href="/join/trade"
@@ -219,7 +219,7 @@ export default function ForTradesPage() {
                 <p className="mt-1 text-xs text-gray-400">Plumber, April 2026</p>
               </div>
               <p className="mt-5 text-sm text-gray-600 leading-relaxed">
-                Free accounts can look clients up too. Pro and Team add payment reliability and red flags.
+                Free accounts see a client&apos;s rating and review count. Standard and Pro show the full profile before you commit to a quote.
               </p>
             </div>
 

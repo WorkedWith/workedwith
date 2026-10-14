@@ -157,7 +157,7 @@ export default async function DashboardPage() {
                 href="/jobs/log/invite-trade"
                 className="flex min-h-[44px] items-center justify-center rounded-lg bg-brand-amber px-3 text-center text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors sm:px-4"
               >
-                + Invite a tradesperson
+                + Add a job
               </a>
               <a
                 href="/jobs/log/backdated"

@@ -46,6 +46,7 @@ export const EMAIL_SAMPLES: EmailSample[] = [
   { id: 'E28', group: 'Account', label: 'Payment failed', to: 'Trade', content: t.paymentFailed() },
   { id: 'N8', group: 'Account', label: 'NEW: Account deleted', to: 'Former user', content: t.accountDeleted() },
   { id: 'E26', group: 'Alerts to us', label: 'Incorrect claim reported', to: 'Admin', content: t.adminIncorrectClaim({ reportedBy: 'the inviting client', inviteId: 'abc123', jobId: 'def456' }) },
+  { id: 'E33', group: 'Alerts to us', label: 'Photo reported', to: 'Admin', content: t.adminPhotoReported({ where: 'profile gallery', reason: 'This is not their work' }) },
   { id: 'E27', group: 'Alerts to us', label: 'ID check waiting', to: 'Admin', content: t.adminIdSubmitted({ name: 'Raul Garcia', email: 'raul@example.com' }) },
   { id: 'E29', group: 'Seeded outreach', label: 'Day 0', to: 'Stranger', content: t.seededOutreach({ day: 'day0', ...seed }) },
   { id: 'E30', group: 'Seeded outreach', label: 'Day 3', to: 'Stranger', content: t.seededOutreach({ day: 'day3', ...seed }) },

@@ -2,17 +2,11 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getUserTier, isStandardOrAbove } from '@/lib/stripe/get-tier'
-import type { SubscriptionTier } from '@/types/database'
-
-const JOB_LIMITS: Partial<Record<SubscriptionTier, number>> = {
-  standard: 3,
-  pro: 5,
-}
+import { getUserTier, isProTier } from '@/lib/stripe/get-tier'
 
 export type CreateFeaturedJobInput = {
   title: string
-  job_id?: string
+  job_id: string
 }
 
 export type CreateFeaturedJobResult =
@@ -25,8 +19,8 @@ export async function createFeaturedJob(input: CreateFeaturedJobInput): Promise<
   if (!user) return { success: false, error: 'You must be signed in.' }
 
   const tier = await getUserTier(user.id)
-  if (!isStandardOrAbove(tier)) {
-    return { success: false, error: 'Featured jobs require a Standard or Pro subscription.' }
+  if (!isProTier(tier)) {
+    return { success: false, error: 'Photos linked to a job need a Pro plan.' }
   }
 
   const title = input.title.trim()
@@ -42,25 +36,30 @@ export async function createFeaturedJob(input: CreateFeaturedJobInput): Promise<
 
   if (!tradeProfile) return { success: false, error: 'Trade profile not found.' }
 
-  const { count } = await admin
-    .from('featured_jobs')
-    .select('id', { count: 'exact', head: true })
+  // The job must be one of this trade's completed jobs, and not already featured
+  const { data: job } = await admin
+    .from('jobs')
+    .select('id')
+    .eq('id', input.job_id)
     .eq('trade_profile_id', tradeProfile.id as string)
+    .eq('status', 'completed')
+    .maybeSingle()
+  if (!job) return { success: false, error: 'Please choose one of your completed jobs.' }
 
-  const limit = JOB_LIMITS[tier] ?? 3
-  if ((count ?? 0) >= limit) {
-    return {
-      success: false,
-      error: `You have reached the ${tier === 'pro' ? 'Pro' : 'Standard'} limit of ${limit} featured jobs.`,
-    }
-  }
+  const { data: already } = await admin
+    .from('featured_jobs')
+    .select('id')
+    .eq('trade_profile_id', tradeProfile.id as string)
+    .eq('job_id', input.job_id)
+    .maybeSingle()
+  if (already) return { success: false, error: 'This job already has photos. Delete the photos on that job first to start again.' }
 
   const { data: featuredJob, error: insertErr } = await admin
     .from('featured_jobs')
     .insert({
       trade_profile_id: tradeProfile.id as string,
       title,
-      job_id: input.job_id ?? null,
+      job_id: input.job_id,
     })
     .select('id')
     .single()

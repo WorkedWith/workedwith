@@ -56,7 +56,7 @@ export function FindForm({ defaultTrade = '', defaultPostcode = '' }: Props) {
         defaultValue={defaultPostcode}
         placeholder="Your postcode"
         autoComplete="postal-code"
-        className="h-12 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-base text-brand-navy placeholder-gray-400 sm:text-sm focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber uppercase"
+        className="h-12 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-base text-brand-navy placeholder-gray-400 sm:text-sm focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
       />
 
       <button

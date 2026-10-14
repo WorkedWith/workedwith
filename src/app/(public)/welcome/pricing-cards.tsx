@@ -15,13 +15,13 @@ const FREE_FEATURES = [
 const STANDARD_EXTRAS = [
   'Full client profile on lookup (payment reliability, red flag history, written review excerpts)',
   'Verified badge on your public profile',
-  'Featured job images (3 jobs, up to 5 images each)',
+  'Photo gallery on your profile (up to 5 photos)',
 ]
 
 const PRO_EXTRAS = [
   'Boosted Districts: 3 included, additional districts £10/month each. Top-of-search placement in chosen postcode districts (randomised within boosted band)',
   'Pro badge on your profile and in every search result where you appear',
-  'Extended featured job images (5 jobs, up to 10 images each)',
+  'Bigger photo gallery (up to 10 photos), plus up to 5 photos on every confirmed job',
   'Profile analytics (views and search appearances)',
   'Priority dispute resolution',
 ]

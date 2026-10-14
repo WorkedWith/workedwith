@@ -41,7 +41,7 @@ export function TradeSearchForm() {
           required
           placeholder="Your postcode"
           autoComplete="postal-code"
-          className="h-12 w-full rounded-lg border border-gray-200 px-3 text-base uppercase text-brand-navy placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber sm:text-sm"
+          className="h-12 w-full rounded-lg border border-gray-200 px-3 text-base text-brand-navy placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber sm:text-sm"
         />
         <button
           type="submit"

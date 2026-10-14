@@ -20,10 +20,10 @@ const FEATURES: { label: string; free: boolean; standard: boolean; pro: boolean 
   { label: 'Basic client lookup',                 free: true,  standard: true,  pro: true  },
   { label: 'Full client reputation lookup',       free: false, standard: true,  pro: true  },
   { label: 'Verified badge on profile',           free: false, standard: true,  pro: true  },
-  { label: 'Featured job images',                 free: false, standard: true,  pro: true  },
+  { label: 'Photo gallery (5 photos Standard, 10 Pro)', free: false, standard: true,  pro: true  },
   { label: 'Boosted Districts: 3 included, additional districts £10/month each', free: false, standard: false, pro: true },
   { label: 'Pro badge on profile and in search',  free: false, standard: false, pro: true  },
-  { label: 'Extended featured job images',        free: false, standard: false, pro: true  },
+  { label: 'Photos on each confirmed job (5 per job)', free: false, standard: false, pro: true  },
   { label: 'Profile analytics',                   free: false, standard: false, pro: true  },
   { label: 'Priority dispute resolution',         free: false, standard: false, pro: true  },
 ]

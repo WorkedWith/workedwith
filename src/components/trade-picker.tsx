@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { TRADE_TYPES, SPECIALISMS } from '@/lib/trade-types'
 
 type Props = {
@@ -28,7 +29,10 @@ const ALL_ROWS = buildRows()
 export function TradePicker({ value, onChange, id, placeholder = 'Choose a trade' }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [mounted, setMounted] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (!open) return
@@ -73,7 +77,7 @@ export function TradePicker({ value, onChange, id, placeholder = 'Choose a trade
         <span aria-hidden className="text-gray-400">▾</span>
       </button>
 
-      {open && (
+      {open && mounted && createPortal(
         <div
           role="dialog"
           aria-modal="true"
@@ -114,7 +118,7 @@ export function TradePicker({ value, onChange, id, placeholder = 'Choose a trade
                 const showLetter = !q && letter && letter !== lastLetter
                 if (letter) lastLetter = letter
                 return (
-                  <li key={r.label}>
+                  <li key={`${r.parent ?? ''}-${r.label}`}>
                     {showLetter && (
                       <div className="sticky top-0 bg-gray-50 px-4 py-1 text-xs font-bold text-gray-400">{letter}</div>
                     )}
@@ -148,7 +152,8 @@ export function TradePicker({ value, onChange, id, placeholder = 'Choose a trade
               )}
             </ul>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )

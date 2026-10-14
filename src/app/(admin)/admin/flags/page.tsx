@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Review, User, Job, FeaturedJobImage, FeaturedJob, TradeProfile } from '@/types/database'
 import { ImageModerationButtons } from './image-moderation-buttons'
+import { PhotoModeration } from './photo-moderation'
 
 export const metadata = { title: 'Flags — WorkedWith Admin' }
 
@@ -101,6 +102,8 @@ export default async function FlagsPage() {
 
   return (
     <div className="max-w-3xl space-y-10">
+
+      <PhotoModeration />
 
       {/* ── Pending featured job images ─────────────────────── */}
       <section>

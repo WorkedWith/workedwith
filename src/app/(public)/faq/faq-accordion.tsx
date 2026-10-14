@@ -29,7 +29,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'What do the paid plans include?',
-    a: 'Standard is £9.99 per month. It unlocks the full client profile on lookup, including payment reliability scores, red flag history and written review excerpts from other tradespeople, plus a verified badge and featured job photos. Pro is £39.99 per month. It adds Boosted Districts for top of search placement (3 included, extra districts £10 per month each), a Pro badge, more featured photos, profile analytics and priority dispute resolution.',
+    a: 'Standard is £9.99 per month. It unlocks the full client profile on lookup, including payment reliability scores, red flag history and written review excerpts from other tradespeople, plus a verified badge and a gallery of up to 5 photos of your work. Pro is £39.99 per month. It adds Boosted Districts for top of search placement (3 included, extra districts £10 per month each), a Pro badge, a gallery of up to 10 photos plus up to 5 photos on each confirmed job, profile analytics and priority dispute resolution.',
   },
   {
     q: 'What happens if someone leaves an unfair review?',

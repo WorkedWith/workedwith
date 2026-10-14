@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { InviteTradeForm } from './invite-trade-form'
 
-export const metadata = { title: 'Invite a tradesperson | WorkedWith' }
+export const metadata = { title: 'Add a job | WorkedWith' }
 
 export default async function InviteTradePage() {
   const supabase = await createClient()
@@ -31,10 +31,10 @@ export default async function InviteTradePage() {
     <main className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">Invite a tradesperson</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Add a job</h1>
           <p className="mt-2 text-sm text-white/60">
-            Log a job with a tradesperson who isn&apos;t on WorkedWith yet. They&apos;ll receive an invite to
-            verify and claim it. Nothing is published until they do.
+            Add a job you have with a tradesperson who isn&apos;t on WorkedWith yet. We&apos;ll send them an invite to
+            join and confirm it. Nothing is published until they do.
           </p>
         </div>
         <InviteTradeForm />

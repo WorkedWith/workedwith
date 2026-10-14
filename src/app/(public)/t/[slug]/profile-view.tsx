@@ -9,6 +9,9 @@ import type { VerificationTier, SeededProfile } from '@/types/database'
 import { CopyUrlButton } from './copy-url-button'
 import { getFeaturedJobs } from '@/actions/featured-jobs/get-featured-jobs'
 import { FeaturedWorkSection } from '@/components/featured-work-section'
+import { GallerySection } from '@/components/gallery-section'
+import { OwnerPhotosPanel } from '@/components/owner-photos-panel'
+import { getGalleryImages } from '@/actions/gallery/get-gallery-images'
 
 function SeededProfilePage({ profile, signedIn }: { profile: SeededProfile; slug: string; signedIn: boolean }) {
   return (
@@ -173,7 +176,9 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
     { data: tradeUser },
     { data: reviews },
     { data: reviewerActivity },
-    featuredJobs,
+    featuredJobsAll,
+    galleryImages,
+    { count: ownGalleryCount },
     { data: { user: currentUser } },
   ] = await Promise.all([
     admin.from('users').select('*').eq('id', userId).single(),
@@ -192,8 +197,18 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
       .eq('is_visible', true)
       .limit(1),
     getFeaturedJobs(tradeProfileId),
+    getGalleryImages(tradeProfileId, tradeProfile.subscription_tier as string | null),
+    admin
+      .from('profile_gallery_images')
+      .select('id', { count: 'exact', head: true })
+      .eq('trade_profile_id', tradeProfileId)
+      .neq('moderation_status', 'rejected'),
     supabase.auth.getUser(),
   ])
+
+  // Photos linked to confirmed jobs are a Pro feature; hidden, not deleted, if the plan lapses
+  const featuredJobs = (tradeProfile.subscription_tier as string) === 'pro' ? featuredJobsAll : []
+  const isOwner = currentUser?.id === userId
 
   // Fire-and-forget view log
   if (!preview) {
@@ -529,6 +544,10 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
               </div>
             </section>
           )}
+
+          {/* ── Photos ───────────────────────────────────────── */}
+          {isOwner && <OwnerPhotosPanel tier={tradeProfile.subscription_tier as string | null} galleryCount={ownGalleryCount ?? 0} />}
+          <GallerySection images={galleryImages} supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''} />
 
           {/* ── Featured work ────────────────────────────────── */}
           {featuredJobs.length > 0 && (

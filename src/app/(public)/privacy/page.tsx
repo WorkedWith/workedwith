@@ -42,7 +42,7 @@ export default async function PrivacyPage() {
           </Section>
 
           <Section n={6} title="Who we share data with">
-            <p>Supabase: database and authentication. Resend: transactional email. Twilio: SMS verification. Stripe: subscription billing. AWS Rekognition: automated image moderation for featured job images. Companies House API: business verification. We do not sell your data. We do not use your data for advertising.</p>
+            <p>Supabase: database and authentication. Resend: transactional email. Twilio: SMS verification. Stripe: subscription billing. AWS Rekognition: automated image moderation for profile photos. Companies House API: business verification. We do not sell your data. We do not use your data for advertising.</p>
           </Section>
 
           <Section n={7} title="Data retention">

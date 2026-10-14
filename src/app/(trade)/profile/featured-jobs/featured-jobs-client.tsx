@@ -17,9 +17,7 @@ type PendingFile = {
 type Props = {
   featuredJobs: FeaturedJobOwner[]
   completedJobs: CompletedJobOption[]
-  jobLimit: number
   imageLimit: number
-  atJobLimit: boolean
   supabaseUrl: string
 }
 
@@ -44,9 +42,7 @@ const STATUS_CLASSES: Record<string, string> = {
 export function FeaturedJobsClient({
   featuredJobs: initialJobs,
   completedJobs,
-  jobLimit,
   imageLimit,
-  atJobLimit,
   supabaseUrl,
 }: Props) {
   const [jobs, setJobs] = useState<FeaturedJobOwner[]>(initialJobs)
@@ -118,6 +114,7 @@ export function FeaturedJobsClient({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) { setFormError('Please enter a title.'); return }
+    if (!linkedJobId) { setFormError('Please choose the confirmed job these photos are from.'); return }
     setFormError(null)
     setUploadedCount(0)
 
@@ -125,7 +122,7 @@ export function FeaturedJobsClient({
       // 1. Create the featured job row
       const createResult = await createFeaturedJob({
         title: title.trim(),
-        job_id: linkedJobId || undefined,
+        job_id: linkedJobId,
       })
 
       if (!createResult.success) {
@@ -207,19 +204,16 @@ export function FeaturedJobsClient({
       {/* Add button / limit notice */}
       {!showForm && (
         <div>
-          {atJobLimit ? (
+          {completedJobs.length === 0 ? (
             <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-500">
-              You have reached the limit of {jobLimit} featured jobs for your plan.
-              <a href="/subscription" className="ml-1 font-medium text-brand-amber hover:underline">
-                Upgrade to add more →
-              </a>
+              No completed jobs without photos yet. Once a job is marked complete it can be added here.
             </div>
           ) : (
             <button
               onClick={() => { setSuccess(false); setShowForm(true) }}
               className="rounded-lg bg-brand-amber px-5 py-2.5 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
             >
-              + Add featured job
+              + Add photos to a job
             </button>
           )}
         </div>
@@ -231,7 +225,7 @@ export function FeaturedJobsClient({
           onSubmit={handleSubmit}
           className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-5"
         >
-          <h2 className="text-lg font-semibold text-brand-navy">New featured job</h2>
+          <h2 className="text-lg font-semibold text-brand-navy">Photos for a confirmed job</h2>
 
           {/* Title */}
           <div>
@@ -249,11 +243,11 @@ export function FeaturedJobsClient({
             />
           </div>
 
-          {/* Optional linked job */}
+          {/* Linked job */}
           {completedJobs.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Link to a confirmed job <span className="text-gray-400 font-normal">(optional)</span>
+                Confirmed job <span className="text-red-500">*</span>
               </label>
               <select
                 value={linkedJobId}
@@ -261,7 +255,7 @@ export function FeaturedJobsClient({
                 disabled={isPending}
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber disabled:opacity-50"
               >
-                <option value="">No linked job</option>
+                <option value="">Choose a job</option>
                 {completedJobs.map(j => (
                   <option key={j.id} value={j.id}>
                     {workTitle(j.job_type)}, {j.postcode}
