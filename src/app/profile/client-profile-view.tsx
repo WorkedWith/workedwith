@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getOutcomeLabels } from '@/lib/job-outcome'
 import { getJobHistory } from '@/actions/get-job-history'
 import { Avatar } from '@/components/avatar'
 import { JobHistory } from '@/components/job-history'
@@ -54,6 +55,7 @@ export async function ClientProfileView({ userId, fullName, clientProfile, photo
     .eq('is_visible', true)
     .order('submitted_at', { ascending: false })
   const reviews = (rawReviews ?? []) as unknown as Review[]
+  const outcomeLabels = await getOutcomeLabels(admin, reviews.map(r => r.job_id))
 
   const reviewerIds = Array.from(new Set(reviews.map(r => r.reviewer_id)))
   const { data: rawTrades } = reviewerIds.length
@@ -168,7 +170,7 @@ export async function ClientProfileView({ userId, fullName, clientProfile, photo
                     <p className="mt-2 text-sm leading-relaxed text-gray-700">{r.written_review}</p>
                   )}
                   <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
-                    <span>{tradeNames.get(r.reviewer_id) ?? 'A tradesperson'} · Confirmed by both sides</span>
+                    <span>{tradeNames.get(r.reviewer_id) ?? 'A tradesperson'} · Confirmed by both sides{outcomeLabels.get(r.job_id) ? ` · ${outcomeLabels.get(r.job_id)}` : ''}</span>
                     {r.dispute_status && r.dispute_status !== 'none' ? (
                       <span className="font-semibold text-amber-700">Dispute raised</span>
                     ) : Date.now() - new Date(r.submitted_at).getTime() > 14 * 24 * 60 * 60 * 1000 ? (

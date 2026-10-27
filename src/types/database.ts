@@ -58,6 +58,8 @@ export interface TradeProfile {
   total_jobs: number
   confirmation_counted: number
   confirmation_confirmed: number
+  hired_again_count: number
+  ended_early_count: number
   created_at: string
 }
 
@@ -80,6 +82,7 @@ export interface ClientProfile {
   total_jobs: number
   confirmation_counted: number
   confirmation_confirmed: number
+  ended_early_count: number
   created_at: string
 }
 
@@ -147,6 +150,7 @@ export type JobStatus =
   | 'completed'
   | 'disputed'
   | 'cancelled'
+  | 'ended_early'
 
 export type JobInitiatedBy = 'trade' | 'client'
 
@@ -172,6 +176,10 @@ export interface Job {
   logged_from_user_agent: string | null
   confirmed_from_ip: string | null
   confirmed_from_user_agent: string | null
+  ended_early_at: string | null
+  outcome_disputed: boolean
+  outcome_disputed_at: string | null
+  last_stale_prompt_at: string | null
   created_at: string
   updated_at: string
 }
@@ -253,6 +261,25 @@ export interface JobEvidenceFile {
   storage_path: string
   file_type: 'image' | 'pdf'
   evidence_type: EvidenceType
+  created_at: string
+}
+
+export type InsuranceStatus = 'pending' | 'approved' | 'rejected' | 'expired' | 'replaced'
+
+export interface TradeInsurance {
+  id: string
+  trade_id: string
+  insurer: string
+  cover_amount_gbp: number
+  expires_on: string
+  storage_path: string | null
+  status: InsuranceStatus
+  reject_reason: string | null
+  reviewed_by: string | null
+  reviewed_at: string | null
+  reminded_30_at: string | null
+  reminded_7_at: string | null
+  files_deleted_at: string | null
   created_at: string
 }
 
@@ -628,13 +655,13 @@ export interface Database {
       }
       trade_profiles: {
         Row: WithIndex<TradeProfile>
-        Insert: Omit<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
+        Insert: Omit<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
         Update: Partial<TradeProfile>
         Relationships: []
       }
       client_profiles: {
         Row: WithIndex<ClientProfile>
-        Insert: Omit<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'> & Partial<Pick<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'>>
+        Insert: Omit<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'ended_early_count' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'> & Partial<Pick<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'ended_early_count' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'>>
         Update: Partial<ClientProfile>
         Relationships: []
       }
@@ -777,6 +804,24 @@ export interface Database {
         Update: Partial<JobEvidenceFile>
         Relationships: []
       }
+      category_rating_averages: {
+        Row: WithIndex<{ trade_type: string; avg_rating: number; review_count: number; updated_at: string }>
+        Insert: { trade_type: string; avg_rating: number } & Partial<{ review_count: number }>
+        Update: Partial<{ avg_rating: number; review_count: number }>
+        Relationships: []
+      }
+      job_early_end_details: {
+        Row: WithIndex<{ job_id: string; ended_by: string | null; note: string | null; created_at: string }>
+        Insert: { job_id: string } & Partial<{ ended_by: string | null; note: string | null }>
+        Update: Partial<{ ended_by: string | null; note: string | null }>
+        Relationships: []
+      }
+      trade_insurance: {
+        Row: WithIndex<TradeInsurance>
+        Insert: { trade_id: string; insurer: string; cover_amount_gbp: number; expires_on: string } & Partial<Omit<TradeInsurance, 'trade_id' | 'insurer' | 'cover_amount_gbp' | 'expires_on' | 'id' | 'created_at'>>
+        Update: Partial<TradeInsurance>
+        Relationships: []
+      }
       tier_grants: {
         Row: WithIndex<TierGrant>
         Insert: { user_id: string; tier: TierGrantTier; ends_at: string } & Partial<Omit<TierGrant, 'user_id' | 'tier' | 'ends_at' | 'id' | 'created_at' | 'updated_at'>>
@@ -842,6 +887,9 @@ export interface Database {
     Views: { [_ in never]: never }
     Functions: {
       refresh_confirmation_stats: { Args: { p_user: string }; Returns: undefined }
+      refresh_category_averages: { Args: Record<string, never>; Returns: undefined }
+      refresh_ended_early: { Args: { p_trade: string | null; p_client: string | null }; Returns: undefined }
+      refresh_hired_again: { Args: { p_trade: string }; Returns: undefined }
       refresh_all_confirmation_stats: { Args: Record<string, never>; Returns: undefined }
     }
   }

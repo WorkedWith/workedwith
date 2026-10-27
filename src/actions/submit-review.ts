@@ -89,7 +89,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   // Fetch job
   const { data: job } = await admin.from('jobs').select('*').eq('id', input.job_id).maybeSingle()
   if (!job) return { success: false, error: 'Job not found.' }
-  if (job.status !== 'completed') return { success: false, error: 'Reviews can only be submitted for completed jobs.' }
+  if (job.status !== 'completed' && job.status !== 'ended_early') return { success: false, error: 'Reviews can only be submitted for completed or ended jobs.' }
 
   // Fetch review window
   const { data: reviewWindow } = await admin

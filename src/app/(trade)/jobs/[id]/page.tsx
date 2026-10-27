@@ -25,6 +25,7 @@ const STATUS_LABELS: Record<JobStatus, string> = {
   completed:           'Completed',
   disputed:            'Disputed',
   cancelled:           'Cancelled',
+  ended_early:         'Ended early',
 }
 
 const STATUS_COLOURS: Record<JobStatus, string> = {
@@ -33,6 +34,7 @@ const STATUS_COLOURS: Record<JobStatus, string> = {
   completed:           'bg-blue-100 text-blue-700',
   disputed:            'bg-red-100 text-red-700',
   cancelled:           'bg-gray-100 text-gray-500',
+  ended_early:         'bg-amber-100 text-amber-700',
 }
 
 // ── Page ──────────────────────────────────────────────────────
@@ -219,6 +221,12 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           </form>
         )}
 
+        {status === 'active' && (
+          <p className="text-center text-sm">
+            <a href={`/jobs/${job.id}/status`} className="font-medium text-brand-navy underline">This job ended early</a>
+          </p>
+        )}
+
         {/* Review you received */}
         {receivedReview && (
           <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
@@ -258,7 +266,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
         )}
 
         {/* Leave review CTA */}
-        {status === 'completed' && reviewWindow && !reviewWindow.trade_review_submitted &&
+        {(status === 'completed' || status === 'ended_early') && reviewWindow && !reviewWindow.trade_review_submitted &&
           (!reviewWindow.window_closes_at || new Date(reviewWindow.window_closes_at) > new Date()) && (
           <a
             href={`/jobs/${job.id}/review`}

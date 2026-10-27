@@ -1,3 +1,5 @@
+import { getActiveInsurance, coverLabel, monthYear, INSURANCE_TOOLTIP } from '@/lib/insurance'
+import { getOutcomeLabels, endedEarlyLabel } from '@/lib/job-outcome'
 import { confirmationLabel, CONFIRMATION_TOOLTIP_TRADE } from '@/lib/request-outcomes'
 import { getEffectiveTier } from '@/lib/tier'
 import { SiteHeader } from '@/components/site-header'
@@ -173,6 +175,7 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
 
   const tradeProfileId = tradeProfile.id as string
 
+  const hiredAgain = (tradeProfile.hired_again_count as number | null) ?? 0
   const confLabel = confirmationLabel(tradeProfile.confirmation_counted as number | null, tradeProfile.confirmation_confirmed as number | null)
 
   // Plan used for features: paid subscription or an active admin grant, whichever is higher
@@ -232,6 +235,9 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
   const verTier = tradeUser.verification_tier as VerificationTier
   const displayName = (tradeProfile.company_name as string | null) ?? tradeUser.full_name as string
   const reviewList = reviews ?? []
+  const outcomeLabels = await getOutcomeLabels(admin, reviewList.map(r => r.job_id as string))
+  const insurance = (await getActiveInsurance(admin, [tradeProfileId])).get(tradeProfileId) ?? null
+  const endedLabel = endedEarlyLabel(tradeProfile.ended_early_count as number | null, tradeProfile.total_jobs as number | null)
   const reviewsClients = (reviewerActivity?.length ?? 0) > 0
   const profileUrl = `${APP_URL}/t/${slug}`
   // Contact details are only sent to signed in viewers
@@ -377,14 +383,30 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                 </p>
               </div>
             )}
-            {((verTier === 'phone_verified' || verTier === 'fully_verified') || effTier === 'pro' || effTier === 'standard' || confLabel) && (
+            {((verTier === 'phone_verified' || verTier === 'fully_verified') || effTier === 'pro' || effTier === 'standard' || confLabel || hiredAgain > 0 || endedLabel || insurance) && (
               <ul className="mt-4 space-y-2.5 border-t border-gray-100 pt-4">
                 {(verTier === 'phone_verified' || verTier === 'fully_verified') && (
                   <TrustTick>Phone number checked</TrustTick>
                 )}
                 {verTier === 'fully_verified' && <TrustTick title="WorkedWith has checked their photo ID and a live selfie.">ID verified</TrustTick>}
+                {insurance && (
+                  <TrustTick title={INSURANCE_TOOLTIP}>
+                    Insured to {coverLabel(insurance.cover_amount_gbp)} until {monthYear(insurance.expires_on)}
+                  </TrustTick>
+                )}
                 {effTier === 'pro' && <TrustTick amber title="On a WorkedWith Pro plan.">Pro member</TrustTick>}
                 {effTier === 'standard' && <TrustTick amber title="On a WorkedWith Standard plan.">Member</TrustTick>}
+                {hiredAgain > 0 && (
+                  <TrustTick title="Clients who have hired this trade for more than one job, at least two weeks apart.">
+                    Hired again by {hiredAgain} client{hiredAgain === 1 ? '' : 's'}
+                  </TrustTick>
+                )}
+                {endedLabel && (
+                  <li title="Jobs that one side marked as ended early, out of all confirmed jobs." className="flex items-center gap-2.5 text-sm font-medium text-brand-navy">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-[11px] font-bold text-gray-600" aria-hidden>!</span>
+                    {endedLabel}
+                  </li>
+                )}
                 {confLabel && (
                   <li title={CONFIRMATION_TOOLTIP_TRADE} className="flex items-center gap-2.5 text-sm font-medium text-brand-navy">
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-[11px] font-bold text-gray-600" aria-hidden>↻</span>
@@ -507,6 +529,11 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                         <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
                           Confirmed client
                         </span>
+                        {outcomeLabels.get(review.job_id as string) && (
+                          <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+                            {outcomeLabels.get(review.job_id as string)}
+                          </span>
+                        )}
                         {isBackdated && (
                           <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
                             Confirmed past job

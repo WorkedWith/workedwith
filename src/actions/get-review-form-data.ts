@@ -37,7 +37,7 @@ export async function getReviewFormData(jobId: string): Promise<ReviewFormData> 
 
   const { data: job } = await admin.from('jobs').select('*').eq('id', jobId).maybeSingle()
   if (!job) return { status: 'not_participant' }
-  if (job.status !== 'completed') return { status: 'job_not_complete' }
+  if (job.status !== 'completed' && job.status !== 'ended_early') return { status: 'job_not_complete' }
 
   const { data: reviewWindow } = await admin
     .from('review_windows')

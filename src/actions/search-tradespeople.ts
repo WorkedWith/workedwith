@@ -1,7 +1,9 @@
 'use server'
 
 import { confirmationLabel } from '@/lib/request-outcomes'
+import { getActiveInsurance } from '@/lib/insurance'
 import { getEffectiveTiers } from '@/lib/tier'
+import { categoryMean, weightedScore, type CategoryAverages } from '@/lib/ranking/weighted'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { SPECIALISMS } from '@/lib/trade-types'
 import type { SubscriptionTier, VerificationTier, SeededProfile } from '@/types/database'
@@ -35,6 +37,8 @@ export type TradesearchResult = {
   subscription_tier: SubscriptionTier
   verification_tier: VerificationTier
   confirmation_label: string | null
+  hired_again_count: number
+  insured: boolean
   is_seeded?: false
 }
 
@@ -102,7 +106,7 @@ export async function searchTradespeople(
   // subscription only affects boosted placement, not whether a trade is listed.
   const { data: rawProfiles } = await admin
     .from('trade_profiles')
-    .select('id, user_id, trade_types, company_name, operating_areas, boosted_districts, public_slug, average_rating, total_reviews, total_jobs, subscription_tier, confirmation_counted, confirmation_confirmed')
+    .select('id, user_id, trade_types, company_name, operating_areas, boosted_districts, public_slug, average_rating, total_reviews, total_jobs, subscription_tier, confirmation_counted, confirmation_confirmed, hired_again_count')
     .contains('trade_types', [tradeType])
     .contains('operating_areas', [district])
 
@@ -124,6 +128,8 @@ export async function searchTradespeople(
       (rawUsers ?? []).map(u => [u.id as string, u])
     )
 
+    const insuredIds = new Set((await getActiveInsurance(admin, rawProfiles.map(p => p.id as string))).keys())
+
     for (const profile of rawProfiles) {
       const user = userMap.get(profile.user_id as string)
       if (!user) continue
@@ -142,16 +148,45 @@ export async function searchTradespeople(
         total_jobs: (profile.total_jobs as number) ?? 0,
         subscription_tier: effectiveTiers.get(profile.user_id as string) ?? 'free',
         verification_tier: user.verification_tier as VerificationTier,
+        hired_again_count: (profile.hired_again_count as number | null) ?? 0,
+        insured: insuredIds.has(profile.id as string),
         confirmation_label: confirmationLabel(profile.confirmation_counted as number | null, profile.confirmation_confirmed as number | null),
       })
     }
 
-    // Two-band ranking: boosted-Pro first, then everyone else (both shuffled)
+    // Two bands. Boosted Pro first, rotated at random. Everyone else ranked by a confidence
+    // weighted score (never shown), so a couple of friendly reviews do not beat a long record.
     const isBoostedHere = (r: TradesearchResult) =>
       r.subscription_tier === 'pro' && r.boosted_districts.includes(district)
 
+    const { data: rawAverages } = await admin.from('category_rating_averages').select('trade_type, avg_rating, review_count')
+    const averages: CategoryAverages = new Map(
+      ((rawAverages ?? []) as unknown as { trade_type: string; avg_rating: number; review_count: number }[])
+        .map(a => [a.trade_type, { avg: Number(a.avg_rating), count: a.review_count }]),
+    )
+    const m = categoryMean(averages, tradeType)
+
+    const { data: rawJobs } = await admin
+      .from('jobs')
+      .select('trade_profile_id, confirmed_at')
+      .in('trade_profile_id', realResults.map(r => r.id))
+      .in('status', ['active', 'completed', 'disputed'])
+      .not('confirmed_at', 'is', null)
+      .order('confirmed_at', { ascending: false })
+      .limit(2000)
+    const latestJob = new Map<string, number>()
+    for (const j of (rawJobs ?? []) as unknown as { trade_profile_id: string; confirmed_at: string }[]) {
+      if (!latestJob.has(j.trade_profile_id)) latestJob.set(j.trade_profile_id, new Date(j.confirmed_at).getTime())
+    }
+
+    const score = (r: TradesearchResult) => (r.total_reviews > 0 ? weightedScore(r.average_rating, r.total_reviews, m) : m)
+    const standardResults = realResults
+      .filter(r => !isBoostedHere(r))
+      .sort((a, b) =>
+        score(b) - score(a) ||
+        b.total_jobs - a.total_jobs ||
+        (latestJob.get(b.id) ?? 0) - (latestJob.get(a.id) ?? 0))
     const boostedResults = shuffleArray(realResults.filter(isBoostedHere))
-    const standardResults = shuffleArray(realResults.filter(r => !isBoostedHere(r)))
     realResults = [...boostedResults, ...standardResults].slice(0, 20)
   }
 

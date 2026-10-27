@@ -38,6 +38,7 @@ const STATUS_LABELS: Record<string, string> = {
   completed: 'Completed',
   disputed: 'Disputed',
   cancelled: 'Cancelled',
+  ended_early: 'Ended early',
 }
 
 export function JobDetailModal({ job, onClose }: Props) {
@@ -140,6 +141,15 @@ export function JobDetailModal({ job, onClose }: Props) {
                   This job is under way. {job.other_party.name} marks it complete when the work is done, then you can both leave a review.
                 </p>
               </div>
+            )}
+
+            {(job.status === 'active' || job.status === 'ended_early') && (
+              <a
+                href={`/jobs/${job.id}/status`}
+                className="block text-sm font-medium text-brand-navy underline"
+              >
+                {job.status === 'active' ? 'This job ended early' : 'See what happened'}
+              </a>
             )}
 
             {/* Trade profile link — shown to clients viewing a trade */}

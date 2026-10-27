@@ -254,6 +254,16 @@ function ResultCard({ result }: { result: TradesearchResult }) {
           <span className="text-sm text-gray-400">📍 {formatAreas(result.operating_areas)}</span>
         )}
       </div>
+      {result.insured && (
+        <p className="mt-2 text-xs font-medium text-green-700" title="WorkedWith checked this certificate when it was uploaded. For large jobs, it's worth asking to see it yourself.">
+          ✓ Insured
+        </p>
+      )}
+      {result.hired_again_count > 0 && (
+        <p className="mt-2 text-xs font-medium text-brand-navy">
+          Hired again by {result.hired_again_count} client{result.hired_again_count === 1 ? '' : 's'}
+        </p>
+      )}
       {result.confirmation_label && (
         <p className="mt-2 text-xs text-gray-500" title="How often this trade confirms jobs other people log with them, over the last 2 years.">
           {result.confirmation_label}

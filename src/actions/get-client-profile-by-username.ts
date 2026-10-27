@@ -1,5 +1,7 @@
 'use server'
 
+import { getOutcomeLabels, endedEarlyLabel } from '@/lib/job-outcome'
+
 import { confirmationLabel } from '@/lib/request-outcomes'
 import { createHash } from 'crypto'
 import { headers } from 'next/headers'
@@ -25,6 +27,7 @@ type ClientProfileRow = {
   scope_clarity_score: number
   red_flag_count: number
   confirmation_label: string | null
+  ended_early_label: string | null
 }
 
 export async function getClientProfileByIdentifier(rawInput: string): Promise<ClientProfileResult> {
@@ -102,7 +105,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
       admin.from('users').select('created_at, verification_tier').eq('id', foundUserId).single(),
       admin
         .from('client_profiles')
-        .select('id, user_id, display_name, company_name, client_type, average_rating, total_reviews, payment_reliability_score, communication_score, scope_clarity_score, red_flag_count, confirmation_counted, confirmation_confirmed')
+        .select('id, user_id, display_name, company_name, client_type, average_rating, total_reviews, payment_reliability_score, communication_score, scope_clarity_score, red_flag_count, confirmation_counted, confirmation_confirmed, ended_early_count, total_jobs')
         .eq('user_id', foundUserId)
         .maybeSingle(),
     ])
@@ -130,6 +133,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
         scope_clarity_score: cp.scope_clarity_score as number,
         red_flag_count: cp.red_flag_count as number,
         confirmation_label: confirmationLabel(cp.confirmation_counted as number | null, cp.confirmation_confirmed as number | null),
+        ended_early_label: endedEarlyLabel(cp.ended_early_count as number | null, cp.total_jobs as number | null),
       }
     }
   }
@@ -159,13 +163,14 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
       verification_tier: verTier,
       member_since: foundUserRecord.created_at,
       confirmation_label: clientProfile.confirmation_label,
+      ended_early_label: clientProfile.ended_early_label,
     }
   }
 
   // Standard / Pro: full data including last 5 written reviews
   const { data: reviews } = await admin
     .from('reviews')
-    .select('reviewer_id, overall_rating, written_review, submitted_at')
+    .select('reviewer_id, job_id, overall_rating, written_review, submitted_at')
     .eq('reviewee_id', foundUserId)
     .eq('reviewee_type', 'client')
     .eq('is_visible', true)
@@ -174,6 +179,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
 
   const recentReviews = reviews ?? []
   const reviewerIds = recentReviews.map(r => r.reviewer_id as string)
+  const outcomeLabels = await getOutcomeLabels(admin, recentReviews.map(r => r.job_id as string))
   const tradeTypeMap: Record<string, string> = {}
 
   if (reviewerIds.length > 0) {
@@ -200,7 +206,9 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
     scope_clarity_score: clientProfile.scope_clarity_score,
     red_flag_count: clientProfile.red_flag_count,
     confirmation_label: clientProfile.confirmation_label,
+    ended_early_label: clientProfile.ended_early_label,
     recent_reviews: recentReviews.map(r => ({
+      outcome_label: outcomeLabels.get(r.job_id as string) ?? null,
       overall_rating: r.overall_rating as number | null,
       written_review: r.written_review as string | null,
       submitted_at: r.submitted_at as string,

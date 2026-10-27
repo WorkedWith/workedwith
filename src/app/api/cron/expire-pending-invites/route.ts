@@ -1,6 +1,10 @@
 import { recordRequestOutcome, findRecipientUserId } from '@/lib/request-outcomes'
 import { INTEGRITY } from '@/lib/integrity/config'
 import { runGrantMaintenance } from '@/lib/grants'
+import { insuranceExpiring } from '@/lib/email/templates'
+import { loadJobParties } from '@/lib/job-parties'
+import { jobStillGoing as jobStillGoingEmail } from '@/lib/email/templates'
+import { STALE_PROMPT_DAYS } from '@/lib/ended-early'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendSeededOutreach, SEEDED_FOLLOW_UPS, SEEDED_LIFETIME_DAYS, type OutreachDay } from '@/lib/seeded-outreach'
@@ -295,10 +299,82 @@ export async function GET(request: Request) {
     results.evidenceDraftsCleared = drafts?.length ?? 0
   }
 
+  // ── 6. Jobs open for 90 days: ask both sides where they are ──
+  {
+    const cutoff = new Date(Date.now() - STALE_PROMPT_DAYS * 86_400_000).toISOString()
+    const { data: stale } = await admin
+      .from('jobs')
+      .select('id, last_stale_prompt_at')
+      .eq('status', 'active')
+      .eq('is_backdated', false)
+      .lt('confirmed_at', cutoff)
+      .or(`last_stale_prompt_at.is.null,last_stale_prompt_at.lt.${cutoff}`)
+      .limit(100)
+    let prompted = 0
+    for (const j of (stale ?? []) as unknown as { id: string }[]) {
+      const p = await loadJobParties(admin, j.id)
+      if (!p) continue
+      if (p.tradeEmail) await sendEmail(p.tradeEmail, jobStillGoingEmail({ name: p.clientName, jobType: p.job.job_type, jobId: j.id }))
+      if (p.clientEmail) await sendEmail(p.clientEmail, jobStillGoingEmail({ name: p.tradeName, jobType: p.job.job_type, jobId: j.id }))
+      await admin.from('jobs').update({ last_stale_prompt_at: now }).eq('id', j.id)
+      prompted++
+    }
+    results.staleJobsPrompted = prompted
+  }
+
+  // ── 7. Insurance: expire, remind at 30 and 7 days, delete old files ──
+  {
+    const todayStr = now.slice(0, 10)
+    const { data: ended } = await admin.from('trade_insurance').update({ status: 'expired' }).eq('status', 'approved').lt('expires_on', todayStr).select('id')
+    results.insuranceExpired = ended?.length ?? 0
+
+    const fmt = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    let reminders = 0
+    for (const [days, col] of [[30, 'reminded_30_at'], [7, 'reminded_7_at']] as const) {
+      const until = new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10)
+      const { data: due } = await admin
+        .from('trade_insurance')
+        .select('id, trade_id, expires_on')
+        .eq('status', 'approved')
+        .gte('expires_on', todayStr)
+        .lte('expires_on', until)
+        .is(col, null)
+        .limit(200)
+      for (const row of (due ?? []) as unknown as { id: string; trade_id: string; expires_on: string }[]) {
+        const { data: tp } = await admin.from('trade_profiles').select('user_id').eq('id', row.trade_id).maybeSingle()
+        const { data: u } = tp ? await admin.from('users').select('email').eq('id', tp.user_id as string).maybeSingle() : { data: null }
+        const email = u?.email as string | null | undefined
+        if (email) {
+          const left = Math.max(1, Math.round((new Date(`${row.expires_on}T12:00:00Z`).getTime() - Date.now()) / 86_400_000))
+          await sendEmail(email, insuranceExpiring({ date: fmt(row.expires_on), daysLeft: days === 30 ? Math.min(left, 30) : Math.min(left, 7) }))
+          reminders++
+        }
+        await admin.from('trade_insurance').update(col === 'reminded_30_at' ? { reminded_30_at: now } : { reminded_7_at: now }).eq('id', row.id)
+      }
+    }
+    results.insuranceReminders = reminders
+
+    const oldCutoff = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
+    const { data: oldRows } = await admin
+      .from('trade_insurance')
+      .select('id, storage_path')
+      .eq('status', 'expired')
+      .lt('expires_on', oldCutoff)
+      .not('storage_path', 'is', null)
+      .limit(100)
+    for (const o of (oldRows ?? []) as unknown as { id: string; storage_path: string }[]) {
+      await admin.storage.from('trade-insurance').remove([o.storage_path])
+      await admin.from('trade_insurance').update({ storage_path: null, files_deleted_at: now }).eq('id', o.id)
+    }
+    results.insuranceFilesDeleted = oldRows?.length ?? 0
+  }
+
   // ── 4. Keep the rolling 24 month confirmation rates fresh ────
   {
     const { error } = await admin.rpc('refresh_all_confirmation_stats')
     if (error) console.error('refresh_all_confirmation_stats failed (non-fatal):', error.message)
+    const { error: catErr } = await admin.rpc('refresh_category_averages')
+    if (catErr) console.error('refresh_category_averages failed (non-fatal):', catErr.message)
   }
 
   return NextResponse.json(results)

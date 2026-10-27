@@ -17,7 +17,7 @@ function formatDate(started_at: string | null, backdated_period: string | null, 
   return 'Date unknown'
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, outcomeDisputed }: { status: string; outcomeDisputed?: boolean }) {
   const variants: Record<string, { label: string; className: string }> = {
     pending_confirmation: {
       label: 'Awaiting confirmation',
@@ -26,6 +26,9 @@ function StatusBadge({ status }: { status: string }) {
     active:    { label: 'In progress', className: 'bg-blue-100 text-blue-700' },
     completed: { label: 'Completed',   className: 'bg-green-100 text-green-700' },
     disputed:  { label: 'Disputed',    className: 'bg-red-100 text-red-700' },
+    ended_early: outcomeDisputed
+      ? { label: 'Outcome disputed', className: 'bg-amber-100 text-amber-700' }
+      : { label: 'Ended early', className: 'bg-amber-100 text-amber-700' },
   }
   const { label, className } = variants[status] ?? { label: status, className: 'bg-gray-100 text-gray-600' }
   return (
@@ -110,7 +113,7 @@ export function JobHistory({ jobs }: Props) {
                     return <p className="mt-1.5 text-xs text-gray-400">{text}</p>
                   })()}
                 </div>
-                <StatusBadge status={job.status} />
+                <StatusBadge status={job.status} outcomeDisputed={job.outcome_disputed} />
               </div>
 
               {(job.reviews.received || job.reviews.given || reviewPending) && (

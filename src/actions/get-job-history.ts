@@ -22,6 +22,7 @@ export interface JobHistoryItem {
   started_at: string | null
   backdated_period: string | null
   is_backdated: boolean
+  outcome_disputed: boolean
   postcode: string | null
   created_at: string
   other_party: OtherParty
@@ -33,7 +34,7 @@ export interface JobHistoryItem {
 type JobRow = Pick<Job,
   | 'id' | 'trade_profile_id' | 'client_profile_id' | 'job_type'
   | 'status' | 'initiated_by' | 'started_at' | 'backdated_period' | 'is_backdated'
-  | 'postcode' | 'created_at'
+  | 'postcode' | 'created_at' | 'outcome_disputed'
 >
 
 type TradeProfileRow = { id: string; user_id: string; company_name: string | null; public_slug: string }
@@ -72,7 +73,7 @@ export async function getJobHistory(): Promise<JobHistoryItem[]> {
 
   let jobsQuery = admin
     .from('jobs')
-    .select('id, trade_profile_id, client_profile_id, job_type, status, initiated_by, started_at, backdated_period, is_backdated, postcode, created_at')
+    .select('id, trade_profile_id, client_profile_id, job_type, status, initiated_by, started_at, backdated_period, is_backdated, outcome_disputed, postcode, created_at')
 
   if (tpId && cpId) {
     jobsQuery = jobsQuery.or(`trade_profile_id.eq.${tpId},client_profile_id.eq.${cpId}`)
@@ -185,6 +186,7 @@ export async function getJobHistory(): Promise<JobHistoryItem[]> {
       started_at: job.started_at,
       backdated_period: job.backdated_period,
       is_backdated: job.is_backdated,
+      outcome_disputed: job.outcome_disputed ?? false,
       postcode: job.postcode,
       created_at: job.created_at,
       other_party: otherParty,

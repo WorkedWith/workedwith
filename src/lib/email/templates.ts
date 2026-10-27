@@ -684,3 +684,97 @@ export function evidenceDecision(p: { confirmed: boolean }): EmailContent {
     button: { label: 'Go to your dashboard', url: `${APP_URL}/dashboard` },
   }
 }
+
+
+// ── Jobs that end early ────────────────────────────────────────
+
+export function jobEndedEarly(p: { name: string; jobType: string; jobId: string }): EmailContent {
+  return {
+    subject: `Your job with ${p.name} has been marked as ended early`,
+    heading: 'Your job was marked as ended early',
+    paragraphs: [
+      `**${p.name}** has marked the ${jobLabel(p.jobType)} as ended early. You can both now leave a review.`,
+      REVIEW_RULE,
+      'If the job was actually finished, you can tell us within 7 days.',
+    ],
+    button: { label: 'Leave a review or say it was finished', url: `${job(p.jobId)}/status` },
+  }
+}
+
+export function jobOutcomeDisputed(p: { name: string; jobType: string; jobId: string }): EmailContent {
+  return {
+    subject: `${p.name} says the job was finished`,
+    heading: 'The other side says the job was finished',
+    paragraphs: [
+      `**${p.name}** says the ${jobLabel(p.jobType)} was finished, not ended early. It now shows as "Outcome disputed".`,
+      'Your reviews stay open. Say what happened in your review.',
+    ],
+    button: { label: 'Leave your review', url: `${job(p.jobId)}/review` },
+  }
+}
+
+export function jobStillGoing(p: { name: string; jobType: string; jobId: string }): EmailContent {
+  return {
+    subject: `Is your ${jobLabel(p.jobType)} still going?`,
+    heading: 'Is this job still going?',
+    paragraphs: [
+      `Your job with **${p.name}** has been open for a while. Let us know where it's at so you can both leave a review when it's done.`,
+      'You can say it is finished, that it ended early, or that it is still going.',
+    ],
+    button: { label: 'Update the job', url: `${job(p.jobId)}/status` },
+  }
+}
+
+export function clientSaysFinished(p: { name: string; jobType: string; jobId: string }): EmailContent {
+  return {
+    subject: `${p.name} says the ${jobLabel(p.jobType)} is finished`,
+    heading: 'Your client says the job is finished',
+    paragraphs: [
+      `**${p.name}** says the ${jobLabel(p.jobType)} is finished.`,
+      'If you agree, mark it complete and you will both be asked for a review.',
+    ],
+    button: { label: 'View the job', url: job(p.jobId) },
+  }
+}
+
+
+// ── Insurance tag ──────────────────────────────────────────────
+
+export function insuranceApproved(): EmailContent {
+  return {
+    subject: 'Your Insured tag is live',
+    heading: 'You are showing as insured',
+    paragraphs: ['Your Insured tag is now live on your profile.'],
+    button: { label: 'View your profile', url: `${APP_URL}/profile` },
+  }
+}
+
+export function insuranceRejected(p: { reason: string }): EmailContent {
+  return {
+    subject: "We couldn't add your Insured tag",
+    heading: "We couldn't add your Insured tag",
+    paragraphs: ["We couldn't add your Insured tag. You can upload a new certificate any time."],
+    quote: { label: 'Reason', text: p.reason },
+    button: { label: 'Upload a new certificate', url: `${APP_URL}/profile/insurance` },
+  }
+}
+
+export function insuranceExpiring(p: { date: string; daysLeft: number }): EmailContent {
+  return {
+    subject: `Your insurance on WorkedWith runs out in ${p.daysLeft} days`,
+    heading: 'Keep your Insured tag',
+    paragraphs: [
+      `Your public liability insurance on WorkedWith runs out on ${p.date}. Upload your new certificate to keep your Insured tag.`,
+    ],
+    button: { label: 'Upload my new certificate', url: `${APP_URL}/profile/insurance` },
+  }
+}
+
+export function adminInsuranceToCheck(p: { tradeName: string }): EmailContent {
+  return {
+    subject: `Insurance certificate to check: ${p.tradeName}`,
+    heading: 'Insurance certificate to check',
+    paragraphs: [`**${p.tradeName}** has uploaded a public liability certificate.`],
+    button: { label: 'Open the insurance queue', url: `${APP_URL}/admin/insurance` },
+  }
+}

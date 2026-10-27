@@ -165,6 +165,11 @@ function SearchResult({ result }: { result: ClientProfileResult }) {
             {result.confirmation_label}
           </p>
         )}
+        {'ended_early_label' in result && result.ended_early_label && (
+          <p className="mt-1 text-xs text-white/60" title="Jobs that one side marked as ended early, out of all confirmed jobs.">
+            {result.ended_early_label}
+          </p>
+        )}
       </div>
 
       {/* Free tier — upgrade prompt */}
@@ -296,6 +301,7 @@ function ScoreRow({ label, score, total }: { label: string; score: number; total
 }
 
 type RecentReview = {
+  outcome_label?: string | null
   overall_rating: number | null
   written_review: string | null
   submitted_at: string
@@ -313,7 +319,7 @@ function ReviewsList({ reviews }: { reviews: RecentReview[] }) {
         {withText.map((review, i) => (
           <div key={i} className="py-4 first:pt-0 last:pb-0">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-gray-600">{review.reviewer_trade_type}</span>
+              <span className="text-xs font-medium text-gray-600">{review.reviewer_trade_type}{review.outcome_label ? ` · ${review.outcome_label}` : ''}</span>
               <span className="text-xs text-gray-400">
                 {new Date(review.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
               </span>

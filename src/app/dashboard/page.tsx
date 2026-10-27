@@ -20,6 +20,7 @@ import type { User, Notification } from '@/types/database'
 import { TradeChip } from '@/components/trade-chip'
 import { Avatar } from '@/components/avatar'
 import { EvidencePrompts } from '@/components/evidence-prompts'
+import { InsurancePrompt } from '@/components/insurance-prompt'
 
 export const metadata = { title: 'Dashboard | WorkedWith', robots: { index: false } }
 
@@ -131,6 +132,7 @@ export default async function DashboardPage() {
       <div className="mx-auto max-w-2xl lg:max-w-5xl px-4 py-8 sm:px-6">
 
         <EvidencePrompts userId={user.id} />
+        {isTrade && <InsurancePrompt userId={user.id} />}
 
         {/* ══════════════════════════════════════════════
             TRADE LAYOUT  (trade + both users)
