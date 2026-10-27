@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { TRADE_TYPES, SPECIALISMS } from '@/lib/trade-types'
+import { TradeIcon } from '@/components/trade-icon'
 
 type Props = {
   value: string
@@ -129,9 +130,12 @@ export function TradePicker({ value, onChange, id, placeholder = 'Choose a trade
                         r.parent && !q ? 'pl-8 text-sm text-gray-600' : 'font-medium text-brand-navy'
                       }`}
                     >
-                      <span>
+                      <span className="flex items-center gap-2.5">
+                        {!r.parent && <TradeIcon trade={r.label} className="h-5 w-5 text-gray-400" />}
+                        <span>
                         {r.label}
                         {r.parent && q && <span className="ml-2 text-xs font-normal text-gray-400">in {r.parent}</span>}
+                        </span>
                       </span>
                       {value === r.label && <span aria-hidden className="text-brand-amber">✓</span>}
                     </button>

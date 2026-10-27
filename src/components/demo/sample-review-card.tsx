@@ -77,9 +77,9 @@ export function SampleReviewCard({
 function SubScoreRow({ label, score }: { label: string; score: number }) {
   const filled = Math.round(score)
   return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-xs text-gray-500">{label}</span>
-      <div className="flex items-center gap-1">
+    <div className="flex min-w-0 items-center justify-between gap-2">
+      <span className="min-w-0 truncate text-xs text-gray-500">{label}</span>
+      <div className="flex shrink-0 items-center gap-1">
         <div className="flex text-xs">
           {[1, 2, 3, 4, 5].map(s => (
             <span key={s} className={s <= filled ? 'text-brand-amber' : 'text-gray-200'} aria-hidden>★</span>

@@ -1,4 +1,5 @@
 import type { DemoTradeProfile, DemoReview } from '@/lib/demo-data'
+import { TradeChip } from '@/components/trade-chip'
 
 type Props = {
   profile: DemoTradeProfile
@@ -34,9 +35,7 @@ export function DemoProfilePage({ profile, reviews }: Props) {
             <h1 className="text-3xl font-bold text-white sm:text-4xl">{profile.full_name}</h1>
             <div className="mt-3 flex flex-wrap gap-2">
               {profile.trade_types.map(t => (
-                <span key={t} className="rounded-full bg-brand-amber/20 px-3 py-1 text-sm font-medium text-brand-amber">
-                  {t}
-                </span>
+                <TradeChip key={t} trade={t} tone="dark" />
               ))}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/60">

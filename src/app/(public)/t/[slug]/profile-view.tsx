@@ -11,6 +11,7 @@ import { getFeaturedJobs } from '@/actions/featured-jobs/get-featured-jobs'
 import { FeaturedWorkSection } from '@/components/featured-work-section'
 import { GallerySection } from '@/components/gallery-section'
 import { OwnerPhotosPanel } from '@/components/owner-photos-panel'
+import { TradeIcon } from '@/components/trade-icon'
 import { getGalleryImages } from '@/actions/gallery/get-gallery-images'
 
 function SeededProfilePage({ profile, signedIn }: { profile: SeededProfile; slug: string; signedIn: boolean }) {
@@ -283,6 +284,7 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                 sizeClass="h-16 w-16 sm:h-20 sm:w-20"
                 textClass="text-xl sm:text-2xl"
                 ringClass="border-2 border-white/20"
+                tradeIcon={mainTrades[0] ?? tradeTypes[0] ?? null}
               />
               <div className="min-w-0">
                 <h1 className="text-xl font-bold leading-tight text-white sm:text-3xl">{displayName}</h1>
@@ -300,7 +302,8 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
             {mainTrades.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
                 {mainTrades.slice(0, 3).map(t => (
-                  <span key={t} className="rounded-full bg-brand-amber/20 px-3 py-1 text-sm font-semibold text-brand-amber">
+                  <span key={t} className="inline-flex items-center gap-1.5 rounded-full bg-brand-amber/20 px-3 py-1 text-sm font-semibold text-brand-amber">
+                    <TradeIcon trade={t} className="h-4 w-4" />
                     {t}
                   </span>
                 ))}
@@ -395,7 +398,10 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                   </h2>
                   <div className="flex flex-wrap gap-1.5">
                     {mainTrades.map(t => (
-                      <span key={t} className="rounded-full bg-brand-navy/10 px-2.5 py-1 text-xs font-semibold text-brand-navy">{t}</span>
+                      <span key={t} className="inline-flex items-center gap-1.5 rounded-full bg-brand-navy/10 px-2.5 py-1 text-xs font-semibold text-brand-navy">
+                        <TradeIcon trade={t} className="h-3.5 w-3.5" />
+                        {t}
+                      </span>
                     ))}
                   </div>
                 </div>

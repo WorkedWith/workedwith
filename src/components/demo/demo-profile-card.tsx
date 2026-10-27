@@ -1,4 +1,6 @@
 import type { DemoTradeProfile } from '@/lib/demo-data'
+import { Avatar } from '@/components/avatar'
+import { TradeChip } from '@/components/trade-chip'
 
 type Props = {
   profile: DemoTradeProfile
@@ -9,14 +11,18 @@ export function DemoProfileCard({ profile }: Props) {
   const filled = Math.round(profile.average_rating)
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-md transition-shadow relative">
+    <div className="flex h-full flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-md transition-shadow relative">
       {/* Example badge */}
       <span className="absolute top-4 right-4 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-400">
         Example profile
       </span>
 
+      {/* Content */}
+      <div className="flex-1">
       {/* Top row: name + tier badge */}
-      <div className="pr-24">
+      <div className="flex items-start gap-3 pr-24">
+        <Avatar name={profile.full_name} sizeClass="h-12 w-12" textClass="text-base" tradeIcon={profile.trade_types[0] ?? null} />
+        <div className="min-w-0">
         <h3 className="text-lg font-bold text-brand-navy leading-snug">{profile.full_name}</h3>
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           {profile.verification_tier === 'fully_verified' && (
@@ -35,14 +41,13 @@ export function DemoProfileCard({ profile }: Props) {
             </span>
           )}
         </div>
+        </div>
       </div>
 
       {/* Trade type pills */}
       <div className="mt-3 flex flex-wrap gap-2">
         {profile.trade_types.map(t => (
-          <span key={t} className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">
-            {t}
-          </span>
+          <TradeChip key={t} trade={t} />
         ))}
       </div>
 
@@ -67,9 +72,10 @@ export function DemoProfileCard({ profile }: Props) {
         <span>{profile.years_experience} yrs experience</span>
         <span>{profile.total_jobs} confirmed jobs</span>
       </div>
+      </div>
 
       {/* CTA */}
-      <div className="mt-5 flex justify-end">
+      <div className="mt-auto flex justify-end pt-5">
         <a
           href={`/t/${profile.public_slug}`}
           className="inline-flex min-h-[44px] items-center rounded-xl border-2 border-brand-navy px-5 text-sm font-semibold text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"

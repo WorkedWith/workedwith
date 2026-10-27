@@ -16,6 +16,8 @@ import { ClientLookupForm } from '@/components/client-lookup-form'
 import { getProfileAnalytics } from '@/actions/get-profile-analytics'
 import type { ProfileAnalytics } from '@/actions/get-profile-analytics'
 import type { User, Notification, SubscriptionTier } from '@/types/database'
+import { TradeChip } from '@/components/trade-chip'
+import { Avatar } from '@/components/avatar'
 
 export const metadata = { title: 'Dashboard | WorkedWith', robots: { index: false } }
 
@@ -36,12 +38,6 @@ export default async function DashboardPage() {
   const isBoth = user_type === 'both'
   const isClient = isBoth || !isTrade
   const firstName = full_name.split(' ')[0]
-  const initials = full_name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(w => w[0]?.toUpperCase() ?? '')
-    .join('')
 
   const [
     { data: rawNotifications },
@@ -130,266 +126,243 @@ export default async function DashboardPage() {
     <main className="min-h-screen bg-gray-50">
       <AppHeader />
 
-      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 space-y-6">
-
-        {/* ── Client-only welcome row ───────────────────── */}
-        {!isTrade && (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-              <div>
-                <h1 className="text-2xl font-bold text-brand-navy">
-                  Welcome back, {firstName}
-                </h1>
-                <p className="mt-0.5 text-sm text-gray-500">{accountLabel} account</p>
-              </div>
-              {pendingCount > 0 && (
-                <a
-                  href="#your-requests"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
-                >
-                  <span className="text-base leading-none">⏳</span>
-                  {pendingCount} to confirm
-                </a>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
-              <a
-                href="/jobs/log/invite-trade"
-                className="flex min-h-[44px] items-center justify-center rounded-lg bg-brand-amber px-3 text-center text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors sm:px-4"
-              >
-                + Add a job
-              </a>
-              <a
-                href="/jobs/log/backdated"
-                className="flex min-h-[44px] items-center justify-center rounded-lg border border-brand-navy px-3 text-center text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors sm:px-4"
-              >
-                + Add a past job
-              </a>
-            </div>
-          </div>
-        )}
+      <div className="mx-auto max-w-2xl lg:max-w-5xl px-4 py-8 sm:px-6">
 
         {/* ══════════════════════════════════════════════
             TRADE LAYOUT  (trade + both users)
         ══════════════════════════════════════════════ */}
         {isTrade && (
-          <>
-            {/* Requests waiting on this trade */}
+          <div className="space-y-6">
+            {/* Requests waiting on this trade — full width */}
             {(tradeRequests.length > 0 || jobRequests.length > 0) && (
               <RequestsBox tradeRequests={tradeRequests} jobRequests={jobRequests} />
             )}
 
-            {/* 0. Why WorkedWith */}
-            <section className="rounded-xl border border-brand-navy/10 bg-brand-navy/5 p-5">
-              <p className="text-sm font-semibold text-brand-navy">Why WorkedWith?</p>
-              <ul className="mt-3 space-y-2">
-                {[
-                  'Check a client\'s record before you take the job on',
-                  'Build a profile of verified reviews that wins you work',
-                  'Fair reviews: neither side sees the other\'s until both are in',
-                  'Free to start, with unlimited jobs and reviews',
-                ].map(item => (
-                  <li key={item} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="mt-0.5 font-bold text-brand-amber" aria-hidden="true">✓</span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {/* 1. Profile summary card */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex items-center gap-4">
-              <div className="flex-shrink-0 flex flex-col items-center gap-1">
-                {profile_photo_url ? (
-                  <img
-                    src={profile_photo_url}
-                    alt="Profile photo"
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-brand-navy flex items-center justify-center text-white text-xl font-bold select-none">
-                    {initials}
-                  </div>
-                )}
-                <a href="/profile" className="text-[11px] text-gray-400 hover:text-brand-amber transition-colors">
-                  {profile_photo_url ? 'Change photo' : 'Add photo'}
-                </a>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold text-brand-navy truncate">{full_name}</h1>
-                {((tradeProfile?.trade_types as string[] | undefined) ?? []).length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {(tradeProfile?.trade_types as string[]).map(t => (
-                      <span key={t} className="bg-amber-100 text-amber-800 text-xs rounded-full px-2 py-0.5">{t}</span>
-                    ))}
-                  </div>
-                )}
-                {tradeHasReviews ? (
-                  <p className="text-sm text-gray-500 mt-1.5">
-                    ★ {(tradeProfile?.average_rating ?? 0).toFixed(1)} · {tradeProfile?.total_reviews ?? 0} review{(tradeProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
-                  </p>
-                ) : (
-                  <p className="text-sm text-gray-400 mt-1.5">No reviews yet</p>
-                )}
-              </div>
-              {tradeProfile?.public_slug && (
-                <a
-                  href={`/t/${tradeProfile.public_slug}`}
-                  className="shrink-0 text-sm text-brand-navy border border-brand-navy rounded-lg px-3 py-1.5 whitespace-nowrap hover:bg-brand-navy hover:text-white transition-colors"
-                >
-                  View profile
-                </a>
-              )}
-            </div>
-
-            {/* Operating areas nudge — only shown when profile exists but no areas set */}
-            {tradeProfile && !hasOperatingAreas && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 flex items-center justify-between gap-4">
-                <p className="text-sm text-amber-800">
-                  <span className="font-semibold">Your profile isn&apos;t appearing in search yet.</span>
-                  {' '}Add at least one operating area to be discoverable.
-                </p>
-                <a
-                  href="/profile/areas"
-                  className="shrink-0 rounded-lg bg-brand-amber px-4 py-2 text-xs font-bold text-brand-navy hover:bg-amber-400 transition-colors whitespace-nowrap"
-                >
-                  Add areas
-                </a>
-              </div>
-            )}
-
-            {isBoth && (
-              <p className="text-xs font-bold uppercase tracking-widest text-brand-amber">As a tradesperson</p>
-            )}
-
-            {/* 2. Onboarding checklist */}
-            {showChecklist && (
-              <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                <p className="text-sm font-semibold text-brand-navy mb-4">Get started with WorkedWith</p>
-                <div className="divide-y divide-gray-50">
-                  <OnboardingItem done={phone_verified} label="Verify your phone number" href="/verify/phone" />
-                  <OnboardingItem done={!!tradeProfile} label="Complete your trade profile" href="/onboarding/trade" />
-                  <OnboardingItem done={hasLiveJob} label="Log your first job" href="/jobs/log" />
-                  <OnboardingItem done={hasBackdatedJob} label="Add a past job" href="/jobs/log/backdated" />
-                  {phone_verified && (
-                    <OnboardingItem
-                      done={id_verification_status === 'pending' || id_verification_status === 'approved'}
-                      label="Get your ID verified"
-                      href="/verify/identity"
-                      helper="Clients are more likely to choose a trade with a verified ID. Send a photo of a driving licence or passport, then a quick selfie on your phone. We check them and delete them straight after, and they are never shown on your profile."
-                    />
-                  )}
-                </div>
+            {/* Why WorkedWith — only until the first job is logged */}
+            {!hasLiveJob && (
+              <section className="rounded-xl border border-brand-navy/10 bg-brand-navy/5 p-5">
+                <p className="text-sm font-semibold text-brand-navy">Why WorkedWith?</p>
+                <ul className="mt-3 space-y-2">
+                  {[
+                    'Check a client\'s record before you take the job on',
+                    'Build a profile of verified reviews that wins you work',
+                    'Fair reviews: neither side sees the other\'s until both are in',
+                    'Free to start, with unlimited jobs and reviews',
+                  ].map(item => (
+                    <li key={item} className="flex items-start gap-2 text-sm text-gray-700">
+                      <span className="mt-0.5 font-bold text-brand-amber" aria-hidden="true">✓</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </section>
             )}
 
-            {/* 3. Quick actions */}
-            <section>
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Quick actions</p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <a
-                  href="/jobs/log"
-                  className="flex min-h-[44px] flex-col items-center justify-center rounded-lg bg-brand-amber px-4 py-3 text-center text-brand-navy hover:bg-amber-400 transition-colors"
-                >
-                  <span className="text-sm font-semibold">+ Log a job with a client</span>
-                  <span className="mt-0.5 text-xs font-medium text-brand-navy/70">Work coming up or under way</span>
-                </a>
-                <a
-                  href="/jobs/log/backdated"
-                  className="flex min-h-[44px] flex-col items-center justify-center rounded-lg border-2 border-brand-navy px-4 py-3 text-center text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
-                >
-                  <span className="text-sm font-semibold">+ Add a past job</span>
-                  <span className="mt-0.5 text-xs font-medium opacity-70">Work you have already finished</span>
-                </a>
+            <div className="lg:grid lg:grid-cols-3 lg:items-start lg:gap-8 space-y-6 lg:space-y-0">
+
+              {/* ── Left column: main actions ─────────────── */}
+              <div className="min-w-0 space-y-6 lg:col-span-2">
+                {isBoth && (
+                  <p className="text-xs font-bold uppercase tracking-widest text-brand-amber">As a tradesperson</p>
+                )}
+
+                {/* Quick actions */}
+                <section>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Quick actions</p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <a
+                      href="/jobs/log"
+                      className="flex min-h-[44px] flex-col items-center justify-center rounded-lg bg-brand-amber px-4 py-3 text-center text-brand-navy hover:bg-amber-400 transition-colors"
+                    >
+                      <span className="text-sm font-semibold">+ Log a job with a client</span>
+                      <span className="mt-0.5 text-xs font-medium text-brand-navy/70">Work coming up or under way</span>
+                    </a>
+                    <a
+                      href="/jobs/log/backdated"
+                      className="flex min-h-[44px] flex-col items-center justify-center rounded-lg border-2 border-brand-navy px-4 py-3 text-center text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
+                    >
+                      <span className="text-sm font-semibold">+ Add a past job</span>
+                      <span className="mt-0.5 text-xs font-medium opacity-70">Work you have already finished</span>
+                    </a>
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-500">
+                    You invite your client, they confirm the job on WorkedWith, and when the work is done you both leave a review.
+                  </p>
+                </section>
+
+                {/* Onboarding checklist */}
+                {showChecklist && (
+                  <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-semibold text-brand-navy mb-4">Get started with WorkedWith</p>
+                    <div className="divide-y divide-gray-50">
+                      <OnboardingItem done={phone_verified} label="Verify your phone number" href="/verify/phone" />
+                      <OnboardingItem done={!!tradeProfile} label="Complete your trade profile" href="/onboarding/trade" />
+                      <OnboardingItem done={hasLiveJob} label="Log your first job" href="/jobs/log" />
+                      <OnboardingItem done={hasBackdatedJob} label="Add a past job" href="/jobs/log/backdated" />
+                      {phone_verified && (
+                        <OnboardingItem
+                          done={id_verification_status === 'pending' || id_verification_status === 'approved'}
+                          label="Get your ID verified"
+                          href="/verify/identity"
+                          helper="Clients are more likely to choose a trade with a verified ID. Send a photo of a driving licence or passport, then a quick selfie on your phone. We check them and delete them straight after, and they are never shown on your profile."
+                        />
+                      )}
+                    </div>
+                  </section>
+                )}
+
+                {/* Your jobs */}
+                <JobHistory jobs={jobHistory} />
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-gray-500">
-                You invite your client, they confirm the job on WorkedWith, and when the work is done you both leave a review.
-              </p>
-            </section>
 
-            {/* 4. Client lookup */}
-            <section>
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Client lookup</p>
-              <ClientLookupForm />
-            </section>
-
-            {/* 5. Trade reputation */}
-            <section>
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Your reputation</p>
-              {tradeHasReviews ? (
-                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center gap-6">
-                    <div>
-                      <p className="text-4xl font-bold text-brand-navy">
-                        {(tradeProfile?.average_rating ?? 0).toFixed(1)}
-                      </p>
-                      <div className="mt-1 flex text-lg" aria-hidden>
-                        {[1, 2, 3, 4, 5].map(s => (
-                          <span
-                            key={s}
-                            className={s <= Math.round(tradeProfile?.average_rating ?? 0) ? 'text-brand-amber' : 'text-gray-200'}
-                          >★</span>
+              {/* ── Right column: profile, lookup, reputation, analytics ── */}
+              <div className="min-w-0 space-y-6">
+                {/* Profile summary card */}
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex items-center gap-4">
+                  <div className="flex-shrink-0 flex flex-col items-center gap-1">
+                    {profile_photo_url ? (
+                      <img
+                        src={profile_photo_url}
+                        alt="Profile photo"
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <Avatar
+                        name={full_name}
+                        sizeClass="h-16 w-16"
+                        textClass="text-xl"
+                        tradeIcon={((tradeProfile?.trade_types as string[] | undefined) ?? [])[0] ?? null}
+                      />
+                    )}
+                    <a href="/profile/edit" className={`text-[11px] transition-colors ${profile_photo_url ? 'text-gray-400 hover:text-brand-amber' : 'font-semibold text-brand-navy underline hover:text-brand-amber'}`}>
+                      {profile_photo_url ? 'Change photo' : 'Add photo'}
+                    </a>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-xl font-bold text-brand-navy truncate">{full_name}</h1>
+                    {((tradeProfile?.trade_types as string[] | undefined) ?? []).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {(tradeProfile?.trade_types as string[]).map(t => (
+                          <TradeChip key={t} trade={t} size="sm" />
                         ))}
                       </div>
-                    </div>
-                    <div className="space-y-1 text-sm text-gray-500">
-                      <p>
-                        <span className="font-semibold text-brand-navy">{tradeProfile?.total_reviews ?? 0}</span>{' '}
-                        review{(tradeProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
+                    )}
+                    {tradeHasReviews ? (
+                      <p className="text-sm text-gray-500 mt-1.5">
+                        ★ {(tradeProfile?.average_rating ?? 0).toFixed(1)} · {tradeProfile?.total_reviews ?? 0} review{(tradeProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
                       </p>
-                      <p>
-                        <span className="font-semibold text-brand-navy">{tradeProfile?.total_jobs ?? 0}</span>{' '}
-                        confirmed job{(tradeProfile?.total_jobs ?? 0) !== 1 ? 's' : ''}
+                    ) : (
+                      <p className="text-sm text-gray-400 mt-1.5">No reviews yet</p>
+                    )}
+                  </div>
+                  {tradeProfile?.public_slug && (
+                    <a
+                      href={`/t/${tradeProfile.public_slug}`}
+                      className="shrink-0 text-sm text-brand-navy border border-brand-navy rounded-lg px-3 py-1.5 whitespace-nowrap hover:bg-brand-navy hover:text-white transition-colors"
+                    >
+                      View profile
+                    </a>
+                  )}
+                </div>
+
+                {/* Operating areas nudge — only shown when profile exists but no areas set */}
+                {tradeProfile && !hasOperatingAreas && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 flex items-center justify-between gap-4">
+                    <p className="text-sm text-amber-800">
+                      <span className="font-semibold">Your profile isn&apos;t appearing in search yet.</span>
+                      {' '}Add at least one operating area to be discoverable.
+                    </p>
+                    <a
+                      href="/profile/areas"
+                      className="shrink-0 rounded-lg bg-brand-amber px-4 py-2 text-xs font-bold text-brand-navy hover:bg-amber-400 transition-colors whitespace-nowrap"
+                    >
+                      Add areas
+                    </a>
+                  </div>
+                )}
+
+                {/* Client lookup */}
+                <section>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Client lookup</p>
+                  <ClientLookupForm />
+                </section>
+
+                {/* Trade reputation */}
+                <section>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Your reputation</p>
+                  {tradeHasReviews ? (
+                    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                      <div className="flex items-center gap-6">
+                        <div>
+                          <p className="text-4xl font-bold text-brand-navy">
+                            {(tradeProfile?.average_rating ?? 0).toFixed(1)}
+                          </p>
+                          <div className="mt-1 flex text-lg" aria-hidden>
+                            {[1, 2, 3, 4, 5].map(s => (
+                              <span
+                                key={s}
+                                className={s <= Math.round(tradeProfile?.average_rating ?? 0) ? 'text-brand-amber' : 'text-gray-200'}
+                              >★</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-1 text-sm text-gray-500">
+                          <p>
+                            <span className="font-semibold text-brand-navy">{tradeProfile?.total_reviews ?? 0}</span>{' '}
+                            review{(tradeProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-brand-navy">{tradeProfile?.total_jobs ?? 0}</span>{' '}
+                            confirmed job{(tradeProfile?.total_jobs ?? 0) !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl bg-gray-50 border border-gray-200 p-6">
+                      <p className="font-semibold text-gray-700 mb-2">Your WorkedWith reputation</p>
+                      <p className="text-sm text-gray-500 leading-relaxed">
+                        Your rating will appear here once you have completed jobs and received reviews.
+                        The more verified jobs you complete, the stronger your profile.
                       </p>
                     </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-xl bg-gray-50 border border-gray-200 p-6">
-                  <p className="font-semibold text-gray-700 mb-2">Your WorkedWith reputation</p>
-                  <p className="text-sm text-gray-500 leading-relaxed">
-                    Your rating will appear here once you have completed jobs and received reviews.
-                    The more verified jobs you complete, the stronger your profile.
-                  </p>
-                </div>
-              )}
-            </section>
+                  )}
+                </section>
 
-            {/* 6. Your jobs */}
-            <JobHistory jobs={jobHistory} />
-
-            {/* 7. Analytics — Pro stats or upgrade prompt */}
-            {isProTrade && analyticsData ? (
-              <section>
-                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics: {analyticsData.periodLabel}</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
-                    <p className="text-3xl font-bold text-brand-navy">{analyticsData.profileViews}</p>
-                    <p className="mt-1 text-xs text-gray-500">Profile views this month</p>
-                  </div>
-                  <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
-                    <p className="text-3xl font-bold text-brand-navy">{analyticsData.searchAppearances}</p>
-                    <p className="mt-1 text-xs text-gray-500">Search appearances this month</p>
-                  </div>
-                </div>
-              </section>
-            ) : !isProTrade ? (
-              <section>
-                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics</p>
-                <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">Profile analytics available on Pro</p>
-                    <p className="mt-0.5 text-xs text-gray-500">See how many people view your profile and find you in search.</p>
-                  </div>
-                  <a
-                    href="/subscription"
-                    className="shrink-0 rounded-lg bg-brand-amber px-4 py-2 text-xs font-bold text-brand-navy hover:bg-amber-400 transition-colors"
-                  >
-                    Upgrade
-                  </a>
-                </div>
-              </section>
-            ) : null}
+                {/* Analytics — Pro stats or upgrade prompt */}
+                {isProTrade && analyticsData ? (
+                  <section>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics: {analyticsData.periodLabel}</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
+                        <p className="text-3xl font-bold text-brand-navy">{analyticsData.profileViews}</p>
+                        <p className="mt-1 text-xs text-gray-500">Profile views this month</p>
+                      </div>
+                      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
+                        <p className="text-3xl font-bold text-brand-navy">{analyticsData.searchAppearances}</p>
+                        <p className="mt-1 text-xs text-gray-500">Search appearances this month</p>
+                      </div>
+                    </div>
+                  </section>
+                ) : !isProTrade ? (
+                  <section>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics</p>
+                    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700">Profile analytics available on Pro</p>
+                        <p className="mt-0.5 text-xs text-gray-500">See how many people view your profile and find you in search.</p>
+                      </div>
+                      <a
+                        href="/subscription"
+                        className="shrink-0 rounded-lg bg-brand-amber px-4 py-2 text-xs font-bold text-brand-navy hover:bg-amber-400 transition-colors"
+                      >
+                        Upgrade
+                      </a>
+                    </div>
+                  </section>
+                ) : null}
+              </div>
+            </div>
 
             {/* isBoth: client side label */}
             {isBoth && (
@@ -483,88 +456,132 @@ export default async function DashboardPage() {
                 <p className="mt-1 text-xs text-gray-400">Job updates, reviews, and notifications will appear here.</p>
               </section>
             )}
-          </>
+          </div>
         )}
 
         {/* ══════════════════════════════════════════════
             CLIENT-ONLY LAYOUT  (client_individual / client_business)
         ══════════════════════════════════════════════ */}
         {!isTrade && (
-          <>
-            {/* 1. Find a tradesperson */}
-            <section>
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Find a tradesperson</p>
-              <TradeSearchForm />
-            </section>
-
-            {/* Your username */}
-            {typeof clientProfile?.username === 'string' && clientProfile.username && (
-              <UsernameCard username={clientProfile.username} />
-            )}
-
-            {/* 2. Jobs waiting for this client to accept */}
-            {jobRequests.length > 0 && <RequestsBox tradeRequests={[]} jobRequests={jobRequests} />}
-
-            {/* 3. Your reputation */}
-            <section>
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Your reputation</p>
-              {clientHasReviews ? (
-                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center gap-6">
-                    <div>
-                      <p className="text-4xl font-bold text-brand-navy">
-                        {(clientProfile?.average_rating ?? 0).toFixed(1)}
-                      </p>
-                      <div className="mt-1 flex text-lg">
-                        {[1, 2, 3, 4, 5].map(s => (
-                          <span
-                            key={s}
-                            className={s <= Math.round(clientProfile?.average_rating ?? 0) ? 'text-brand-amber' : 'text-gray-200'}
-                            aria-hidden
-                          >★</span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-1 text-sm text-gray-500">
-                      <p>
-                        <span className="font-semibold text-brand-navy">{clientProfile?.total_reviews ?? 0}</span>{' '}
-                        review{(clientProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
-                      </p>
-                      <p>
-                        <span className="font-semibold text-brand-navy">{clientProfile?.total_jobs ?? 0}</span>{' '}
-                        confirmed job{(clientProfile?.total_jobs ?? 0) !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                  </div>
+          <div className="space-y-6">
+            {/* Welcome row — full width */}
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                <div>
+                  <h1 className="text-2xl font-bold text-brand-navy">
+                    Welcome back, {firstName}
+                  </h1>
+                  <p className="mt-0.5 text-sm text-gray-500">{accountLabel} account</p>
                 </div>
-              ) : (
-                <div className="rounded-xl bg-gray-50 border border-gray-200 p-6">
-                  <p className="font-semibold text-gray-700 mb-2">Your WorkedWith reputation</p>
-                  <p className="text-sm text-gray-500 leading-relaxed">
-                    Complete jobs and receive reviews from tradespeople to build your WorkedWith score.
-                    Your score shows other tradespeople you are a reliable client.
-                  </p>
-                </div>
-              )}
-            </section>
-
-            {/* 4. Your jobs */}
-            <div id="your-jobs">
-              <JobHistory jobs={jobHistory} />
+                {pendingCount > 0 && (
+                  <a
+                    href="#your-requests"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors"
+                  >
+                    <span className="text-base leading-none">⏳</span>
+                    {pendingCount} to confirm
+                  </a>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
+                <a
+                  href="/jobs/log/invite-trade"
+                  className="flex min-h-[44px] items-center justify-center rounded-lg bg-brand-amber px-3 text-center text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors sm:px-4"
+                >
+                  + Add a job
+                </a>
+                <a
+                  href="/jobs/log/backdated"
+                  className="flex min-h-[44px] items-center justify-center rounded-lg border border-brand-navy px-3 text-center text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors sm:px-4"
+                >
+                  + Add a past job
+                </a>
+              </div>
             </div>
 
-            {/* 5. Onboarding checklist */}
-            {showChecklist && (
-              <section className="rounded-xl bg-brand-navy/5 border border-brand-navy/10 p-5">
-                <p className="text-sm font-semibold text-brand-navy mb-4">Get started with WorkedWith</p>
-                <div className="divide-y divide-brand-navy/10">
-                  <OnboardingItem done={phone_verified} label="Verify your phone number" href="/verify/phone" />
-                  <OnboardingItem done={hasBackdatedJob} label="Add your first past job" href="/jobs/log/backdated" />
-                  <ExploreItem />
+            <div className="lg:grid lg:grid-cols-3 lg:items-start lg:gap-8 space-y-6 lg:space-y-0">
+
+              {/* ── Left column: search + actions ─────────── */}
+              <div className="min-w-0 space-y-6 lg:col-span-2">
+                {/* Find a tradesperson */}
+                <section>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Find a tradesperson</p>
+                  <TradeSearchForm />
+                </section>
+
+                {/* Your reputation */}
+                <section>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Your reputation</p>
+                  {clientHasReviews ? (
+                    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                      <div className="flex items-center gap-6">
+                        <div>
+                          <p className="text-4xl font-bold text-brand-navy">
+                            {(clientProfile?.average_rating ?? 0).toFixed(1)}
+                          </p>
+                          <div className="mt-1 flex text-lg">
+                            {[1, 2, 3, 4, 5].map(s => (
+                              <span
+                                key={s}
+                                className={s <= Math.round(clientProfile?.average_rating ?? 0) ? 'text-brand-amber' : 'text-gray-200'}
+                                aria-hidden
+                              >★</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-1 text-sm text-gray-500">
+                          <p>
+                            <span className="font-semibold text-brand-navy">{clientProfile?.total_reviews ?? 0}</span>{' '}
+                            review{(clientProfile?.total_reviews ?? 0) !== 1 ? 's' : ''}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-brand-navy">{clientProfile?.total_jobs ?? 0}</span>{' '}
+                            confirmed job{(clientProfile?.total_jobs ?? 0) !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl bg-gray-50 border border-gray-200 p-6">
+                      <p className="font-semibold text-gray-700 mb-2">Your WorkedWith reputation</p>
+                      <p className="text-sm text-gray-500 leading-relaxed">
+                        Complete jobs and receive reviews from tradespeople to build your WorkedWith score.
+                        Your score shows other tradespeople you are a reliable client.
+                      </p>
+                    </div>
+                  )}
+                </section>
+
+                {/* Your jobs */}
+                <div id="your-jobs">
+                  <JobHistory jobs={jobHistory} />
                 </div>
-              </section>
-            )}
-          </>
+
+                {/* Onboarding checklist */}
+                {showChecklist && (
+                  <section className="rounded-xl bg-brand-navy/5 border border-brand-navy/10 p-5">
+                    <p className="text-sm font-semibold text-brand-navy mb-4">Get started with WorkedWith</p>
+                    <div className="divide-y divide-brand-navy/10">
+                      <OnboardingItem done={phone_verified} label="Verify your phone number" href="/verify/phone" />
+                      <OnboardingItem done={hasBackdatedJob} label="Add your first past job" href="/jobs/log/backdated" />
+                      <ExploreItem />
+                    </div>
+                  </section>
+                )}
+              </div>
+
+              {/* ── Right column: username card + job requests ── */}
+              <div className="min-w-0 space-y-6">
+                {/* Your username */}
+                {typeof clientProfile?.username === 'string' && clientProfile.username && (
+                  <UsernameCard username={clientProfile.username} />
+                )}
+
+                {/* Jobs waiting for this client to accept */}
+                {jobRequests.length > 0 && <RequestsBox tradeRequests={[]} jobRequests={jobRequests} />}
+              </div>
+            </div>
+          </div>
         )}
 
       </div>

@@ -19,7 +19,7 @@ export default async function SettingsPage() {
     <main className="min-h-screen bg-gray-50">
       <AppHeader />
 
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
         <h1 className="mb-6 text-2xl font-bold text-brand-navy">Settings</h1>
         <SettingsContent email={user.email ?? ''} userType={userType} />
       </div>

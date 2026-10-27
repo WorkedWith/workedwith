@@ -1,16 +1,27 @@
 import type { Metadata } from 'next'
 import { SampleReviewCard } from '@/components/demo/sample-review-card'
 import { DEMO_REVIEWS_JAMES, DEMO_REVIEWS_SARAH, DEMO_REVIEWS_OWEN } from '@/lib/demo-data'
+import { TradeIcon } from '@/components/trade-icon'
 
 export const metadata: Metadata = {
   title: 'For Tradespeople | WorkedWith',
   description: 'Build your verified reputation, vet clients before you commit, and get found by homeowners who value quality over price.',
 }
 
-const SOCIAL_PROOF_TRADES = [
-  'Electricians', 'Plumbers', 'Builders', 'Joiners', 'Plasterers',
-  'Decorators', 'Roofers', 'Tilers', 'Landscapers', 'Gas Engineers',
-  'Carpenters', 'Bricklayers',
+const SOCIAL_PROOF_TRADES: { label: string; trade: string }[] = [
+  { label: 'Electricians', trade: 'Electrician' },
+  { label: 'Plumbers', trade: 'Plumber' },
+  { label: 'Builders', trade: 'Builder' },
+  { label: 'Joiners', trade: 'Joiner' },
+  { label: 'Plasterers', trade: 'Plasterer' },
+  { label: 'Decorators', trade: 'Painter and Decorator' },
+  { label: 'Roofers', trade: 'Roofer' },
+  { label: 'Tilers', trade: 'Tiler' },
+  { label: 'Landscapers', trade: 'Landscaper' },
+  { label: 'Gas Engineers', trade: 'Gas Engineer' },
+  { label: 'Carpenters', trade: 'Carpenter' },
+  { label: 'Bricklayers', trade: 'Bricklayer' },
+  { label: 'Scaffolders', trade: 'Scaffolder' },
 ]
 
 const COMPARISON_ROWS: { feature: string; ww: boolean; ca: boolean; gr: boolean }[] = [
@@ -98,9 +109,10 @@ export default function ForTradesPage() {
             Built for UK tradespeople including
           </p>
           <div className="flex flex-wrap justify-center gap-2">
-            {SOCIAL_PROOF_TRADES.map(trade => (
-              <span key={trade} className="rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium text-gray-600 shadow-sm">
-                {trade}
+            {SOCIAL_PROOF_TRADES.map(({ label, trade }) => (
+              <span key={label} className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium text-gray-600 shadow-sm">
+                <TradeIcon trade={trade} className="h-4 w-4 text-brand-amber" />
+                {label}
               </span>
             ))}
           </div>

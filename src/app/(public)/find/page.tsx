@@ -1,3 +1,4 @@
+import { TradeChip } from '@/components/trade-chip'
 import { Avatar } from '@/components/avatar'
 import { formatAreas } from '@/lib/format-areas'
 import type { Metadata } from 'next'
@@ -26,6 +27,17 @@ export default async function FindPage({ searchParams }: PageProps) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const isAuthenticated = !!user
+
+  let isClient = false
+  if (user) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('user_type')
+      .eq('id', user.id)
+      .maybeSingle()
+    const userType = (userData?.user_type as string | null | undefined) ?? null
+    isClient = userType === 'client_individual' || userType === 'client_business' || userType === 'both'
+  }
 
   let searchResult: Awaited<ReturnType<typeof searchTradespeople>> | null = null
   if (hasSearch) {
@@ -91,28 +103,29 @@ export default async function FindPage({ searchParams }: PageProps) {
         {/* Demo profiles — only when no real and no seeded results */}
         {showDemo && (
           <div>
-            <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-xl text-center">
-              <p className="text-amber-800 font-medium text-sm">
-                No verified tradespeople in {district ?? 'your area'} yet. WorkedWith is growing fast.
-                Here is what a WorkedWith profile looks like.
+            <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-6">
+              <h2 className="text-xl font-bold text-brand-navy">
+                Nobody on WorkedWith covers {district ?? 'your area'} yet.
+              </h2>
+              <p className="mt-2 text-sm text-gray-600">
+                Invite the tradesperson you already have in mind. They confirm the job, and you both build a record.
               </p>
-              {!isAuthenticated && (
-                <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                  <a
-                    href="/join/client"
-                    className="rounded-lg bg-brand-navy px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
-                  >
-                    Create a free client account
-                  </a>
-                  <a
-                    href="/for-trades"
-                    className="text-sm font-semibold text-brand-navy underline"
-                  >
-                    Know a tradesperson? Tell them about WorkedWith
-                  </a>
-                </div>
-              )}
+              <a
+                href={isClient ? '/jobs/log/invite-trade' : '/join/client'}
+                className="mt-4 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-brand-amber px-6 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors sm:w-auto"
+              >
+                Invite a tradesperson
+              </a>
+              <p className="mt-4">
+                <a
+                  href="/for-trades"
+                  className="text-sm font-semibold text-brand-navy underline"
+                >
+                  Know a tradesperson? Tell them about WorkedWith
+                </a>
+              </p>
             </div>
+            <p className="mb-4 text-sm font-semibold text-gray-500">This is what a profile looks like</p>
             <div className="grid gap-6 sm:grid-cols-3">
               {DEMO_TRADE_PROFILES.map(profile => (
                 <DemoProfileCard key={profile.id} profile={profile} />
@@ -185,7 +198,7 @@ function ResultCard({ result }: { result: TradesearchResult }) {
   return (
     <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-3">
-        <Avatar name={result.company_name || result.full_name} photoUrl={result.photo_url} sizeClass="h-12 w-12" textClass="text-base" />
+        <Avatar name={result.company_name || result.full_name} photoUrl={result.photo_url} sizeClass="h-12 w-12" textClass="text-base" tradeIcon={result.trade_types[0] ?? null} />
         <div className="min-w-0 flex-1">
           <h2 className="text-lg font-bold text-brand-navy leading-snug">{result.company_name || result.full_name}</h2>
           {result.verification_tier === 'fully_verified' && (
@@ -215,9 +228,7 @@ function ResultCard({ result }: { result: TradesearchResult }) {
 
       <div className="mt-3 flex flex-wrap gap-2">
         {result.trade_types.map(t => (
-          <span key={t} className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">
-            {t}
-          </span>
+          <TradeChip key={t} trade={t} />
         ))}
       </div>
 
