@@ -20,7 +20,8 @@ begin
          round((sum(average_rating * total_reviews) / nullif(sum(total_reviews), 0))::numeric, 3),
          sum(total_reviews)::int
   from public.trade_profiles
-  where total_reviews > 0;
+  where total_reviews > 0
+  having sum(total_reviews) > 0;
 
   insert into public.category_rating_averages (trade_type, avg_rating, review_count)
   select t.trade_type,
