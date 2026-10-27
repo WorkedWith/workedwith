@@ -74,7 +74,7 @@ function DemoClientCard() {
       </div>
 
       <p className="mt-4 text-xs text-gray-400 text-center">
-        This is an example profile. Real client profiles are built from verified job records.
+        This is an example profile. Real client profiles are built from confirmed job records.
       </p>
     </div>
   )

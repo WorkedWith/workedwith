@@ -1,5 +1,6 @@
 'use server'
 
+import { recordSignal, evaluateJob } from '@/lib/integrity/evaluate'
 import { sendEmail } from '@/lib/email/send'
 import { bothReviewsLive, reviewSaved, reviewWaitingOnYou, theirReviewLive, yourReviewLive } from '@/lib/email/templates'
 import { formatDateLong } from '@/lib/email/format'
@@ -176,7 +177,8 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
     return { success: false, error: 'Failed to submit review. Please try again.' }
   }
 
-  await checkVelocitySpike(admin, input.job_id, tradeUserId)
+  await recordSignal(admin, user.id, 'review', input.job_id)
+  await evaluateJob(admin, input.job_id)
 
   // Mark submitter's side on review window
   const windowUpdate =
@@ -389,29 +391,4 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
 
   await Promise.all(singlePromises)
   return { success: true, bothSubmitted: false }
-}
-
-// ── Velocity spike check ──────────────────────────────────────
-
-async function checkVelocitySpike(admin: ReturnType<typeof createAdminClient>, jobId: string, tradeUserId: string | null) {
-  if (!tradeUserId) return
-
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-
-  const { data: recentReviews } = await admin
-    .from('reviews')
-    .select('id')
-    .eq('reviewee_id', tradeUserId)
-    .eq('reviewee_type', 'trade')
-    .gte('submitted_at', sevenDaysAgo)
-
-  if ((recentReviews?.length ?? 0) > 5) {
-    const spikeFlag = {
-      job_id: jobId,
-      flag_type: 'velocity_spike' as const,
-      details: `Tradesperson received ${recentReviews!.length} reviews in the last 7 days`,
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await admin.from('review_integrity_flags').insert([spikeFlag] as any[])
-  }
 }

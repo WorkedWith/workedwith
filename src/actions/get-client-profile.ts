@@ -1,5 +1,6 @@
 'use server'
 
+import { confirmationLabel } from '@/lib/request-outcomes'
 import { createHash } from 'crypto'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
@@ -28,6 +29,7 @@ export type ClientProfileResult =
       total_reviews: number
       verification_tier: VerificationTier
       member_since: string
+      confirmation_label?: string | null
     }
   | {
       status: 'pro'
@@ -36,6 +38,7 @@ export type ClientProfileResult =
       total_reviews: number
       verification_tier: VerificationTier
       member_since: string
+      confirmation_label?: string | null
       payment_reliability_score: number
       communication_score: number
       scope_clarity_score: number
@@ -127,13 +130,13 @@ export async function getClientProfile(identifier: string): Promise<ClientProfil
   }
 
   // Fetch client profile (need both user and profile to return a result)
-  let clientProfile: { id: string; user_id: string; average_rating: number; total_reviews: number; payment_reliability_score: number; communication_score: number; scope_clarity_score: number; red_flag_count: number } | null = null
+  let clientProfile: { id: string; user_id: string; average_rating: number; total_reviews: number; payment_reliability_score: number; communication_score: number; scope_clarity_score: number; red_flag_count: number; confirmation_label: string | null } | null = null
   let foundUserRecord: { created_at: string; verification_tier: string } | null = null
 
   if (foundUserId) {
     const [{ data: userRow }, { data: cp }] = await Promise.all([
       admin.from('users').select('created_at, verification_tier').eq('id', foundUserId).single(),
-      admin.from('client_profiles').select('id, user_id, average_rating, total_reviews, payment_reliability_score, communication_score, scope_clarity_score, red_flag_count').eq('user_id', foundUserId).maybeSingle(),
+      admin.from('client_profiles').select('id, user_id, average_rating, total_reviews, payment_reliability_score, communication_score, scope_clarity_score, red_flag_count, confirmation_counted, confirmation_confirmed').eq('user_id', foundUserId).maybeSingle(),
     ])
     if (userRow) foundUserRecord = { created_at: userRow.created_at as string, verification_tier: userRow.verification_tier as string }
     if (cp) {
@@ -146,6 +149,7 @@ export async function getClientProfile(identifier: string): Promise<ClientProfil
         communication_score: cp.communication_score as number,
         scope_clarity_score: cp.scope_clarity_score as number,
         red_flag_count: cp.red_flag_count as number,
+        confirmation_label: confirmationLabel(cp.confirmation_counted as number | null, cp.confirmation_confirmed as number | null),
       }
     }
   }
@@ -170,6 +174,7 @@ export async function getClientProfile(identifier: string): Promise<ClientProfil
   if (!isPro) {
     return {
       status: 'free',
+      confirmation_label: clientProfile.confirmation_label,
       overall_rating: clientProfile.average_rating,
       total_reviews: clientProfile.total_reviews,
       verification_tier: verTier,
@@ -215,6 +220,7 @@ export async function getClientProfile(identifier: string): Promise<ClientProfil
     communication_score: clientProfile.communication_score,
     scope_clarity_score: clientProfile.scope_clarity_score,
     red_flag_count: clientProfile.red_flag_count,
+    confirmation_label: clientProfile.confirmation_label,
     recent_reviews: recentReviews.map(r => ({
       overall_rating: r.overall_rating as number | null,
       written_review: r.written_review as string | null,

@@ -139,7 +139,7 @@ export function BackdatedJobForm({ initiatedBy }: { initiatedBy: JobInitiatedBy 
         <p className="mt-2 text-sm text-gray-600 leading-relaxed">
           {success.reviewSaved
             ? <>Your invite has been sent and your review saved. <span className="font-medium text-brand-navy">{success.inviteeSentTo}</span> will be notified.</>
-            : <>Once <span className="font-medium text-brand-navy">{success.inviteeSentTo}</span> confirms, you can both leave verified reviews.</>}
+            : <>Once <span className="font-medium text-brand-navy">{success.inviteeSentTo}</span> confirms, you can both leave reviews.</>}
         </p>
         <div className="mt-6 flex flex-col gap-3">
           <a

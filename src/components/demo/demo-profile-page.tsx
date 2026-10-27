@@ -14,7 +14,7 @@ export function DemoProfilePage({ profile, reviews }: Props) {
         <div className="mx-auto max-w-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <p className="text-sm text-amber-800 leading-snug">
             <span className="font-semibold">This is an example WorkedWith profile.</span>{' '}
-            Join to see real verified tradespeople in your area.
+            Join to see real tradespeople in your area.
           </p>
           <a
             href="/join/client/individual"
@@ -65,7 +65,7 @@ export function DemoProfilePage({ profile, reviews }: Props) {
               <div className="space-y-1.5 pt-1">
                 <p className="text-sm text-gray-600">
                   <span className="font-semibold text-brand-navy">{profile.total_reviews}</span>{' '}
-                  verified review{profile.total_reviews !== 1 ? 's' : ''}
+                  review{profile.total_reviews !== 1 ? 's' : ''}
                 </p>
                 <p className="text-sm text-gray-600">
                   <span className="font-semibold text-brand-navy">{profile.total_jobs}</span>{' '}
@@ -78,10 +78,10 @@ export function DemoProfilePage({ profile, reviews }: Props) {
           {/* Verification badges */}
           <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-gray-400">
-              Verified on WorkedWith
+              Checked on WorkedWith
             </h2>
             <div className="flex flex-wrap gap-2">
-              <VerifiedBadge>✓ Phone Verified</VerifiedBadge>
+              <VerifiedBadge>✓ Phone checked</VerifiedBadge>
               {profile.verification_tier === 'fully_verified' && (
                 <VerifiedBadge>✓ ID Verified</VerifiedBadge>
               )}
@@ -149,7 +149,7 @@ function ReviewCard({ review }: { review: DemoReview }) {
         </span>
         {review.is_backdated && (
           <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-            Verified past job
+            Confirmed past job
           </span>
         )}
       </div>

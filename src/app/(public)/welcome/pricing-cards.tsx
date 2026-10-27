@@ -14,7 +14,7 @@ const FREE_FEATURES = [
 
 const STANDARD_EXTRAS = [
   'Full client profile on lookup (payment reliability, red flag history, written review excerpts)',
-  'Verified badge on your public profile',
+  'Member badge on your public profile',
   'Photo gallery on your profile (up to 5 photos)',
 ]
 
@@ -79,7 +79,7 @@ export function PricingCards() {
               )}
             </div>
             <span className="shrink-0 rounded-full bg-brand-amber px-2.5 py-1 text-xs font-semibold text-brand-navy">
-              Verified
+              Member
             </span>
           </div>
           <ul className="mt-6 flex-1 space-y-2.5">

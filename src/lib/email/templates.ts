@@ -599,3 +599,88 @@ export function seededOutreach(p: {
       }
   }
 }
+
+// ── Admin plan grants ──────────────────────────────────────────
+
+export function grantStarted(p: { plan: string; endsOn: string; isPro: boolean }): EmailContent {
+  return {
+    subject: `You've got WorkedWith ${p.plan} free until ${p.endsOn}`,
+    preheader: 'Nothing to pay and no card needed.',
+    heading: `${p.plan} is free for you until ${p.endsOn}`,
+    paragraphs: [
+      `Good news. We've given your WorkedWith account ${p.plan} free until ${p.endsOn}. There's nothing to pay and no card needed.`,
+      ...(p.isPro ? ['Choose your 3 Boosted Districts to start showing at the top of local searches.'] : []),
+      `If you'd like to keep it after ${p.endsOn}, you can upgrade any time from your account.`,
+    ],
+    button: p.isPro
+      ? { label: 'Choose my districts', url: `${APP_URL}/profile/areas` }
+      : { label: "See what's included", url: `${APP_URL}/subscription` },
+  }
+}
+
+export function grantEnding(p: { plan: string; endsOn: string; daysLeft: 14 | 3; benefits: string[] }): EmailContent {
+  return {
+    subject: p.daysLeft === 3
+      ? `3 days left of your free ${p.plan}`
+      : `Your free ${p.plan} ends on ${p.endsOn}`,
+    heading: p.daysLeft === 3 ? `3 days left of your free ${p.plan}` : `Your free ${p.plan} ends on ${p.endsOn}`,
+    paragraphs: [
+      `Your free ${p.plan} on WorkedWith ends on ${p.endsOn}. After that your account moves to Free and your reviews and job history stay exactly as they are.`,
+      `To keep ${p.benefits.join(', ')}, upgrade before then.`,
+    ],
+    button: { label: 'Upgrade', url: `${APP_URL}/subscription` },
+  }
+}
+
+export function grantEnded(p: { plan: string }): EmailContent {
+  return {
+    subject: `Your free ${p.plan} has ended`,
+    heading: `Your free ${p.plan} has ended`,
+    paragraphs: [
+      `Your free ${p.plan} on WorkedWith has now ended and your account is on Free. Your reviews and job history are all still there.`,
+      'You can upgrade any time.',
+    ],
+    button: { label: 'Upgrade', url: `${APP_URL}/subscription` },
+  }
+}
+
+// ── Declines and the evidence route ────────────────────────────
+
+export function jobRequestDeclined(p: { name: string; jobType: string; notMe: boolean; requestId: string }): EmailContent {
+  return {
+    subject: `${p.name} has declined your job request`,
+    heading: 'Your job request was declined',
+    paragraphs: [
+      `**${p.name}** has not confirmed the ${jobLabel(p.jobType)} you logged.${p.notMe ? ' They say they did not do this job, or it is not them.' : ''}`,
+      'If the job did happen, you can send us proof, such as an invoice or a bank transfer, within 30 days and we will look at it.',
+    ],
+    button: { label: 'Send proof', url: `${APP_URL}/requests/${p.requestId}/evidence` },
+  }
+}
+
+export function evidenceReceived(p: { requesterName: string; jobType: string; deadline: string; requestId: string }): EmailContent {
+  return {
+    subject: `${p.requesterName} has sent proof of a job with you`,
+    heading: 'Proof of a job has been sent',
+    paragraphs: [
+      `**${p.requesterName}** says the ${jobLabel(p.jobType)} you declined did happen and has sent evidence.`,
+      `You have until ${p.deadline} to give your side, or you can confirm the job now. WorkedWith will then decide within 21 days.`,
+    ],
+    button: { label: 'Give your side', url: `${APP_URL}/requests/${p.requestId}/evidence/respond` },
+  }
+}
+
+export function evidenceDecision(p: { confirmed: boolean }): EmailContent {
+  return {
+    subject: 'We have decided on the job request',
+    heading: 'We have decided',
+    paragraphs: [
+      'We have looked at both sides.',
+      p.confirmed
+        ? 'Decision: the job is confirmed and you can now each leave a review.'
+        : 'Decision: the job request stays declined.',
+      'If you have questions, reply to this email.',
+    ],
+    button: { label: 'Go to your dashboard', url: `${APP_URL}/dashboard` },
+  }
+}

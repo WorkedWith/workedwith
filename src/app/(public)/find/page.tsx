@@ -12,7 +12,7 @@ import { SiteHeader } from '@/components/site-header'
 
 export const metadata: Metadata = {
   title: 'Find a Tradesperson | WorkedWith',
-  description: 'Search verified tradespeople near you. Every tradesperson on WorkedWith has confirmed jobs and genuine mutual reviews.',
+  description: 'Search tradespeople near you. Every tradesperson on WorkedWith has confirmed jobs and genuine mutual reviews.',
 }
 
 type PageProps = {
@@ -66,7 +66,7 @@ export default async function FindPage({ searchParams }: PageProps) {
             Find a tradesperson
           </h1>
           <p className="mt-3 text-base text-white/70">
-            Verified tradespeople with genuine mutual reviews from real jobs.
+            Tradespeople with genuine mutual reviews from real jobs.
           </p>
 
           {/* Search card */}
@@ -138,8 +138,8 @@ export default async function FindPage({ searchParams }: PageProps) {
         {hasSearch && searchResult?.success && hasAnyResults && isAuthenticated && (
           <div>
             <p className="text-sm text-gray-400 mb-4">
-              {realResults.length} verified result{realResults.length !== 1 ? 's' : ''}
-              {hasSeededResults ? ` + ${seededResults.length} unverified listing${seededResults.length !== 1 ? 's' : ''}` : ''}
+              {realResults.length} result{realResults.length !== 1 ? 's' : ''}
+              {hasSeededResults ? ` + ${seededResults.length} listing${seededResults.length !== 1 ? 's' : ''} not yet claimed` : ''}
               {' '}covering {district}
             </p>
             <div className="space-y-4">
@@ -203,24 +203,24 @@ function ResultCard({ result }: { result: TradesearchResult }) {
           <h2 className="text-lg font-bold text-brand-navy leading-snug">{result.company_name || result.full_name}</h2>
           {result.verification_tier === 'fully_verified' && (
             <span className="mt-1.5 inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
-              ID Verified
+              ID verified
             </span>
           )}
           {result.verification_tier === 'phone_verified' && (
             <span className="mt-1.5 inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-              Phone Verified
+              Phone checked
             </span>
           )}
         </div>
         <div className="shrink-0 flex items-center gap-2">
           {result.subscription_tier === 'pro' && (
-            <span className="rounded-full bg-brand-amber px-2.5 py-0.5 text-xs font-bold text-brand-navy">
-              Pro
+            <span title="On a WorkedWith Pro plan." className="rounded-full bg-brand-amber px-2.5 py-0.5 text-xs font-bold text-brand-navy">
+              Pro member
             </span>
           )}
           {result.subscription_tier === 'standard' && (
-            <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500">
-              Verified
+            <span title="On a WorkedWith Standard plan." className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500">
+              Member
             </span>
           )}
         </div>
@@ -254,6 +254,11 @@ function ResultCard({ result }: { result: TradesearchResult }) {
           <span className="text-sm text-gray-400">📍 {formatAreas(result.operating_areas)}</span>
         )}
       </div>
+      {result.confirmation_label && (
+        <p className="mt-2 text-xs text-gray-500" title="How often this trade confirms jobs other people log with them, over the last 2 years.">
+          {result.confirmation_label}
+        </p>
+      )}
 
       <div className="mt-5 flex justify-end">
         <a

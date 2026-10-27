@@ -5,7 +5,7 @@ import { TradeIcon } from '@/components/trade-icon'
 
 export const metadata: Metadata = {
   title: 'For Tradespeople | WorkedWith',
-  description: 'Build your verified reputation, vet clients before you commit, and get found by homeowners who value quality over price.',
+  description: 'Build your reputation, vet clients before you commit, and get found by homeowners who value quality over price.',
 }
 
 const SOCIAL_PROOF_TRADES: { label: string; trade: string }[] = [
@@ -344,7 +344,7 @@ export default function ForTradesPage() {
             Why WorkedWith
           </h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <TrustCard icon={<ShieldIcon />} title="Real people" body="Every account has a verified phone number. Add a photo ID and a selfie for your ID verified badge." />
+            <TrustCard icon={<ShieldIcon />} title="Real people" body="Every account has a checked phone number. Add a photo ID and a selfie for your ID verified badge." />
             <TrustCard icon={<EyeIcon />} title="Blind reviews" body="Neither party can see the other's review until both are published. No retaliation." />
             <TrustCard icon={<HandshakeIcon />} title="Confirmed jobs first" body="Both sides confirm the job before any review is possible." />
             <TrustCard icon={<FlagIcon />} title="UK trades focused" body="Built specifically for the UK trades market and how it actually works." />

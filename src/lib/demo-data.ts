@@ -99,7 +99,7 @@ export const DEMO_TRADE_PROFILES: DemoTradeProfile[] = [
 export const DEMO_REVIEWS_JAMES: DemoReview[] = [
   {
     job_title: 'Full house rewire and consumer unit upgrade',
-    reviewer_label: 'Verified client',
+    reviewer_label: 'Confirmed client',
     trade_type: 'Electrician',
     overall_rating: 5,
     quality_score: 5,
@@ -112,7 +112,7 @@ export const DEMO_REVIEWS_JAMES: DemoReview[] = [
   },
   {
     job_title: 'EV charger installation',
-    reviewer_label: 'Verified client',
+    reviewer_label: 'Confirmed client',
     trade_type: 'Electrician',
     overall_rating: 5,
     quality_score: 5,
@@ -125,7 +125,7 @@ export const DEMO_REVIEWS_JAMES: DemoReview[] = [
   },
   {
     job_title: 'Fuse board replacement',
-    reviewer_label: 'Verified client',
+    reviewer_label: 'Confirmed client',
     trade_type: 'Electrician',
     overall_rating: 5,
     quality_score: 5,
@@ -141,7 +141,7 @@ export const DEMO_REVIEWS_JAMES: DemoReview[] = [
 export const DEMO_REVIEWS_SARAH: DemoReview[] = [
   {
     job_title: 'Skim plaster three rooms and full decoration',
-    reviewer_label: 'Verified client',
+    reviewer_label: 'Confirmed client',
     trade_type: 'Plasterer',
     overall_rating: 5,
     quality_score: 5,
@@ -154,7 +154,7 @@ export const DEMO_REVIEWS_SARAH: DemoReview[] = [
   },
   {
     job_title: 'Feature wall and full lounge redecoration',
-    reviewer_label: 'Verified client',
+    reviewer_label: 'Confirmed client',
     trade_type: 'Painter and Decorator',
     overall_rating: 5,
     quality_score: 5,
@@ -167,7 +167,7 @@ export const DEMO_REVIEWS_SARAH: DemoReview[] = [
   },
   {
     job_title: 'Render and skim new extension',
-    reviewer_label: 'Verified client',
+    reviewer_label: 'Confirmed client',
     trade_type: 'Plasterer',
     overall_rating: 4,
     quality_score: 5,
@@ -183,7 +183,7 @@ export const DEMO_REVIEWS_SARAH: DemoReview[] = [
 export const DEMO_REVIEWS_OWEN: DemoReview[] = [
   {
     job_title: 'Leak trace and repair',
-    reviewer_label: 'Verified client',
+    reviewer_label: 'Confirmed client',
     trade_type: 'Plumber',
     overall_rating: 5,
     quality_score: 5,
@@ -196,7 +196,7 @@ export const DEMO_REVIEWS_OWEN: DemoReview[] = [
   },
   {
     job_title: 'Full bathroom installation',
-    reviewer_label: 'Verified client',
+    reviewer_label: 'Confirmed client',
     trade_type: 'Plumber',
     overall_rating: 5,
     quality_score: 5,
@@ -209,7 +209,7 @@ export const DEMO_REVIEWS_OWEN: DemoReview[] = [
   },
   {
     job_title: 'Boiler service and radiator balance',
-    reviewer_label: 'Verified client',
+    reviewer_label: 'Confirmed client',
     trade_type: 'Plumber',
     overall_rating: 5,
     quality_score: 5,

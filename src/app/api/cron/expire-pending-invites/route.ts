@@ -1,3 +1,6 @@
+import { recordRequestOutcome, findRecipientUserId } from '@/lib/request-outcomes'
+import { INTEGRITY } from '@/lib/integrity/config'
+import { runGrantMaintenance } from '@/lib/grants'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendSeededOutreach, SEEDED_FOLLOW_UPS, SEEDED_LIFETIME_DAYS, type OutreachDay } from '@/lib/seeded-outreach'
@@ -25,6 +28,55 @@ export async function GET(request: Request) {
 
   // ── 1. Expire pending invites ─────────────────────────────────
   {
+    // Requests nobody answered count against the recipient, but only if they already had an account.
+    // Done before the contact details are deleted.
+    {
+      const { data: expiring } = await admin
+        .from('pending_invites')
+        .select('id, contact_email, contact_phone, inviting_client_id, created_at')
+        .eq('status', 'sent')
+        .lt('expires_at', now)
+        .limit(500)
+      let unanswered = 0
+      for (const inv of (expiring ?? []) as unknown as { id: string; contact_email: string | null; contact_phone: string | null; inviting_client_id: string; created_at: string }[]) {
+        const recipient = await findRecipientUserId(admin, { email: inv.contact_email, phone: inv.contact_phone })
+        if (!recipient || recipient === inv.inviting_client_id) continue
+        await recordRequestOutcome(admin, {
+          kind: 'pending_invite', requestId: inv.id, recipientId: recipient,
+          requesterId: inv.inviting_client_id, outcome: 'expired_unanswered', requestedAt: inv.created_at,
+        })
+        unanswered++
+      }
+      results.pendingInvitesUnanswered = unanswered
+    }
+
+    {
+      const { data: expiredJobInvites } = await admin
+        .from('job_invites')
+        .select('id, invitee_email, invitee_phone, inviter_id, sent_at')
+        .eq('status', 'pending')
+        .lt('expires_at', now)
+        .order('expires_at', { ascending: false })
+        .limit(200)
+      const rows = (expiredJobInvites ?? []) as unknown as { id: string; invitee_email: string | null; invitee_phone: string | null; inviter_id: string; sent_at: string }[]
+      let jobUnanswered = 0
+      if (rows.length > 0) {
+        const { data: done } = await admin.from('request_outcomes').select('request_id').eq('request_kind', 'job_invite').in('request_id', rows.map(r => r.id))
+        const seen = new Set(((done ?? []) as unknown as { request_id: string }[]).map(d => d.request_id))
+        for (const inv of rows) {
+          if (seen.has(inv.id)) continue
+          const recipient = await findRecipientUserId(admin, { email: inv.invitee_email, phone: inv.invitee_phone })
+          if (!recipient || recipient === inv.inviter_id) continue
+          await recordRequestOutcome(admin, {
+            kind: 'job_invite', requestId: inv.id, recipientId: recipient,
+            requesterId: inv.inviter_id, outcome: 'expired_unanswered', requestedAt: inv.sent_at,
+          })
+          jobUnanswered++
+        }
+      }
+      results.jobInvitesUnanswered = jobUnanswered
+    }
+
     const { data, error } = await admin
       .from('pending_invites')
       .delete()
@@ -174,6 +226,24 @@ export async function GET(request: Request) {
     results.incompleteIdChecksCleared = cleared
   }
 
+  // ── 2d. Admin plan grants: start emails, 14 and 3 day reminders, expiry ──
+  {
+    results.grants = await runGrantMaintenance(admin)
+  }
+
+  // ── 2e. Integrity hashes are kept for 90 days only ──────────
+  {
+    const cutoff = new Date(Date.now() - INTEGRITY.retentionDays * 86_400_000).toISOString()
+    const { data: gone } = await admin.from('integrity_signals').delete().lt('created_at', cutoff).select('id')
+    const { data: cleared } = await admin
+      .from('jobs')
+      .update({ logged_from_ip: null, confirmed_from_ip: null, logged_from_user_agent: null, confirmed_from_user_agent: null })
+      .lt('created_at', cutoff)
+      .or('logged_from_ip.not.is.null,confirmed_from_ip.not.is.null,logged_from_user_agent.not.is.null,confirmed_from_user_agent.not.is.null')
+      .select('id')
+    results.integrityHashesDeleted = { signals: gone?.length ?? 0, jobs: cleared?.length ?? 0 }
+  }
+
   // ── 3. Rate limit event cleanup (> 24 hours) ─────────────────
   {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
@@ -183,6 +253,52 @@ export async function GET(request: Request) {
       .lt('created_at', cutoff)
       .select('id')
     results.rateLimitRowsDeleted = deleted?.length ?? 0
+  }
+
+  // ── 5. Evidence claims: response deadline, file deletion, stale drafts ──
+  {
+    const { data: due } = await admin
+      .from('job_evidence_claims')
+      .update({ status: 'under_review' })
+      .eq('status', 'awaiting_response')
+      .lt('response_deadline', now)
+      .select('id')
+    results.evidenceMovedToReview = due?.length ?? 0
+
+    const fileCutoff = new Date(Date.now() - 30 * 86_400_000).toISOString()
+    const { data: old } = await admin
+      .from('job_evidence_claims')
+      .select('id')
+      .in('status', ['upheld', 'not_upheld', 'withdrawn'])
+      .is('files_deleted_at', null)
+      .lt('decided_at', fileCutoff)
+      .limit(100)
+    let filesRemoved = 0
+    for (const c of (old ?? []) as unknown as { id: string }[]) {
+      const { data: fs } = await admin.from('job_evidence_files').select('id, storage_path').eq('claim_id', c.id)
+      const paths = ((fs ?? []) as unknown as { storage_path: string }[]).map(f => f.storage_path)
+      if (paths.length) await admin.storage.from('job-evidence').remove(paths)
+      await admin.from('job_evidence_files').delete().eq('claim_id', c.id)
+      await admin.from('job_evidence_claims').update({ files_deleted_at: now }).eq('id', c.id)
+      filesRemoved += paths.length
+    }
+    results.evidenceFilesDeleted = filesRemoved
+
+    const draftCutoff = new Date(Date.now() - 2 * 86_400_000).toISOString()
+    const { data: drafts } = await admin.from('job_evidence_claims').select('id').eq('status', 'draft').lt('created_at', draftCutoff).limit(100)
+    for (const d of (drafts ?? []) as unknown as { id: string }[]) {
+      const { data: fs } = await admin.from('job_evidence_files').select('storage_path').eq('claim_id', d.id)
+      const paths = ((fs ?? []) as unknown as { storage_path: string }[]).map(f => f.storage_path)
+      if (paths.length) await admin.storage.from('job-evidence').remove(paths)
+      await admin.from('job_evidence_claims').delete().eq('id', d.id)
+    }
+    results.evidenceDraftsCleared = drafts?.length ?? 0
+  }
+
+  // ── 4. Keep the rolling 24 month confirmation rates fresh ────
+  {
+    const { error } = await admin.rpc('refresh_all_confirmation_stats')
+    if (error) console.error('refresh_all_confirmation_stats failed (non-fatal):', error.message)
   }
 
   return NextResponse.json(results)

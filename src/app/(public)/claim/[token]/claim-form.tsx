@@ -119,7 +119,7 @@ export function ClaimForm({ claimToken, businessName, contactPhone, contactEmail
       <div className="rounded-xl border border-brand-amber/30 bg-amber-50 p-6">
         <h2 className="font-semibold text-brand-navy">Is this your business?</h2>
         <p className="mt-1 mb-4 text-sm text-gray-600">
-          Claiming is free. You will be able to add your own details and collect verified reviews.
+          Claiming is free. You will be able to add your own details and collect reviews.
         </p>
 
         {contactPhone && mode === 'idle' && (

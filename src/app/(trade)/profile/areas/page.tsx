@@ -1,3 +1,4 @@
+import { getEffectiveTier } from '@/lib/tier'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
@@ -23,7 +24,8 @@ export default async function OperatingAreasPage() {
 
   if (!profile) redirect('/onboarding/trade')
 
-  const isPro = (profile.subscription_tier as string) === 'pro'
+  // A Pro grant counts: it includes the 3 Boosted Districts (paid add ons still need a paid plan)
+  const isPro = (await getEffectiveTier(user.id)) === 'pro'
 
   const billed = (profile.boosted_district_addon_quantity as number | null) ?? 0
   const paid = Math.max((profile.boosted_district_addon_paid_quantity as number | null) ?? 0, billed)

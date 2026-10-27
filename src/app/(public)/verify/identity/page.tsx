@@ -59,7 +59,7 @@ export default async function VerifyIdentityPage() {
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-600 text-white text-sm font-bold">✓</span>
               <div>
                 <p className="font-semibold text-green-900">Your identity is verified</p>
-                <p className="mt-0.5 text-sm text-green-700">Your Verified badge is live on your profile.</p>
+                <p className="mt-0.5 text-sm text-green-700">Your ID verified badge is live on your profile.</p>
               </div>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { getEffectiveTier } from '@/lib/tier'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -15,9 +16,10 @@ import { TradeSearchForm } from './trade-search-form'
 import { ClientLookupForm } from '@/components/client-lookup-form'
 import { getProfileAnalytics } from '@/actions/get-profile-analytics'
 import type { ProfileAnalytics } from '@/actions/get-profile-analytics'
-import type { User, Notification, SubscriptionTier } from '@/types/database'
+import type { User, Notification } from '@/types/database'
 import { TradeChip } from '@/components/trade-chip'
 import { Avatar } from '@/components/avatar'
+import { EvidencePrompts } from '@/components/evidence-prompts'
 
 export const metadata = { title: 'Dashboard | WorkedWith', robots: { index: false } }
 
@@ -68,7 +70,7 @@ export default async function DashboardPage() {
 
   const tpId = tradeProfile ? (tradeProfile as unknown as { id: string }).id : undefined
   const cpId = clientProfile ? (clientProfile as unknown as { id: string }).id : undefined
-  const isProTrade = isTrade && (tradeProfile?.subscription_tier as SubscriptionTier | null) === 'pro'
+  const isProTrade = isTrade && (await getEffectiveTier(user.id)) === 'pro'
 
   let hasLiveJob = false
   let hasBackdatedJobTrade = false
@@ -128,6 +130,8 @@ export default async function DashboardPage() {
 
       <div className="mx-auto max-w-2xl lg:max-w-5xl px-4 py-8 sm:px-6">
 
+        <EvidencePrompts userId={user.id} />
+
         {/* ══════════════════════════════════════════════
             TRADE LAYOUT  (trade + both users)
         ══════════════════════════════════════════════ */}
@@ -145,7 +149,7 @@ export default async function DashboardPage() {
                 <ul className="mt-3 space-y-2">
                   {[
                     'Check a client\'s record before you take the job on',
-                    'Build a profile of verified reviews that wins you work',
+                    'Build a profile of real reviews that wins you work',
                     'Fair reviews: neither side sees the other\'s until both are in',
                     'Free to start, with unlimited jobs and reviews',
                   ].map(item => (
@@ -323,7 +327,7 @@ export default async function DashboardPage() {
                       <p className="font-semibold text-gray-700 mb-2">Your WorkedWith reputation</p>
                       <p className="text-sm text-gray-500 leading-relaxed">
                         Your rating will appear here once you have completed jobs and received reviews.
-                        The more verified jobs you complete, the stronger your profile.
+                        The more confirmed jobs you complete, the stronger your profile.
                       </p>
                     </div>
                   )}
@@ -676,7 +680,7 @@ function RequestsBox({ tradeRequests, jobRequests }: { tradeRequests: TradeReque
             <p className="text-sm font-semibold text-brand-navy break-words">{r.clientName}</p>
             <p className="mt-0.5 text-sm text-gray-600">{aJobLabel(r.jobType)}, {r.jobDate}</p>
             {r.description && <p className="mt-1 text-sm text-gray-500 break-words">{r.description}</p>}
-            <div className="mt-3"><InviteDecision token={r.token} compact /></div>
+            <div className="mt-3"><InviteDecision token={r.token} compact requesterName={r.clientName} /></div>
           </li>
         ))}
         {jobRequests.map(r => (
@@ -686,7 +690,7 @@ function RequestsBox({ tradeRequests, jobRequests }: { tradeRequests: TradeReque
               {aJobLabel(r.jobType)}{r.when ? `, ${r.when}` : ''}{r.isBackdated ? ' (already finished)' : ''}
             </p>
             {r.description && <p className="mt-1 text-sm text-gray-500 break-words">{r.description}</p>}
-            <div className="mt-3"><InviteDecision token={r.token} kind="job" compact /></div>
+            <div className="mt-3"><InviteDecision token={r.token} kind="job" compact requesterName={r.fromName} /></div>
           </li>
         ))}
       </ul>

@@ -57,7 +57,7 @@ export default async function VerifyPhonePage({ searchParams }: PageProps) {
             Verify your mobile
           </h1>
           <p className="mt-2 text-sm text-white/60">
-            A verified number increases trust on your profile.
+            A checked phone number increases trust on your profile.
           </p>
         </div>
 

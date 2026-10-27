@@ -17,11 +17,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'How do I find a tradesperson?',
-    a: 'Go to the Find a tradesperson page, select a trade type, and enter your postcode. We match you with tradespeople who cover your postcode district. Results show verified tradespeople with genuine mutual reviews.',
+    a: 'Go to the Find a tradesperson page, select a trade type, and enter your postcode. We match you with tradespeople who cover your postcode district. Results show tradespeople with genuine mutual reviews from confirmed jobs.',
   },
   {
-    q: 'What is a verified review?',
-    a: 'A review is verified when both the tradesperson and the client have confirmed the job took place and both have submitted their reviews independently.',
+    q: 'What makes a review genuine?',
+    a: 'A review is genuine when both the tradesperson and the client have confirmed the job took place and both have submitted their reviews independently.',
   },
   {
     q: 'Can I add jobs I completed before joining?',
@@ -29,7 +29,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'What do the paid plans include?',
-    a: 'Standard is £9.99 per month. It unlocks the full client profile on lookup, including payment reliability scores, red flag history and written review excerpts from other tradespeople, plus a verified badge and a gallery of up to 5 photos of your work. Pro is £39.99 per month. It adds Boosted Districts for top of search placement (3 included, extra districts £10 per month each), a Pro badge, a gallery of up to 10 photos plus up to 5 photos on each confirmed job, profile analytics and priority dispute resolution.',
+    a: 'Standard is £9.99 per month. It unlocks the full client profile on lookup, including payment reliability scores, red flag history and written review excerpts from other tradespeople, plus a Member badge and a gallery of up to 5 photos of your work. Pro is £39.99 per month. It adds Boosted Districts for top of search placement (3 included, extra districts £10 per month each), a Pro member badge, a gallery of up to 10 photos plus up to 5 photos on each confirmed job, profile analytics and priority dispute resolution.',
   },
   {
     q: 'What happens if someone leaves an unfair review?',

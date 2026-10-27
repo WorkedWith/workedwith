@@ -1,3 +1,4 @@
+import { supersedeGrantIfCovered, hasActiveProGrant } from '@/lib/grants'
 import type Stripe from 'stripe'
 import { sendEmail } from '@/lib/email/send'
 import { paymentFailed, planCancelled, planChanged, planStarted } from '@/lib/email/templates'
@@ -91,6 +92,8 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
         })
         .eq('user_id', userId)
 
+      await supersedeGrantIfCovered(admin, userId, tier)
+
       await emailUser(admin, userId, planStarted({
         plan: PLAN_LABEL[tier] ?? tier,
         trialEnds: subscription.trial_end ? formatDateLong(new Date(subscription.trial_end * 1000)) : null,
@@ -123,6 +126,9 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
         .eq('stripe_customer_id', customerId)
         .maybeSingle()
 
+      // An active Pro grant keeps the Boosted Districts it includes
+      const grantKeepsBoosts = existing?.user_id ? await hasActiveProGrant(admin, existing.user_id as string) : false
+
       const storedStart = (existing?.subscription_period_start_at as string | null) ?? null
       const storedPaid = (existing?.boosted_district_addon_paid_quantity as number | null) ?? 0
       const periodRolledOver =
@@ -140,9 +146,11 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
           is_searchable: tier !== 'free',
           boosted_district_addon_quantity: tier === 'pro' ? addonQty : 0,
           boosted_district_addon_paid_quantity: paidQty,
-          ...boostClear,
+          ...(grantKeepsBoosts ? {} : boostClear),
         })
         .eq('stripe_customer_id', customerId)
+
+      if (existing?.user_id) await supersedeGrantIfCovered(admin, existing.user_id as string, tier)
 
       // Customer emails: only on a real change, never on routine renewals
       const existingUserId = (existing?.user_id as string | null) ?? null
@@ -170,6 +178,15 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
 
+      const { data: lapsed } = await admin
+        .from('trade_profiles')
+        .select('user_id')
+        .eq('stripe_customer_id', customerId)
+        .maybeSingle()
+      const lapsedUserId = (lapsed?.user_id as string | null | undefined) ?? null
+      // An active Pro grant keeps the Boosted Districts it includes
+      const grantKeepsBoosts = lapsedUserId ? await hasActiveProGrant(admin, lapsedUserId) : false
+
       // Clear boosted districts and add-on on lapse/cancel — no silent reinstatement on resubscribe
       await admin
         .from('trade_profiles')
@@ -180,8 +197,7 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
           subscription_period_start_at: null,
           stripe_subscription_id: null,
           is_searchable: false,
-          boosted_districts: [],
-          boosted_districts_updated_at: null,
+          ...(grantKeepsBoosts ? {} : { boosted_districts: [], boosted_districts_updated_at: null }),
           boosted_district_addon_quantity: 0,
           boosted_district_addon_paid_quantity: 0,
         })

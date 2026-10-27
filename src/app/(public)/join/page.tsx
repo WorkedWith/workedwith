@@ -35,7 +35,7 @@ export default async function JoinPage({
           >
             <h2 className="text-2xl font-bold text-white">I&apos;m a tradesperson</h2>
             <p className="mt-3 flex-1 text-sm leading-relaxed text-white/70">
-              Build your verified work history, vet clients before you commit, and grow your reputation.
+              Build your confirmed work history, vet clients before you commit, and grow your reputation.
             </p>
             <span className="mt-8 inline-flex h-12 items-center justify-center rounded-xl bg-brand-amber px-6 text-sm font-semibold text-brand-navy group-hover:bg-amber-400 transition-colors">
               Join as a tradesperson
@@ -49,7 +49,7 @@ export default async function JoinPage({
           >
             <h2 className="text-2xl font-bold text-brand-navy">I&apos;m a client</h2>
             <p className="mt-3 flex-1 text-sm leading-relaxed text-gray-600">
-              Find verified tradespeople and build a reputation that gets you the best trades wanting to work with you.
+              Find tradespeople and build a reputation that gets you the best trades wanting to work with you.
             </p>
             <span className="mt-8 inline-flex h-12 items-center justify-center rounded-xl bg-brand-navy px-6 text-sm font-semibold text-white group-hover:bg-brand-navy/90 transition-colors">
               Join as a client

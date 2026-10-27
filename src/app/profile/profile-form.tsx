@@ -158,7 +158,7 @@ export function ProfileForm({ user, tradeProfile, clientProfile }: Props) {
           />
           {user.phone_verified && (
             <span className="shrink-0 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-              ✓ Verified
+              ✓ Checked
             </span>
           )}
         </div>

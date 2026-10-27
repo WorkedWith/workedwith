@@ -27,17 +27,17 @@ export function DemoProfileCard({ profile }: Props) {
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           {profile.verification_tier === 'fully_verified' && (
             <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
-              ID Verified
+              ID verified
             </span>
           )}
           {profile.subscription_tier === 'pro' && (
             <span className="rounded-full bg-brand-amber px-2.5 py-0.5 text-xs font-bold text-brand-navy">
-              Pro
+              Pro member
             </span>
           )}
           {profile.subscription_tier === 'standard' && (
             <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500">
-              Verified
+              Member
             </span>
           )}
         </div>

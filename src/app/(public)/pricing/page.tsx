@@ -20,8 +20,8 @@ const FAQS = [
     a: 'Never. Client accounts are permanently free on WorkedWith.',
   },
   {
-    q: 'What makes a review verified?',
-    a: 'A review is verified when both the tradesperson and the client have confirmed the job took place and both have submitted their reviews independently. Neither review is visible until both are submitted.',
+    q: 'What makes a review genuine?',
+    a: 'A review is genuine when both the tradesperson and the client have confirmed the job took place and both have submitted their reviews independently. Neither review is visible until both are submitted.',
   },
   {
     q: 'Is the free tier really unlimited?',
@@ -53,7 +53,7 @@ export default function PricingPage() {
       <section className="bg-brand-navy px-4 py-20 sm:py-24 sm:px-6 text-center">
         <h1 className="text-4xl font-bold text-white sm:text-5xl">Simple, honest pricing.</h1>
         <p className="mx-auto mt-4 max-w-xl text-lg text-white/60 leading-relaxed">
-          Free forever for the basics. Standard for verified trust. Pro for maximum visibility.
+          Free forever for the basics. Standard for the full picture on clients. Pro for maximum visibility.
         </p>
       </section>
 

@@ -160,7 +160,7 @@ export default async function InviteJobPage({ params }: { params: { token: strin
         </h1>
         <p className="mt-3 text-base text-white/70 max-w-sm mx-auto leading-relaxed">
           They logged <span className="font-medium text-white">{aJobLabel(job.job_type)}</span>
-          {jobPeriod !== 'recently' ? ` in ${jobPeriod}` : ''}. Confirm it happened and leave each other verified reviews.
+          {jobPeriod !== 'recently' ? ` in ${jobPeriod}` : ''}. Confirm it happened and leave each other reviews.
         </p>
       </div>
 

@@ -56,6 +56,8 @@ export interface TradeProfile {
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
   total_jobs: number
+  confirmation_counted: number
+  confirmation_confirmed: number
   created_at: string
 }
 
@@ -76,6 +78,8 @@ export interface ClientProfile {
   red_flag_count: number
   is_searchable: boolean
   total_jobs: number
+  confirmation_counted: number
+  confirmation_confirmed: number
   created_at: string
 }
 
@@ -178,6 +182,9 @@ export type IntegrityFlagType =
   | 'velocity_spike'
   | 'postcode_distance_anomaly'
   | 'new_accounts_both_parties'
+  | 'combined_signals'
+  | 'false_decline'
+  | 'repeated_unfounded_claims'
 
 export type IntegrityFlagOutcome = 'pending' | 'dismissed' | 'actioned'
 
@@ -190,6 +197,63 @@ export interface ReviewIntegrityFlag {
   reviewed_by: string | null
   reviewed_at: string | null
   outcome: IntegrityFlagOutcome
+}
+
+export interface IntegritySignal {
+  id: string
+  user_id: string
+  kind: 'signup' | 'review'
+  job_id: string | null
+  ip_hash: string | null
+  device_hash: string | null
+  created_at: string
+}
+
+// ── Confirmation rate and evidence (PRD v3.7) ────────────────
+export type RequestKind = 'pending_invite' | 'job_invite'
+export type RequestOutcomeKind = 'confirmed' | 'wont_confirm' | 'not_me' | 'expired_unanswered' | 'overturned'
+
+export interface RequestOutcome {
+  id: string
+  request_kind: RequestKind
+  request_id: string
+  recipient_id: string
+  requester_id: string | null
+  outcome: RequestOutcomeKind
+  requested_at: string
+  resolved_at: string
+}
+
+export type EvidenceClaimStatus = 'draft' | 'awaiting_response' | 'under_review' | 'upheld' | 'not_upheld' | 'withdrawn'
+export type EvidenceType = 'invoice' | 'bank_transfer' | 'quote' | 'messages' | 'other'
+
+export interface JobEvidenceClaim {
+  id: string
+  invite_kind: RequestKind
+  invite_id: string
+  requester_id: string
+  respondent_id: string
+  status: EvidenceClaimStatus
+  requester_statement: string
+  respondent_statement: string | null
+  evidence_types: EvidenceType[]
+  response_deadline: string | null
+  decision_deadline: string | null
+  decided_at: string | null
+  decided_by: string | null
+  decided_how: 'admin' | 'respondent_confirmed' | null
+  files_deleted_at: string | null
+  created_at: string
+}
+
+export interface JobEvidenceFile {
+  id: string
+  claim_id: string
+  uploaded_by: string | null
+  storage_path: string
+  file_type: 'image' | 'pdf'
+  evidence_type: EvidenceType
+  created_at: string
 }
 
 export interface ReviewWindow {
@@ -286,6 +350,8 @@ export interface Dispute {
   is_priority: boolean
 }
 
+export type DeclineReason = 'not_me' | 'wont_confirm'
+
 export type JobInviteStatus = 'pending' | 'accepted' | 'declined' | 'expired'
 
 export interface JobInvite {
@@ -301,6 +367,11 @@ export interface JobInvite {
   responded_at: string | null
   last_reminded_at?: string | null
   reminder_count?: number
+  decline_reason?: DeclineReason | null
+  decline_note?: string | null
+  declined_at?: string | null
+  declined_by_user_id?: string | null
+  overturned_at?: string | null
 }
 
 export type NotificationType =
@@ -349,6 +420,11 @@ export interface PendingInvite {
   claimed_by_user_id: string | null
   claimed_at: string | null
   resulting_job_id: string | null
+  decline_reason: DeclineReason | null
+  decline_note: string | null
+  declined_at: string | null
+  declined_by_user_id: string | null
+  overturned_at: string | null
   created_at: string
   expires_at: string
 }
@@ -447,6 +523,42 @@ export interface PhotoReport {
   created_at: string
 }
 
+// ── Admin plan grants (PRD v3.8 item 6) ──────────────────────
+export type TierGrantTier = 'standard' | 'pro'
+export type TierGrantReason = 'founding' | 'goodwill' | 'partnership' | 'other'
+export type TierGrantEndReason = 'expired' | 'ended_early' | 'superseded'
+export type TierGrantAction = 'created' | 'extended' | 'tier_changed' | 'ended_early' | 'expired' | 'superseded'
+
+export interface TierGrant {
+  id: string
+  user_id: string
+  tier: TierGrantTier
+  starts_at: string
+  ends_at: string
+  reason: TierGrantReason
+  note: string | null
+  granted_by: string | null
+  ended_at: string | null
+  ended_reason: TierGrantEndReason | null
+  ended_by: string | null
+  started_email_sent_at: string | null
+  reminder_14_sent_at: string | null
+  reminder_3_sent_at: string | null
+  ended_email_sent_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TierGrantEvent {
+  id: string
+  grant_id: string
+  action: TierGrantAction
+  actor: string | null
+  before_values: Record<string, unknown> | null
+  after_values: Record<string, unknown> | null
+  created_at: string
+}
+
 // ── Rate limit events ─────────────────────────────────────────
 
 export interface BoostEventRow {
@@ -516,13 +628,13 @@ export interface Database {
       }
       trade_profiles: {
         Row: WithIndex<TradeProfile>
-        Insert: Omit<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
+        Insert: Omit<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
         Update: Partial<TradeProfile>
         Relationships: []
       }
       client_profiles: {
         Row: WithIndex<ClientProfile>
-        Insert: Omit<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'> & Partial<Pick<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'>>
+        Insert: Omit<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'> & Partial<Pick<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'>>
         Update: Partial<ClientProfile>
         Relationships: []
       }
@@ -641,6 +753,42 @@ export interface Database {
         Update: Partial<ProfileGalleryImage>
         Relationships: []
       }
+      integrity_signals: {
+        Row: WithIndex<IntegritySignal>
+        Insert: { user_id: string; kind: 'signup' | 'review' } & Partial<Omit<IntegritySignal, 'user_id' | 'kind' | 'id' | 'created_at'>>
+        Update: Partial<IntegritySignal>
+        Relationships: []
+      }
+      request_outcomes: {
+        Row: WithIndex<RequestOutcome>
+        Insert: { request_kind: RequestKind; request_id: string; recipient_id: string; outcome: RequestOutcomeKind; requested_at: string } & Partial<Omit<RequestOutcome, 'request_kind' | 'request_id' | 'recipient_id' | 'outcome' | 'requested_at' | 'id'>>
+        Update: Partial<RequestOutcome>
+        Relationships: []
+      }
+      job_evidence_claims: {
+        Row: WithIndex<JobEvidenceClaim>
+        Insert: { invite_kind: RequestKind; invite_id: string; requester_id: string; respondent_id: string; requester_statement: string } & Partial<Omit<JobEvidenceClaim, 'invite_kind' | 'invite_id' | 'requester_id' | 'respondent_id' | 'requester_statement' | 'id' | 'created_at'>>
+        Update: Partial<JobEvidenceClaim>
+        Relationships: []
+      }
+      job_evidence_files: {
+        Row: WithIndex<JobEvidenceFile>
+        Insert: { claim_id: string; storage_path: string; file_type: 'image' | 'pdf'; evidence_type: EvidenceType } & Partial<Omit<JobEvidenceFile, 'claim_id' | 'storage_path' | 'file_type' | 'evidence_type' | 'id' | 'created_at'>>
+        Update: Partial<JobEvidenceFile>
+        Relationships: []
+      }
+      tier_grants: {
+        Row: WithIndex<TierGrant>
+        Insert: { user_id: string; tier: TierGrantTier; ends_at: string } & Partial<Omit<TierGrant, 'user_id' | 'tier' | 'ends_at' | 'id' | 'created_at' | 'updated_at'>>
+        Update: Partial<TierGrant>
+        Relationships: []
+      }
+      tier_grant_events: {
+        Row: WithIndex<TierGrantEvent>
+        Insert: { grant_id: string; action: TierGrantAction } & Partial<Omit<TierGrantEvent, 'grant_id' | 'action' | 'id' | 'created_at'>>
+        Update: Partial<TierGrantEvent>
+        Relationships: []
+      }
       photo_reports: {
         Row: WithIndex<PhotoReport>
         Insert: Partial<Omit<PhotoReport, 'id' | 'created_at'>>
@@ -692,6 +840,9 @@ export interface Database {
     }
     // GenericSchema requires Views and Functions (non-optional)
     Views: { [_ in never]: never }
-    Functions: { [_ in never]: never }
+    Functions: {
+      refresh_confirmation_stats: { Args: { p_user: string }; Returns: undefined }
+      refresh_all_confirmation_stats: { Args: Record<string, never>; Returns: undefined }
+    }
   }
 }

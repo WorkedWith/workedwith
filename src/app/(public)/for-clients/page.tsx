@@ -6,7 +6,7 @@ import { DEMO_TRADE_PROFILES, DEMO_TRADESPERSON_REVIEWS } from '@/lib/demo-data'
 
 export const metadata: Metadata = {
   title: 'Find a Tradesperson | WorkedWith',
-  description: 'Find verified tradespeople in your area with genuine mutual reviews from real jobs.',
+  description: 'Find tradespeople in your area with genuine mutual reviews from real jobs.',
 }
 
 const TRUST_PILLS = [
@@ -177,7 +177,7 @@ export default function ForClientsPage() {
             What tradespeople say about their clients
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-base text-gray-500">
-            On WorkedWith, clients build a reputation too. Here is what verified client reviews look like.
+            On WorkedWith, clients build a reputation too. Here is what real client reviews look like.
           </p>
           <div className="mt-12 grid gap-6 sm:grid-cols-3">
             <SampleReviewCard

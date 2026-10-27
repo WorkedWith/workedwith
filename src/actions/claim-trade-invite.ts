@@ -1,5 +1,6 @@
 'use server'
 
+import { recordRequestOutcome } from '@/lib/request-outcomes'
 import { sendEmail } from '@/lib/email/send'
 import { inviteClaimed } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
@@ -133,6 +134,16 @@ export async function claimTradeInvite(claimToken: string): Promise<ClaimTradeIn
           resulting_job_id: job.id,
         })
         .eq('id', inv.id)
+
+      // Counts towards the trade's confirmation rate
+      await recordRequestOutcome(admin, {
+        kind: 'pending_invite',
+        requestId: inv.id,
+        recipientId: user.id,
+        requesterId: inv.inviting_client_id,
+        outcome: 'confirmed',
+        requestedAt: inv.created_at,
+      })
 
       // Notify inviting client
       const clientUser = (await admin.from('users').select('id, email, full_name').eq('id', inv.inviting_client_id).single()).data

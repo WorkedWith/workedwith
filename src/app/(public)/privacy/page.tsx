@@ -38,7 +38,7 @@ export default async function PrivacyPage() {
           </Section>
 
           <Section n={5} title="Reviews and reputation data">
-            <p>Reviews submitted about you are retained even if your account is closed, as they form part of another user&apos;s verified history. Your name on those reviews is anonymised to Verified Tradesperson or Verified Client on closure.</p>
+            <p>Reviews submitted about you are retained even if your account is closed, as they form part of another user&apos;s history. Your name on those reviews is anonymised on closure.</p>
           </Section>
 
           <Section n={6} title="Who we share data with">
@@ -46,7 +46,7 @@ export default async function PrivacyPage() {
           </Section>
 
           <Section n={7} title="Data retention">
-            <p>Active account data: retained for the duration of your account. Review data: retained indefinitely, anonymised on account closure. Identity hashes: retained indefinitely for fraud prevention. ID document images and selfies: deleted after admin review. Search audit logs: retained for 12 months.</p>
+            <p>Active account data: retained for the duration of your account. Review data: retained indefinitely, anonymised on account closure. Identity hashes: retained indefinitely for fraud prevention. ID document images and selfies: deleted after admin review. Proof you send about a declined job request (invoices, bank transfers, messages): shown only to WorkedWith admins and deleted 30 days after we decide. Search audit logs: retained for 12 months. Network and browser hashes used to spot fake reviews: salted one way hashes recorded when you sign up, log or confirm a job and submit a review, used only to detect fake reviews, and deleted after 90 days.</p>
           </Section>
 
           <Section n={8} title="Your rights">

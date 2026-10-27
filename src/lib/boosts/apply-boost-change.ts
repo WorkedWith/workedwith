@@ -1,3 +1,4 @@
+import { getEffectiveTier } from '@/lib/tier'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripeClient } from '@/lib/stripe/client'
 import {
@@ -82,7 +83,7 @@ export async function applyBoostChange(
     .maybeSingle()
 
   if (!profile) return { status: 'error', error: 'Trade profile not found.' }
-  if ((profile.subscription_tier as string) !== 'pro') {
+  if ((await getEffectiveTier(userId)) !== 'pro') {
     return { status: 'error', error: 'Boosted Districts need a Pro plan.' }
   }
 

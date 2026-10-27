@@ -1,5 +1,6 @@
 'use server'
 
+import { hashSignal } from '@/lib/integrity/hash'
 import { headers } from 'next/headers'
 import { sendEmail } from '@/lib/email/send'
 import { pastJobExisting, pastJobNew } from '@/lib/email/templates'
@@ -61,8 +62,9 @@ function normalizeUKMobile(raw: string): string | null {
 
 export async function logBackdatedJob(input: LogBackdatedJobInput): Promise<LogBackdatedJobResult> {
   const h = await headers()
-  const logged_from_ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? h.get('x-real-ip') ?? null
-  const logged_from_user_agent = h.get('user-agent') ?? null
+  // Stored as salted hashes only (PRD v3.8 item 1)
+  const logged_from_ip = hashSignal(h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? h.get('x-real-ip') ?? null)
+  const logged_from_user_agent = hashSignal(h.get('user-agent') ?? null)
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

@@ -373,7 +373,7 @@ export function FeaturedJobsClient({
               <h3 className="font-semibold text-brand-navy">{job.title}</h3>
               {job.job_id && (
                 <span className="mt-1 inline-flex items-center rounded-full bg-green-50 border border-green-200 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                  Linked to verified job
+                  Linked to a confirmed job
                 </span>
               )}
             </div>

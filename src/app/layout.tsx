@@ -10,10 +10,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: 'WorkedWith | Know who you\'re working with',
-  description: 'The only platform where both the tradesperson and the client have a reputation to protect. Mutual reviews. Verified identities. Real accountability.',
+  description: 'The only platform where both the tradesperson and the client have a reputation to protect. Mutual reviews. ID checks. Real accountability.',
   openGraph: {
     title: 'WorkedWith | Know who you\'re working with',
-    description: 'The only platform where both the tradesperson and the client have a reputation to protect. Mutual reviews. Verified identities. Real accountability.',
+    description: 'The only platform where both the tradesperson and the client have a reputation to protect. Mutual reviews. ID checks. Real accountability.',
     siteName: 'WorkedWith',
     type: 'website',
   },

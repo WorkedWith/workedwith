@@ -94,7 +94,7 @@ export default async function SubscriptionSuccessPage({
             <>
               <p className="mt-3 text-sm text-gray-600 leading-relaxed">
                 Your subscription is active. You now have access to full client reputation
-                profiles, a Verified badge, and a photo gallery.
+                profiles, a Member badge, and a photo gallery.
               </p>
               <div className="mt-8 flex flex-col gap-3">
                 <a

@@ -77,7 +77,7 @@ function JoinTradeForm() {
             Join as a Tradesperson
           </h1>
           <p className="mt-2 text-sm text-white/60">
-            Build your verified work history and vet clients before you commit.
+            Build your confirmed work history and vet clients before you commit.
           </p>
         </div>
 

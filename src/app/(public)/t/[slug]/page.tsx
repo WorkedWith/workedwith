@@ -31,12 +31,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const tradesLabel = tradeTypes.length > 0 ? tradeTypes.join(', ') : 'Tradesperson'
     const reviewsText =
       (profile.total_reviews as number) > 0
-        ? `${profile.total_reviews} verified reviews on WorkedWith.`
+        ? `${profile.total_reviews} reviews from confirmed jobs on WorkedWith.`
         : 'New to WorkedWith.'
 
     const title = `${displayName}, ${tradesLabel} | WorkedWith`
     const areasText = formatAreas(profile.operating_areas as string[] | null)
-    const description = `${displayName} is a verified ${tradesLabel}${areasText ? `. ${areasText}` : ''}. ${reviewsText}`
+    const description = `${displayName} is a ${tradesLabel}${areasText ? `. ${areasText}` : ''}. ${reviewsText}`
     const canonical = `${APP_URL}/t/${slug}`
 
     return {

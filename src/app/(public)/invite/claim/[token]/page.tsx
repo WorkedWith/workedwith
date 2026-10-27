@@ -152,7 +152,7 @@ export default async function ClaimInvitePage({ params }: PageProps) {
           <p className="mt-3 text-base text-white/70 max-w-sm mx-auto leading-relaxed">
             They logged <span className="font-medium text-white">{aJobLabel(invite.job_type)}</span> in{' '}
             <span className="font-medium text-white">{invite.job_date}</span>. Claim it and the job is confirmed,
-            so you can leave each other verified reviews.
+            so you can leave each other reviews.
           </p>
         </div>
 
@@ -244,7 +244,7 @@ export default async function ClaimInvitePage({ params }: PageProps) {
           If you did this job, accept it and you can both leave a review. If you did not, decline and we will let them know.
         </p>
         <div className="mt-6">
-          <InviteDecision token={token} />
+          <InviteDecision token={token} requesterName={clientName} />
         </div>
       </div>
     </Shell>

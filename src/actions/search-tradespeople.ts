@@ -1,5 +1,7 @@
 'use server'
 
+import { confirmationLabel } from '@/lib/request-outcomes'
+import { getEffectiveTiers } from '@/lib/tier'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { SPECIALISMS } from '@/lib/trade-types'
 import type { SubscriptionTier, VerificationTier, SeededProfile } from '@/types/database'
@@ -32,6 +34,7 @@ export type TradesearchResult = {
   total_jobs: number
   subscription_tier: SubscriptionTier
   verification_tier: VerificationTier
+  confirmation_label: string | null
   is_seeded?: false
 }
 
@@ -99,7 +102,7 @@ export async function searchTradespeople(
   // subscription only affects boosted placement, not whether a trade is listed.
   const { data: rawProfiles } = await admin
     .from('trade_profiles')
-    .select('id, user_id, trade_types, company_name, operating_areas, boosted_districts, public_slug, average_rating, total_reviews, total_jobs, subscription_tier')
+    .select('id, user_id, trade_types, company_name, operating_areas, boosted_districts, public_slug, average_rating, total_reviews, total_jobs, subscription_tier, confirmation_counted, confirmation_confirmed')
     .contains('trade_types', [tradeType])
     .contains('operating_areas', [district])
 
@@ -108,6 +111,10 @@ export async function searchTradespeople(
 
   if (rawProfiles && rawProfiles.length > 0) {
     const userIds = rawProfiles.map(p => p.user_id as string)
+    const effectiveTiers = await getEffectiveTiers(
+      admin,
+      rawProfiles.map(p => ({ user_id: p.user_id as string, subscription_tier: p.subscription_tier as string | null })),
+    )
     const { data: rawUsers } = await admin
       .from('users')
       .select('id, full_name, verification_tier, profile_photo_url')
@@ -133,8 +140,9 @@ export async function searchTradespeople(
         average_rating: (profile.average_rating as number) ?? 0,
         total_reviews: (profile.total_reviews as number) ?? 0,
         total_jobs: (profile.total_jobs as number) ?? 0,
-        subscription_tier: (profile.subscription_tier as SubscriptionTier | null) ?? 'free',
+        subscription_tier: effectiveTiers.get(profile.user_id as string) ?? 'free',
         verification_tier: user.verification_tier as VerificationTier,
+        confirmation_label: confirmationLabel(profile.confirmation_counted as number | null, profile.confirmation_confirmed as number | null),
       })
     }
 

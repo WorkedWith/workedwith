@@ -1,3 +1,4 @@
+import { getEffectiveTier } from '@/lib/tier'
 import { APP_URL } from '@/lib/app-url'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -24,13 +25,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
   if (!userData || !userData.phone_verified) redirect('/verify/phone')
   if (userData.user_type !== 'trade' && userData.user_type !== 'both') redirect('/dashboard')
 
-  const { data: tradeProfile } = await admin
-    .from('trade_profiles')
-    .select('subscription_tier')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  const subscriptionTier = (tradeProfile?.subscription_tier as string | null | undefined) ?? 'free'
+  const subscriptionTier: string = await getEffectiveTier(user.id)
 
   const rawUsername = Array.isArray(searchParams.username)
     ? searchParams.username[0]
@@ -165,6 +160,11 @@ function SearchResult({ result }: { result: ClientProfileResult }) {
         <p className="mt-3 text-xs text-white/40">
           Member since {fmtMemberSince(result.member_since)}
         </p>
+        {result.confirmation_label && (
+          <p className="mt-1 text-xs text-white/60" title="How often this client confirms jobs other people log with them, over the last 2 years.">
+            {result.confirmation_label}
+          </p>
+        )}
       </div>
 
       {/* Free tier — upgrade prompt */}
@@ -206,7 +206,7 @@ function SearchResult({ result }: { result: ClientProfileResult }) {
                     {result.red_flag_count} red flag{result.red_flag_count !== 1 ? 's' : ''}
                   </p>
                   <p className={`text-xs ${result.red_flag_count >= 3 ? 'text-red-600' : 'text-amber-600'}`}>
-                    Raised by verified tradespeople on WorkedWith
+                    Raised by tradespeople on WorkedWith
                   </p>
                 </div>
               </div>
@@ -257,13 +257,13 @@ function VerificationBadge({ tier }: { tier: VerificationTier }) {
   if (tier === 'phone_verified') {
     return (
       <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800">
-        ✓ Phone verified
+        ✓ Phone checked
       </span>
     )
   }
   return (
     <span className="shrink-0 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
-      Unverified
+      Not yet checked
     </span>
   )
 }

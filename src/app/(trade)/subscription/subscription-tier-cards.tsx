@@ -26,7 +26,7 @@ export function SubscriptionTierCards({ currentTier }: Props) {
           name="Free"
           price="£0"
           priceSuffix="forever"
-          description="Everything you need to build a verified reputation."
+          description="Everything you need to build a trusted reputation."
           highlight={currentTier === 'free'}
           isCurrent={currentTier === 'free'}
           cta={currentTier === 'free' ? null : <DowngradeButton label="Downgrade to Free" />}
@@ -37,7 +37,7 @@ export function SubscriptionTierCards({ currentTier }: Props) {
           name="Standard"
           price={period === 'monthly' ? '£9.99' : '£99.90'}
           priceSuffix={period === 'monthly' ? 'per month' : 'per year'}
-          description="Full client lookup, verified badge, and a photo gallery."
+          description="Full client lookup, Member badge, and a photo gallery."
           highlight={currentTier === 'standard'}
           isCurrent={currentTier === 'standard'}
           cta={

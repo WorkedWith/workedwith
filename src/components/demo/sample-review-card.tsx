@@ -46,7 +46,7 @@ export function SampleReviewCard({
         </span>
         {isBackdated && (
           <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-            Verified past job
+            Confirmed past job
           </span>
         )}
       </div>

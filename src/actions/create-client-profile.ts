@@ -1,5 +1,6 @@
 'use server'
 
+import { recordSignal } from '@/lib/integrity/evaluate'
 import { sendEmail } from '@/lib/email/send'
 import { welcomeClient } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
@@ -108,6 +109,8 @@ export async function createClientProfile(
     const r = await sendEmail(user.email, welcomeClient({ username: uname.value }))
     if (!r.ok) console.error('Welcome email failed (non-fatal):', r.error)
   }
+
+  await recordSignal(admin, user.id, 'signup')
 
   return { success: true }
 }

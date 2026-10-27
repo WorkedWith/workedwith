@@ -22,15 +22,15 @@ export default async function TermsPage() {
         <div className="prose prose-gray max-w-none space-y-10">
 
           <Section n={1} title="What WorkedWith is">
-            <p>WorkedWith is a trust and accountability platform for the UK trades industry. It allows tradespeople and clients to leave verified mutual reviews of each other following confirmed jobs. WorkedWith does not manage jobs, handle payments between parties, or facilitate bookings. The platform is a reputation layer that sits on top of existing working relationships.</p>
+            <p>WorkedWith is a trust and accountability platform for the UK trades industry. It allows tradespeople and clients to leave mutual reviews of each other following confirmed jobs. WorkedWith does not manage jobs, handle payments between parties, or facilitate bookings. The platform is a reputation layer that sits on top of existing working relationships.</p>
           </Section>
 
           <Section n={2} title="Accounts">
             <p>You must be at least 18 years old to create an account. You are responsible for keeping your login credentials secure. You must provide accurate information when registering, including your real name and a valid UK mobile number. One account per person. Creating multiple accounts to circumvent a ban or hide a poor review history is a breach of these terms and may result in permanent removal from the platform.</p>
           </Section>
 
-          <Section n={3} title="Verified identity">
-            <p>Phone verification is required to submit or receive reviews. You may optionally verify your identity further by uploading a driving licence or passport and a selfie taken on your phone. Completing ID verification unlocks a Verified badge on your public profile, giving clients additional confidence in your identity. Business clients may be verified via Companies House. We retain identity hashes after account deletion to prevent rebrand attempts.</p>
+          <Section n={3} title="ID checks">
+            <p>Phone verification is required to submit or receive reviews. You may optionally verify your identity further by uploading a driving licence or passport and a selfie taken on your phone. Completing ID verification unlocks an ID verified badge on your public profile, giving clients additional confidence in your identity. Business clients may be verified via Companies House. We retain identity hashes after account deletion to prevent rebrand attempts.</p>
           </Section>
 
           <Section n={4} title="Reviews">

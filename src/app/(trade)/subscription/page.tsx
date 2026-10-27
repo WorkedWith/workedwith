@@ -1,3 +1,4 @@
+import { getActiveGrants, effectiveTierFrom } from '@/lib/tier'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -14,21 +15,26 @@ export const metadata = { title: 'Subscription | WorkedWith' }
 
 const FEATURES: { label: string; free: boolean; standard: boolean; pro: boolean }[] = [
   { label: 'Unlimited jobs and reviews',          free: true,  standard: true,  pro: true  },
-  { label: 'Verified review history',             free: true,  standard: true,  pro: true  },
+  { label: 'Reviews from confirmed jobs',             free: true,  standard: true,  pro: true  },
   { label: 'Public profile page',                 free: true,  standard: true,  pro: true  },
   { label: 'Respond to reviews',                  free: true,  standard: true,  pro: true  },
   { label: 'Basic client lookup',                 free: true,  standard: true,  pro: true  },
   { label: 'Full client reputation lookup',       free: false, standard: true,  pro: true  },
-  { label: 'Verified badge on profile',           free: false, standard: true,  pro: true  },
+  { label: 'Member badge on profile',             free: false, standard: true,  pro: true  },
   { label: 'Photo gallery (5 photos Standard, 10 Pro)', free: false, standard: true,  pro: true  },
   { label: 'Boosted Districts: 3 included, additional districts £10/month each', free: false, standard: false, pro: true },
-  { label: 'Pro badge on profile and in search',  free: false, standard: false, pro: true  },
+  { label: 'Pro member badge on profile and in search',  free: false, standard: false, pro: true  },
   { label: 'Photos on each confirmed job (5 per job)', free: false, standard: false, pro: true  },
   { label: 'Profile analytics',                   free: false, standard: false, pro: true  },
   { label: 'Priority dispute resolution',         free: false, standard: false, pro: true  },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────
+
+function fmtGrantDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
 
 function fmtDate(unix: number): string {
   return new Date(unix * 1000).toLocaleDateString('en-GB', {
@@ -65,7 +71,10 @@ export default async function SubscriptionPage() {
   const currentBillingPeriod = (tradeProfile?.billing_period as BillingPeriod | null | undefined) ?? 'monthly'
   const subscriptionId = tradeProfile?.stripe_subscription_id as string | null | undefined
   const isPaid = currentTier === 'standard' || currentTier === 'pro'
-  const isPro = currentTier === 'pro'
+  const grants = await getActiveGrants(admin, [user.id])
+  const activeGrant = grants.get(user.id) ?? null
+  const effectiveTier = effectiveTierFrom(currentTier, activeGrant)
+  const isPro = effectiveTier === 'pro'
 
   // ── Boost summary (Pro only) ──────────────────────────────────
   const billedSlots = (tradeProfile?.boosted_district_addon_quantity as number | null | undefined) ?? 0
@@ -118,6 +127,26 @@ export default async function SubscriptionPage() {
           )}
         </div>
 
+        {/* Free plan from WorkedWith (admin grant) */}
+        {activeGrant && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+            <p className="text-sm font-semibold text-brand-navy">
+              You have {activeGrant.tier === 'pro' ? 'Pro' : 'Standard'} free until {fmtGrantDate(activeGrant.ends_at)}.
+              {activeGrant.reason === 'founding' && ' Founding member offer.'}
+            </p>
+            <p className="mt-1 text-sm text-gray-600">
+              Nothing to pay and no card on file. When it ends your account moves to Free
+              unless you upgrade, and your reviews and job history stay as they are.
+            </p>
+            <a
+              href="#plans"
+              className="mt-3 inline-flex min-h-[44px] items-center rounded-xl bg-brand-navy px-5 text-sm font-semibold text-white hover:bg-brand-navy/90"
+            >
+              Upgrade now
+            </a>
+          </div>
+        )}
+
         {/* Boosted District summary (Pro only) */}
         {isPro && (
           <BoostSummaryCard
@@ -129,6 +158,7 @@ export default async function SubscriptionPage() {
         )}
 
         {/* Tier cards with period toggle */}
+        <div id="plans" className="scroll-mt-6" />
         <SubscriptionTierCards
           currentTier={currentTier}
           currentBillingPeriod={currentBillingPeriod}

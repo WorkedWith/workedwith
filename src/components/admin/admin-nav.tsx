@@ -7,11 +7,13 @@ const links = [
   { href: '/admin', label: 'Dashboard', icon: GridIcon },
   { href: '/admin/verification', label: 'Verification', icon: BadgeCheckIcon },
   { href: '/admin/disputes', label: 'Disputes', icon: ScaleIcon },
+  { href: '/admin/evidence', label: 'Evidence claims', icon: ScaleIcon },
   { href: '/admin/pending-invites', label: 'Pending Invites', icon: InboxIcon },
   { href: '/admin/seeded-profiles', label: 'Seeded Profiles', icon: SeedIcon },
   { href: '/admin/flags', label: 'Flagged Reviews', icon: FlagIcon },
   { href: '/admin/integrity', label: 'Integrity', icon: ShieldIcon },
   { href: '/admin/users', label: 'Users', icon: UsersIcon },
+  { href: '/admin/grants', label: 'Plan grants', icon: BadgeCheckIcon },
   { href: '/admin/search-audit', label: 'Search Audit', icon: SearchIcon },
   { href: '/admin/email-preview', label: 'Emails and texts', icon: InboxIcon },
 ]

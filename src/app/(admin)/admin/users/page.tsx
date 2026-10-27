@@ -32,7 +32,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
   const users = (rawUsers ?? []) as unknown as UserRow[]
 
   // Subscription tier from trade_profiles for trade users
-  const tradeUserIds = users.filter(u => u.user_type === 'trade').map(u => u.id)
+  const tradeUserIds = users.filter(u => u.user_type === 'trade' || u.user_type === 'both').map(u => u.id)
   const { data: rawProfiles } = tradeUserIds.length
     ? await admin.from('trade_profiles').select('user_id, subscription_tier').in('user_id', tradeUserIds)
     : { data: [] }
@@ -124,6 +124,11 @@ export default async function UsersPage({ searchParams }: PageProps) {
                         <span className="text-xs text-gray-500">
                           {tradeProfile?.subscription_tier ?? (user.user_type === 'trade' ? 'free' : '—')}
                         </span>
+                        {tradeProfile && (
+                          <a href={`/admin/grants?email=${encodeURIComponent(user.email)}`} className="ml-2 text-xs font-medium text-brand-navy underline">
+                            Grant
+                          </a>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-xs text-gray-400">

@@ -1,3 +1,5 @@
+import { confirmationLabel, CONFIRMATION_TOOLTIP_TRADE } from '@/lib/request-outcomes'
+import { getEffectiveTier } from '@/lib/tier'
 import { SiteHeader } from '@/components/site-header'
 import { Avatar } from '@/components/avatar'
 import { ALL_SPECIALISMS } from '@/lib/trade-types'
@@ -171,6 +173,11 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
 
   const tradeProfileId = tradeProfile.id as string
 
+  const confLabel = confirmationLabel(tradeProfile.confirmation_counted as number | null, tradeProfile.confirmation_confirmed as number | null)
+
+  // Plan used for features: paid subscription or an active admin grant, whichever is higher
+  const effTier = await getEffectiveTier(userId)
+
   // 2. Parallel: user row + visible reviews + reviewer activity + featured jobs + current viewer
   const supabase = await createClient()
   const [
@@ -198,7 +205,7 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
       .eq('is_visible', true)
       .limit(1),
     getFeaturedJobs(tradeProfileId),
-    getGalleryImages(tradeProfileId, tradeProfile.subscription_tier as string | null),
+    getGalleryImages(tradeProfileId, effTier),
     admin
       .from('profile_gallery_images')
       .select('id', { count: 'exact', head: true })
@@ -208,7 +215,7 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
   ])
 
   // Photos linked to confirmed jobs are a Pro feature; hidden, not deleted, if the plan lapses
-  const featuredJobs = (tradeProfile.subscription_tier as string) === 'pro' ? featuredJobsAll : []
+  const featuredJobs = effTier === 'pro' ? featuredJobsAll : []
   const isOwner = currentUser?.id === userId
 
   // Fire-and-forget view log
@@ -366,18 +373,24 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                 </ol>
                 <p className="mt-4 text-sm leading-relaxed text-gray-600">
                   Their first reviews will appear here after their first confirmed jobs. Until then, the checks
-                  below show what we have verified.
+                  below show what we have checked.
                 </p>
               </div>
             )}
-            {((verTier === 'phone_verified' || verTier === 'fully_verified') || (tradeProfile.subscription_tier as string) === 'pro' || (tradeProfile.subscription_tier as string) === 'standard') && (
+            {((verTier === 'phone_verified' || verTier === 'fully_verified') || effTier === 'pro' || effTier === 'standard' || confLabel) && (
               <ul className="mt-4 space-y-2.5 border-t border-gray-100 pt-4">
                 {(verTier === 'phone_verified' || verTier === 'fully_verified') && (
-                  <TrustTick>Phone number verified</TrustTick>
+                  <TrustTick>Phone number checked</TrustTick>
                 )}
-                {verTier === 'fully_verified' && <TrustTick>ID checked by WorkedWith</TrustTick>}
-                {(tradeProfile.subscription_tier as string) === 'pro' && <TrustTick amber>Pro member</TrustTick>}
-                {(tradeProfile.subscription_tier as string) === 'standard' && <TrustTick amber>Verified member</TrustTick>}
+                {verTier === 'fully_verified' && <TrustTick title="WorkedWith has checked their photo ID and a live selfie.">ID verified</TrustTick>}
+                {effTier === 'pro' && <TrustTick amber title="On a WorkedWith Pro plan.">Pro member</TrustTick>}
+                {effTier === 'standard' && <TrustTick amber title="On a WorkedWith Standard plan.">Member</TrustTick>}
+                {confLabel && (
+                  <li title={CONFIRMATION_TOOLTIP_TRADE} className="flex items-center gap-2.5 text-sm font-medium text-brand-navy">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-[11px] font-bold text-gray-600" aria-hidden>↻</span>
+                    {confLabel}
+                  </li>
+                )}
               </ul>
             )}
           </section>
@@ -492,11 +505,11 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                       {/* Badges */}
                       <div className="mt-2 flex flex-wrap gap-2">
                         <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-                          Verified client
+                          Confirmed client
                         </span>
                         {isBackdated && (
                           <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                            Verified past job
+                            Confirmed past job
                           </span>
                         )}
                         {disputeStatus === 'open' && (
@@ -552,7 +565,7 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
           )}
 
           {/* ── Photos ───────────────────────────────────────── */}
-          {isOwner && <OwnerPhotosPanel tier={tradeProfile.subscription_tier as string | null} galleryCount={ownGalleryCount ?? 0} />}
+          {isOwner && <OwnerPhotosPanel tier={effTier} galleryCount={ownGalleryCount ?? 0} />}
           <GallerySection images={galleryImages} supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''} />
 
           {/* ── Featured work ────────────────────────────────── */}
@@ -672,9 +685,9 @@ function SubScoreRow({ label, score }: { label: string; score: number }) {
   )
 }
 
-function TrustTick({ children, amber = false }: { children: React.ReactNode; amber?: boolean }) {
+function TrustTick({ children, amber = false, title }: { children: React.ReactNode; amber?: boolean; title?: string }) {
   return (
-    <li className="flex items-center gap-2.5 text-sm font-medium text-brand-navy">
+    <li title={title} className="flex items-center gap-2.5 text-sm font-medium text-brand-navy">
       <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${amber ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
         ✓
       </span>

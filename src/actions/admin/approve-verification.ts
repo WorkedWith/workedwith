@@ -81,7 +81,7 @@ export async function approveVerification(
       user_id: doc.user_id,
       type: 'id_verified',
       title: 'Identity verified',
-      body: 'Your ID has been approved. Your profile now shows as fully verified.',
+      body: 'Your ID has been approved. Your profile now shows an ID verified badge.',
       link: '/dashboard',
     }),
     admin.storage.from('verification-documents').remove(

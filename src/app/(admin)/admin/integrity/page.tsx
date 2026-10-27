@@ -9,6 +9,7 @@ const flagLabels: Record<string, string> = {
   velocity_spike: 'Review velocity spike',
   postcode_distance_anomaly: 'Postcode distance anomaly',
   new_accounts_both_parties: 'New accounts — both parties',
+  combined_signals: 'Combined signals (scored)',
 }
 
 export default async function IntegrityPage() {

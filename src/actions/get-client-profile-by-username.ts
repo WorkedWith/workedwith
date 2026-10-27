@@ -1,5 +1,6 @@
 'use server'
 
+import { confirmationLabel } from '@/lib/request-outcomes'
 import { createHash } from 'crypto'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
@@ -23,6 +24,7 @@ type ClientProfileRow = {
   communication_score: number
   scope_clarity_score: number
   red_flag_count: number
+  confirmation_label: string | null
 }
 
 export async function getClientProfileByIdentifier(rawInput: string): Promise<ClientProfileResult> {
@@ -100,7 +102,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
       admin.from('users').select('created_at, verification_tier').eq('id', foundUserId).single(),
       admin
         .from('client_profiles')
-        .select('id, user_id, display_name, company_name, client_type, average_rating, total_reviews, payment_reliability_score, communication_score, scope_clarity_score, red_flag_count')
+        .select('id, user_id, display_name, company_name, client_type, average_rating, total_reviews, payment_reliability_score, communication_score, scope_clarity_score, red_flag_count, confirmation_counted, confirmation_confirmed')
         .eq('user_id', foundUserId)
         .maybeSingle(),
     ])
@@ -127,6 +129,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
         communication_score: cp.communication_score as number,
         scope_clarity_score: cp.scope_clarity_score as number,
         red_flag_count: cp.red_flag_count as number,
+        confirmation_label: confirmationLabel(cp.confirmation_counted as number | null, cp.confirmation_confirmed as number | null),
       }
     }
   }
@@ -155,6 +158,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
       total_reviews: clientProfile.total_reviews,
       verification_tier: verTier,
       member_since: foundUserRecord.created_at,
+      confirmation_label: clientProfile.confirmation_label,
     }
   }
 
@@ -195,6 +199,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
     communication_score: clientProfile.communication_score,
     scope_clarity_score: clientProfile.scope_clarity_score,
     red_flag_count: clientProfile.red_flag_count,
+    confirmation_label: clientProfile.confirmation_label,
     recent_reviews: recentReviews.map(r => ({
       overall_rating: r.overall_rating as number | null,
       written_review: r.written_review as string | null,
