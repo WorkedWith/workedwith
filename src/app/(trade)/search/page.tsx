@@ -44,8 +44,8 @@ export default async function SearchPage({ searchParams }: PageProps) {
           <h1 className="text-2xl font-bold text-brand-navy">Client lookup</h1>
           <p className="mt-1 text-sm text-gray-500">
             {subscriptionTier === 'free'
-              ? 'Find a client by their WorkedWith username, email address or mobile number to see their overall rating and member since date. Upgrade to Standard for full scores and written reviews.'
-              : 'Find a client by their WorkedWith username, email address or mobile number to view their full reputation profile.'}
+              ? 'Find a client by their WorkedWith username, email address, mobile number or Companies House number to see their overall rating and member since date. Upgrade to Standard for full scores and written reviews.'
+              : 'Find a client by their WorkedWith username, email address, mobile number or Companies House number to view their full reputation profile.'}
           </p>
         </div>
 
@@ -54,7 +54,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
           <form method="GET" action="/search" className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Client username, email or mobile
+                Client username, email, mobile or company number
               </label>
               <input
                 id="username"
@@ -62,7 +62,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                 type="text"
                 required
                 defaultValue={username ?? ''}
-                placeholder="Username, email address or mobile number"
+                placeholder="Username, email, mobile or company number"
                 autoComplete="off"
                 className="w-full h-11 rounded-lg border border-gray-300 px-4 text-sm text-brand-navy placeholder-gray-400 focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
               />

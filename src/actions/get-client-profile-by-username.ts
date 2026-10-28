@@ -88,6 +88,20 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
   } else if (identifier.kind === 'phone') {
     const { data } = await admin.from('users').select('id').eq('phone', identifier.value).maybeSingle()
     if (data?.id) foundUserId = data.id as string
+  } else if (identifier.kind === 'company') {
+    // A business is found by its Companies House number, never by name
+    const { data: org } = await admin
+      .from('organisations')
+      .select('primary_contact_user_id, owner_id')
+      .eq('companies_house_number', identifier.value)
+      .maybeSingle()
+    const seat = (org as { primary_contact_user_id: string | null; owner_id: string | null } | null)
+    foundUserId = seat?.primary_contact_user_id ?? seat?.owner_id ?? null
+    if (!foundUserId) {
+      // It may be a username that happens to look like a company number
+      const { data } = await admin.from('client_profiles').select('user_id').eq('username', rawInput.trim().replace(/^@/, '').toLowerCase()).maybeSingle()
+      if (data?.user_id) foundUserId = data.user_id as string
+    }
   } else {
     const { data } = await admin
       .from('client_profiles')

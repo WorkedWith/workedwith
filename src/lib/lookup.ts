@@ -1,6 +1,6 @@
 export const DAILY_LOOKUP_LIMIT = 30
 
-export type LookupKind = 'email' | 'phone' | 'username'
+export type LookupKind = 'email' | 'phone' | 'company' | 'username'
 
 export type LookupIdentifier = { kind: LookupKind; value: string }
 
@@ -16,12 +16,22 @@ export function normaliseUkMobile(raw: string): string | null {
   return null
 }
 
+/** A Companies House number: 8 digits, or 2 letters and 6 digits (SC123456). Short numbers are padded with leading zeros. */
+export function normaliseCompanyNumber(raw: string): string | null {
+  const c = raw.replace(/\s+/g, '').toUpperCase()
+  if (/^[A-Z]{2}\d{6}$/.test(c)) return c
+  if (/^\d{6,8}$/.test(c)) return c.padStart(8, '0')
+  return null
+}
+
 /** Decides whether the box holds an email, a mobile number or a username. */
 export function classifyIdentifier(input: string): LookupIdentifier {
   const trimmed = input.trim()
   if (EMAIL_RE.test(trimmed)) return { kind: 'email', value: trimmed.toLowerCase() }
   const phone = normaliseUkMobile(trimmed)
   if (phone) return { kind: 'phone', value: phone }
+  const company = normaliseCompanyNumber(trimmed)
+  if (company) return { kind: 'company', value: company }
   return { kind: 'username', value: trimmed }
 }
 
