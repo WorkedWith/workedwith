@@ -488,6 +488,20 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
             </section>
           )}
 
+          {/* ── Job link ──────────────────────────────────────── */}
+          {!isOwner && !preview && !(tradeProfile.job_link_paused as boolean | null) && (
+            <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-base font-bold text-brand-navy">Had a job done by {displayName}?</h2>
+              <p className="mt-1 text-sm text-gray-600">Log it here. Once {displayName} confirms, you can both leave a review.</p>
+              <a
+                href={`/t/${slug}/job`}
+                className="mt-3 inline-flex min-h-[44px] items-center rounded-xl border-2 border-brand-navy px-5 text-sm font-semibold text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
+              >
+                Log a job with {displayName}
+              </a>
+            </section>
+          )}
+
           {/* ── Review history ────────────────────────────────── */}
           {reviewList.length > 0 && (
             <section>

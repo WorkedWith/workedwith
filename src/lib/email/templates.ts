@@ -835,3 +835,15 @@ export function adminWeeklyDigest(p: {
     button: { label: 'Open search analytics', url: `${APP_URL}/admin/analytics` },
   }
 }
+
+export function reviewResponded(p: { responderName: string; response: string; jobId: string }): EmailContent {
+  return {
+    subject: `${p.responderName} has replied to your review`,
+    heading: 'They have replied',
+    paragraphs: [
+      `**${p.responderName}** has replied to the review you left. Their reply is public, sits under your review, and cannot be changed.`,
+      `"${p.response}"`,
+    ],
+    button: { label: 'View the job', url: job(p.jobId) },
+  }
+}

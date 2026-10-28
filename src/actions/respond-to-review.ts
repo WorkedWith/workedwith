@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { MAX_RESPONSE_CHARS } from '@/lib/review-response'
 import { canActForReviewee } from '@/lib/org-access'
+import { sendEmail } from '@/lib/email/send'
+import { reviewResponded } from '@/lib/email/templates'
 
 export type RespondResult = { success: true } | { success: false; error: string }
 
@@ -56,6 +58,11 @@ export async function respondToReview(reviewId: string, text: string): Promise<R
       link: `/jobs/${review.job_id as string}`,
     })
     if (nErr) console.error('Review response notification failed (non-fatal):', nErr.message)
+    const { data: reviewer } = await admin.from('users').select('email').eq('id', reviewerId).maybeSingle()
+    if (reviewer?.email) {
+      const r = await sendEmail(reviewer.email as string, reviewResponded({ responderName: me.full_name as string ?? 'The other party', response: trimmed, jobId: review.job_id as string }))
+      if (!r.ok) console.error('Review response email failed (non-fatal):', r.error)
+    }
   }
   return { success: true }
 }
