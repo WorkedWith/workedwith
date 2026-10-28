@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { SampleReviewCard } from '@/components/demo/sample-review-card'
 import { DEMO_REVIEWS_JAMES, DEMO_REVIEWS_SARAH, DEMO_REVIEWS_OWEN } from '@/lib/demo-data'
 import { TradeIcon } from '@/components/trade-icon'
+import { PhoneMockup } from '@/components/marketing/phone-mockup'
 
 export const metadata: Metadata = {
   title: 'For Tradespeople | WorkedWith',
@@ -83,7 +84,7 @@ export default function ForTradesPage() {
             </span>
           </h1>
           <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-white/70 text-balance">
-            Build a work history from jobs your clients have confirmed, check clients before you commit, and add the jobs you have already done.
+            Know who is enquiring before you drive out to quote. Check a client&apos;s record for paying on time, then build a reputation from jobs your clients have confirmed.
           </p>
           <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <a
@@ -98,6 +99,59 @@ export default function ForTradesPage() {
             >
               See how it works
             </a>
+          </div>
+          <div className="mt-14 sm:mt-16">
+            <PhoneMockup variant="trade" />
+          </div>
+        </div>
+      </section>
+
+      {/* ── What trades get ──────────────────────────────────── */}
+      <section className="bg-white px-4 py-16 sm:py-20 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center text-3xl font-bold text-brand-navy sm:text-4xl text-balance">
+            Fewer wasted quotes. Fewer unpaid invoices.
+          </h2>
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            <TrustCard
+              icon={<EyeIcon />}
+              title="Better enquiries"
+              body="Clients on WorkedWith have a record to protect. Look one up by username, email or mobile and see how they have treated other trades before you give up an evening to quote."
+            />
+            <TrustCard
+              icon={<ShieldIcon />}
+              title="Know before you start"
+              body="See whether a client pays on time, keeps the scope clear and communicates. Standard and Pro show the full scores and red flags. Free shows the overall rating."
+            />
+            <TrustCard
+              icon={<StarIcon />}
+              title="A reputation you own"
+              body="Every review comes from a job both sides confirmed, and it stays with you. Free to start, then Standard at £9.99 or Pro at £39.99 a month. No contracts."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── What you pay for ─────────────────────────────────── */}
+      <section className="bg-brand-navy px-4 py-16 sm:py-20 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-center text-3xl font-bold text-white sm:text-4xl text-balance">
+            Clients who are real, and on record
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-base leading-relaxed text-white/70 text-balance">
+            Anyone can type a name into a directory. On WorkedWith a client has a phone number we have checked and a history of how they treat trades, so the people who enquire are the ones worth quoting for.
+          </p>
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            {[
+              { t: 'Fewer wasted trips', b: 'See how a client has treated other trades before you drive out to quote.' },
+              { t: 'Know if they pay', b: 'Payment on time is scored on every client, from trades who have worked for them.' },
+              { t: 'No lead fees, no contract', b: 'Free to start. Standard is £9.99 and Pro is £39.99 a month. Stop any time and keep your reviews.' },
+            ].map(c => (
+              <div key={c.t} className="rounded-2xl border border-white/15 bg-white/5 p-6">
+                <p className="text-lg font-bold text-brand-amber">{c.t}</p>
+                <p className="mt-2 text-sm leading-relaxed text-white/70">{c.b}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

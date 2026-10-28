@@ -403,16 +403,6 @@ export async function GET(request: Request) {
     if (catErr) console.error('refresh_category_averages failed (non-fatal):', catErr.message)
   }
 
-  // ── 8. Delete share links 90 days after they ended ───────────
-  try {
-    const cutoff = new Date(Date.now() - 90 * 86_400_000).toISOString()
-    const { data: gone } = await admin.from('client_share_links').delete().lt('expires_at', cutoff).select('id')
-    const { data: goneRevoked } = await admin.from('client_share_links').delete().lt('revoked_at', cutoff).select('id')
-    results.shareLinksDeleted = (gone?.length ?? 0) + (goneRevoked?.length ?? 0)
-  } catch (e) {
-    console.error('share link cleanup failed (non-fatal):', e)
-  }
-
   // ── 9. Roll up search events older than 12 months ─────────────
   try {
     const { error } = await admin.rpc('rollup_old_search_events')

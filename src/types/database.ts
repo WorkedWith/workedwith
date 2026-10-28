@@ -866,12 +866,6 @@ export interface Database {
         Update: Partial<ClientListingSubmission>
         Relationships: []
       }
-      client_share_links: {
-        Row: WithIndex<{ id: string; client_user_id: string; token: string; expires_at: string; revoked_at: string | null; open_count: number; trade_view_count: number; created_at: string }>
-        Insert: { client_user_id: string; token: string; expires_at: string }
-        Update: Partial<{ revoked_at: string | null }>
-        Relationships: []
-      }
       search_events: {
         Row: WithIndex<{ id: string; created_at: string; district: string; trade_category: string; specialism: string | null; viewer_role: string; user_id: string | null; session_hash: string; real_count: number; seeded_count: number; boosted_count: number; demo_shown: boolean }>
         Insert: { district: string; trade_category: string; viewer_role: string; session_hash: string } & Partial<{ specialism: string | null; user_id: string | null; real_count: number; seeded_count: number; boosted_count: number; demo_shown: boolean }>
@@ -964,7 +958,6 @@ export interface Database {
       refresh_category_averages: { Args: Record<string, never>; Returns: undefined }
       refresh_ended_early: { Args: { p_trade: string | null; p_client: string | null }; Returns: undefined }
       rollup_old_search_events: { Args: Record<string, never>; Returns: number }
-      bump_share_link: { Args: { p_id: string; p_trade: boolean }; Returns: undefined }
       refresh_hired_again: { Args: { p_trade: string }; Returns: undefined }
       refresh_all_confirmation_stats: { Args: Record<string, never>; Returns: undefined }
     }

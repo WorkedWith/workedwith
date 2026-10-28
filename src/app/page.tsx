@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { PhoneMockup } from '@/components/marketing/phone-mockup'
+import { HowItWorksStrip } from '@/components/marketing/how-it-works-strip'
 
 export const metadata: Metadata = {
   title: "WorkedWith | Know who you're working with",
@@ -96,6 +98,28 @@ export default function HomePage() {
           </p>
         </div>
       </div>
+
+      {/* ── How it works ─────────────────────────────────────── */}
+      <section className="border-t border-white/10 px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-center text-2xl font-bold text-white sm:text-3xl text-balance">
+            Both sides have a reputation to protect
+          </h2>
+          <div className="mt-12">
+            <HowItWorksStrip />
+          </div>
+          <div className="mt-16 grid items-start gap-10 sm:grid-cols-2">
+            <div>
+              <PhoneMockup variant="trade" />
+              <p className="mt-6 text-center text-sm text-white/70">What clients see when they check a tradesperson</p>
+            </div>
+            <div>
+              <PhoneMockup variant="client" />
+              <p className="mt-6 text-center text-sm text-white/70">What tradespeople see when they check a client</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── Footer strip ─────────────────────────────────────── */}
       <div className="flex items-center justify-between border-t border-white/10 px-6 py-4">

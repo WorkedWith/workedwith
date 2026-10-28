@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { TRADE_TYPES, SPECIALISMS } from '@/lib/trade-types'
 import { DemoProfileCard } from '@/components/demo/demo-profile-card'
 import { SampleReviewCard } from '@/components/demo/sample-review-card'
+import { PhoneMockup } from '@/components/marketing/phone-mockup'
 import { DEMO_TRADE_PROFILES, DEMO_TRADESPERSON_REVIEWS } from '@/lib/demo-data'
 
 export const metadata: Metadata = {
@@ -119,6 +120,9 @@ export default function ForClientsPage() {
           >
             Join free and invite a tradesperson to your job →
           </a>
+          <div className="mt-14 sm:mt-16">
+            <PhoneMockup variant="trade" />
+          </div>
         </div>
       </section>
 
