@@ -12,6 +12,8 @@ const links = [
   { href: '/admin/client-listings', label: 'Client listings', icon: SeedIcon },
   { href: '/admin/pending-invites', label: 'Pending Invites', icon: InboxIcon },
   { href: '/admin/seeded-profiles', label: 'Seeded Profiles', icon: SeedIcon },
+  { href: '/admin/reviews', label: 'Reviews', icon: FlagIcon },
+  { href: '/admin/organisations', label: 'Organisations', icon: InboxIcon },
   { href: '/admin/flags', label: 'Flagged Reviews', icon: FlagIcon },
   { href: '/admin/integrity', label: 'Integrity', icon: ShieldIcon },
   { href: '/admin/users', label: 'Users', icon: UsersIcon },
