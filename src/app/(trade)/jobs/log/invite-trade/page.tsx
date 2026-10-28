@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { InviteTradeForm } from './invite-trade-form'
+import { PickTrade } from '@/components/pick-trade'
 
 export const metadata = { title: 'Add a job | WorkedWith' }
 
@@ -33,10 +34,11 @@ export default async function InviteTradePage() {
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-white">Add a job</h1>
           <p className="mt-2 text-sm text-white/60">
-            Add a job you have with a tradesperson who isn&apos;t on WorkedWith yet. We&apos;ll send them an invite to
-            join and confirm it. Nothing is published until they do.
+            Search first. If they are already here we send the request to their account. If not, add their details and
+            we&apos;ll invite them. Nothing is published until they confirm.
           </p>
         </div>
+        <PickTrade />
         <InviteTradeForm />
         <div className="mt-4 text-center">
           <a href="/dashboard" className="text-sm text-white/50 hover:text-white transition-colors">
