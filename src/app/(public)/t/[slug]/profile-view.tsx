@@ -1,4 +1,5 @@
 import { getActiveInsurance, coverLabel, monthYear, INSURANCE_TOOLTIP } from '@/lib/insurance'
+import { ReviewResponse } from '@/components/review-response'
 import { getOutcomeLabels, endedEarlyLabel } from '@/lib/job-outcome'
 import { confirmationLabel, CONFIRMATION_TOOLTIP_TRADE } from '@/lib/request-outcomes'
 import { getEffectiveTier } from '@/lib/tier'
@@ -584,6 +585,13 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
                           </span>
                         </p>
                       )}
+
+                      <ReviewResponse
+                        reviewId={rid}
+                        responseText={(review.response_text as string | null) ?? null}
+                        responderName={displayName}
+                        canRespond={isOwner}
+                      />
                     </article>
                   )
                 })}

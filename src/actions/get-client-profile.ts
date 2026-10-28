@@ -16,6 +16,7 @@ export type RecentReview = {
   outcome_label?: string | null
   overall_rating: number | null
   written_review: string | null
+  response_text?: string | null
   submitted_at: string
   reviewer_trade_type: string
 }
@@ -235,6 +236,7 @@ export async function getClientProfile(identifier: string): Promise<ClientProfil
       outcome_label: outcomeLabels.get(r.job_id as string) ?? null,
       overall_rating: r.overall_rating as number | null,
       written_review: r.written_review as string | null,
+      response_text: (r.response_text as string | null | undefined) ?? null,
       submitted_at: r.submitted_at as string,
       reviewer_trade_type: tradeTypeMap[r.reviewer_id as string] ?? 'Tradesperson',
     })),

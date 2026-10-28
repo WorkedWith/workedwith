@@ -170,7 +170,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
   // Standard / Pro: full data including last 5 written reviews
   const { data: reviews } = await admin
     .from('reviews')
-    .select('reviewer_id, job_id, overall_rating, written_review, submitted_at')
+    .select('reviewer_id, job_id, overall_rating, written_review, response_text, submitted_at')
     .eq('reviewee_id', foundUserId)
     .eq('reviewee_type', 'client')
     .eq('is_visible', true)
@@ -211,6 +211,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
       outcome_label: outcomeLabels.get(r.job_id as string) ?? null,
       overall_rating: r.overall_rating as number | null,
       written_review: r.written_review as string | null,
+      response_text: (r.response_text as string | null | undefined) ?? null,
       submitted_at: r.submitted_at as string,
       reviewer_trade_type: tradeTypeMap[r.reviewer_id as string] ?? 'Tradesperson',
     })),

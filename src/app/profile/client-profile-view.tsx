@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ReviewResponse } from '@/components/review-response'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getOutcomeLabels } from '@/lib/job-outcome'
 import { getJobHistory } from '@/actions/get-job-history'
@@ -181,6 +182,12 @@ export async function ClientProfileView({ userId, fullName, clientProfile, photo
                       </Link>
                     )}
                   </div>
+                  <ReviewResponse
+                    reviewId={r.id}
+                    responseText={r.response_text}
+                    responderName="you"
+                    canRespond
+                  />
                 </li>
               ))}
             </ul>

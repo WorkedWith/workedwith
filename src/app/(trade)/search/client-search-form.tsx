@@ -332,6 +332,9 @@ function ReviewsList({ reviews }: { reviews: RecentReview[] }) {
               </div>
             )}
             <p className="text-sm text-gray-700 leading-relaxed">{review.written_review}</p>
+            {review.response_text && (
+              <p className="mt-2 border-l-4 border-gray-300 pl-2 text-xs text-gray-600">Client response: {review.response_text}</p>
+            )}
           </div>
         ))}
       </div>

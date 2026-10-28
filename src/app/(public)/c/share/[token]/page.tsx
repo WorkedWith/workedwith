@@ -76,12 +76,12 @@ export default async function ClientSharePage({ params }: Props) {
   const since = new Date(cu.created_at as string).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
   const idChecked = cu.verification_tier === 'fully_verified'
 
-  let recent: { overall_rating: number | null; written_review: string | null; submitted_at: string; job_id: string }[] = []
+  let recent: { overall_rating: number | null; written_review: string | null; submitted_at: string; job_id: string; response_text: string | null }[] = []
   let outcome = new Map<string, string>()
   if (viewerIsTrade && fullAccess) {
     const { data } = await admin
       .from('reviews')
-      .select('overall_rating, written_review, submitted_at, job_id')
+      .select('overall_rating, written_review, submitted_at, job_id, response_text')
       .eq('reviewee_id', clientUserId)
       .eq('reviewee_type', 'client')
       .eq('is_visible', true)
@@ -128,6 +128,7 @@ export default async function ClientSharePage({ params }: Props) {
                     {outcome.get(r.job_id) ? ` · ${outcome.get(r.job_id)}` : ''}
                   </p>
                   <p className="mt-1 text-sm text-gray-700">{r.written_review}</p>
+                  {r.response_text && <p className="mt-1 border-l-4 border-gray-300 pl-2 text-xs text-gray-600">Client response: {r.response_text}</p>}
                 </div>
               ))}
             </div>
