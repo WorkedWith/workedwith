@@ -34,7 +34,7 @@ function Bar({ label, value }: { label: string; value: number }) {
 
 export function PhoneMockup({ variant, className = '' }: { variant: 'trade' | 'client'; className?: string }) {
   return (
-    <figure className={`mx-auto w-[260px] ${className}`}>
+    <figure className={`mx-auto w-[260px] text-left ${className}`}>
       <div className="rounded-[2.2rem] border-[7px] border-gray-900 bg-gray-900 shadow-2xl shadow-black/40">
         <div className="overflow-hidden rounded-[1.7rem] bg-gray-50">
           <div className="mx-auto mt-1.5 h-1.5 w-16 rounded-full bg-gray-300" />

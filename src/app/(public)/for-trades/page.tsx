@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { SampleReviewCard } from '@/components/demo/sample-review-card'
 import { DEMO_REVIEWS_JAMES, DEMO_REVIEWS_SARAH, DEMO_REVIEWS_OWEN } from '@/lib/demo-data'
 import { TradeIcon } from '@/components/trade-icon'
-import { PhoneMockup } from '@/components/marketing/phone-mockup'
 
 export const metadata: Metadata = {
   title: 'For Tradespeople | WorkedWith',
@@ -99,9 +98,6 @@ export default function ForTradesPage() {
             >
               See how it works
             </a>
-          </div>
-          <div className="mt-14 sm:mt-16">
-            <PhoneMockup variant="trade" />
           </div>
         </div>
       </section>

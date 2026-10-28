@@ -225,7 +225,7 @@ export const DEMO_REVIEWS_OWEN: DemoReview[] = [
 export const DEMO_TRADESPERSON_REVIEWS: DemoTradespersonReview[] = [
   {
     job_title: 'Full rewire, Chester',
-    reviewer_label: 'Verified tradesperson',
+    reviewer_label: 'Confirmed tradesperson',
     trade_type: 'Electrician',
     client_display: 'D. Harrison, Chester',
     overall_rating: 5,
@@ -237,7 +237,7 @@ export const DEMO_TRADESPERSON_REVIEWS: DemoTradespersonReview[] = [
   },
   {
     job_title: 'Plastering, Salford',
-    reviewer_label: 'Verified tradesperson',
+    reviewer_label: 'Confirmed tradesperson',
     trade_type: 'Plasterer',
     client_display: 'R. Okafor, Salford',
     overall_rating: 5,
@@ -249,7 +249,7 @@ export const DEMO_TRADESPERSON_REVIEWS: DemoTradespersonReview[] = [
   },
   {
     job_title: 'Boiler service, Bangor',
-    reviewer_label: 'Verified tradesperson',
+    reviewer_label: 'Confirmed tradesperson',
     trade_type: 'Plumber',
     client_display: 'T. Williams, Bangor',
     overall_rating: 4,

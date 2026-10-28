@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { TRADE_TYPES, SPECIALISMS } from '@/lib/trade-types'
 import { DemoProfileCard } from '@/components/demo/demo-profile-card'
 import { SampleReviewCard } from '@/components/demo/sample-review-card'
-import { PhoneMockup } from '@/components/marketing/phone-mockup'
 import { DEMO_TRADE_PROFILES, DEMO_TRADESPERSON_REVIEWS } from '@/lib/demo-data'
 
 export const metadata: Metadata = {
@@ -120,9 +119,6 @@ export default function ForClientsPage() {
           >
             Join free and invite a tradesperson to your job →
           </a>
-          <div className="mt-14 sm:mt-16">
-            <PhoneMockup variant="trade" />
-          </div>
         </div>
       </section>
 
@@ -181,7 +177,7 @@ export default function ForClientsPage() {
             What tradespeople say about their clients
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-base text-gray-500">
-            On WorkedWith, clients build a reputation too. Here is what real client reviews look like.
+            On WorkedWith, clients build a reputation too. Here is what client reviews look like.
           </p>
           <div className="mt-12 grid gap-6 sm:grid-cols-3">
             <SampleReviewCard
