@@ -85,8 +85,11 @@ export function DemoProfilePage({ profile, reviews }: Props) {
               {profile.verification_tier === 'fully_verified' && (
                 <VerifiedBadge>✓ ID Verified</VerifiedBadge>
               )}
+              {profile.insured_to && (
+                <VerifiedBadge>✓ Insured to {profile.insured_to}</VerifiedBadge>
+              )}
               <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                ✓ WorkedWith Member Since 2024
+                On WorkedWith since 2026
               </span>
             </div>
           </section>

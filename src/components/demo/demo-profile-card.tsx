@@ -72,6 +72,12 @@ export function DemoProfileCard({ profile }: Props) {
         <span>{profile.years_experience} yrs experience</span>
         <span>{profile.total_jobs} confirmed jobs</span>
       </div>
+      {profile.insured_to && <p className="mt-2 text-xs font-medium text-green-700">✓ Insured</p>}
+      {profile.hired_again ? (
+        <p className="mt-2 text-xs font-medium text-brand-navy">
+          Hired again by {profile.hired_again} client{profile.hired_again === 1 ? '' : 's'}
+        </p>
+      ) : null}
       </div>
 
       {/* CTA */}

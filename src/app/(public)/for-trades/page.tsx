@@ -349,7 +349,6 @@ export default function ForTradesPage() {
               ]}
               writtenReview={DEMO_REVIEWS_JAMES[0].written_review}
               date={DEMO_REVIEWS_JAMES[0].date}
-              isBackdated={DEMO_REVIEWS_JAMES[0].is_backdated}
             />
             <SampleReviewCard
               jobTitle={DEMO_REVIEWS_SARAH[0].job_title}
@@ -365,7 +364,6 @@ export default function ForTradesPage() {
               ]}
               writtenReview={DEMO_REVIEWS_SARAH[0].written_review}
               date={DEMO_REVIEWS_SARAH[0].date}
-              isBackdated={DEMO_REVIEWS_SARAH[0].is_backdated}
             />
             <SampleReviewCard
               jobTitle={DEMO_REVIEWS_OWEN[0].job_title}
@@ -381,7 +379,6 @@ export default function ForTradesPage() {
               ]}
               writtenReview={DEMO_REVIEWS_OWEN[0].written_review}
               date={DEMO_REVIEWS_OWEN[0].date}
-              isBackdated={DEMO_REVIEWS_OWEN[0].is_backdated}
             />
           </div>
         </div>

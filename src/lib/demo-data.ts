@@ -14,6 +14,8 @@ export type DemoTradeProfile = {
   total_jobs: number
   verification_tier: 'fully_verified' | 'phone_verified'
   subscription_tier: 'pro' | 'standard'
+  insured_to?: string
+  hired_again?: number
   bio: string
   is_demo: true
 }
@@ -59,6 +61,8 @@ export const DEMO_TRADE_PROFILES: DemoTradeProfile[] = [
     total_jobs: 31,
     verification_tier: 'fully_verified',
     subscription_tier: 'pro',
+    insured_to: '£2m',
+    hired_again: 6,
     bio: 'Domestic and commercial electrician based in Chester. Part P certified, NICEIC approved. Specialising in rewires, consumer unit upgrades, and EV charger installation.',
     is_demo: true,
   },
@@ -75,6 +79,8 @@ export const DEMO_TRADE_PROFILES: DemoTradeProfile[] = [
     total_jobs: 22,
     verification_tier: 'fully_verified',
     subscription_tier: 'standard',
+    insured_to: '£1m',
+    hired_again: 3,
     bio: 'Plasterer and decorator with 8 years experience across Manchester and Salford. Skimming, rendering, feature walls, and full room decoration.',
     is_demo: true,
   },

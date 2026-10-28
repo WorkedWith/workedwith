@@ -9,7 +9,6 @@ type Props = {
   scores: Score[]
   writtenReview: string
   date: string
-  isBackdated?: boolean
 }
 
 export function SampleReviewCard({
@@ -21,7 +20,6 @@ export function SampleReviewCard({
   scores,
   writtenReview,
   date,
-  isBackdated = false,
 }: Props) {
   const filled = Math.round(overallRating)
 
@@ -44,11 +42,6 @@ export function SampleReviewCard({
         <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
           {reviewerLabel}
         </span>
-        {isBackdated && (
-          <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-            Confirmed past job
-          </span>
-        )}
       </div>
 
       {/* Job title + written review */}
