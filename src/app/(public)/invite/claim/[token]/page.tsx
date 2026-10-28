@@ -235,7 +235,7 @@ export default async function ClaimInvitePage({ params }: PageProps) {
         <h2 className="text-xl font-semibold text-brand-navy">{clientName} says you did a job together</h2>
         <dl className="mt-5 space-y-2 text-sm">
           <div className="flex justify-between gap-4"><dt className="text-gray-500">Job</dt><dd className="text-right font-medium text-brand-navy">{jobLabel(invite.job_type)}</dd></div>
-          <div className="flex justify-between gap-4"><dt className="text-gray-500">When</dt><dd className="text-right font-medium text-brand-navy">{invite.job_date}</dd></div>
+          <div className="flex justify-between gap-4"><dt className="text-gray-500">When</dt><dd className="text-right font-medium text-brand-navy">{invite.job_state === 'in_progress' ? `Started ${invite.job_date}` : invite.job_date}</dd></div>
           {invite.description && (
             <div className="flex justify-between gap-4"><dt className="text-gray-500">Details</dt><dd className="text-right text-gray-700">{invite.description}</dd></div>
           )}

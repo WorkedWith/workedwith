@@ -60,6 +60,7 @@ export interface TradeProfile {
   confirmation_confirmed: number
   hired_again_count: number
   ended_early_count: number
+  job_link_paused: boolean
   created_at: string
 }
 
@@ -193,6 +194,7 @@ export type IntegrityFlagType =
   | 'combined_signals'
   | 'false_decline'
   | 'repeated_unfounded_claims'
+  | 'repeated_rejected_listings'
 
 export type IntegrityFlagOutcome = 'pending' | 'dismissed' | 'actioned'
 
@@ -452,6 +454,13 @@ export interface PendingInvite {
   declined_at: string | null
   declined_by_user_id: string | null
   overturned_at: string | null
+  source: 'client_invite' | 'trade_link'
+  job_state: 'finished' | 'in_progress'
+  job_month: string | null
+  postcode_district: string | null
+  target_user_id: string | null
+  listing_submission_id: string | null
+  listing_id: string | null
   created_at: string
   expires_at: string
 }
@@ -628,6 +637,27 @@ export interface SeededProfile {
   reminder_1_sent_at: string | null
   reminder_2_sent_at: string | null
   reminder_3_sent_at: string | null
+  source: 'admin' | 'client_added'
+  added_by_client_id: string | null
+  public_reference_url: string | null
+}
+
+export type ListingSubmissionStatus = 'pending' | 'approved' | 'rejected' | 'merged'
+
+export interface ClientListingSubmission {
+  id: string
+  client_id: string
+  business_name: string
+  business_name_normalised: string
+  trade_category: string
+  district: string
+  public_reference_url: string | null
+  status: ListingSubmissionStatus
+  seeded_profile_id: string | null
+  review_note: string | null
+  reviewed_by: string | null
+  reviewed_at: string | null
+  created_at: string
 }
 
 export interface DoNotReseed {
@@ -655,7 +685,7 @@ export interface Database {
       }
       trade_profiles: {
         Row: WithIndex<TradeProfile>
-        Insert: Omit<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
+        Insert: Omit<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'job_link_paused' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'job_link_paused' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
         Update: Partial<TradeProfile>
         Relationships: []
       }
@@ -822,6 +852,24 @@ export interface Database {
         Update: Partial<TradeInsurance>
         Relationships: []
       }
+      job_link_events: {
+        Row: WithIndex<{ id: string; trade_profile_id: string; kind: 'visit' | 'request' | 'cap_hit'; created_at: string }>
+        Insert: { trade_profile_id: string; kind: 'visit' | 'request' | 'cap_hit' }
+        Update: Partial<{ kind: 'visit' | 'request' | 'cap_hit' }>
+        Relationships: []
+      }
+      client_listing_submissions: {
+        Row: WithIndex<ClientListingSubmission>
+        Insert: { client_id: string; business_name: string; business_name_normalised: string; trade_category: string; district: string } & Partial<Omit<ClientListingSubmission, 'client_id' | 'business_name' | 'business_name_normalised' | 'trade_category' | 'district' | 'id' | 'created_at'>>
+        Update: Partial<ClientListingSubmission>
+        Relationships: []
+      }
+      client_share_links: {
+        Row: WithIndex<{ id: string; client_user_id: string; token: string; expires_at: string; revoked_at: string | null; open_count: number; trade_view_count: number; created_at: string }>
+        Insert: { client_user_id: string; token: string; expires_at: string }
+        Update: Partial<{ revoked_at: string | null }>
+        Relationships: []
+      }
       tier_grants: {
         Row: WithIndex<TierGrant>
         Insert: { user_id: string; tier: TierGrantTier; ends_at: string } & Partial<Omit<TierGrant, 'user_id' | 'tier' | 'ends_at' | 'id' | 'created_at' | 'updated_at'>>
@@ -889,6 +937,7 @@ export interface Database {
       refresh_confirmation_stats: { Args: { p_user: string }; Returns: undefined }
       refresh_category_averages: { Args: Record<string, never>; Returns: undefined }
       refresh_ended_early: { Args: { p_trade: string | null; p_client: string | null }; Returns: undefined }
+      bump_share_link: { Args: { p_id: string; p_trade: boolean }; Returns: undefined }
       refresh_hired_again: { Args: { p_trade: string }; Returns: undefined }
       refresh_all_confirmation_stats: { Args: Record<string, never>; Returns: undefined }
     }

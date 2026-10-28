@@ -9,6 +9,7 @@ const links = [
   { href: '/admin/disputes', label: 'Disputes', icon: ScaleIcon },
   { href: '/admin/evidence', label: 'Evidence claims', icon: ScaleIcon },
   { href: '/admin/insurance', label: 'Insurance', icon: BadgeCheckIcon },
+  { href: '/admin/client-listings', label: 'Client listings', icon: SeedIcon },
   { href: '/admin/pending-invites', label: 'Pending Invites', icon: InboxIcon },
   { href: '/admin/seeded-profiles', label: 'Seeded Profiles', icon: SeedIcon },
   { href: '/admin/flags', label: 'Flagged Reviews', icon: FlagIcon },

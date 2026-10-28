@@ -778,3 +778,37 @@ export function adminInsuranceToCheck(p: { tradeName: string }): EmailContent {
     button: { label: 'Open the insurance queue', url: `${APP_URL}/admin/insurance` },
   }
 }
+
+
+// ── Job links ──────────────────────────────────────────────────
+
+export function jobLinkRequest(p: {
+  clientName: string
+  jobType: string
+  when: string
+  inProgress: boolean
+  claimUrl: string
+}): EmailContent {
+  return {
+    subject: `${p.clientName} says you did a job for them`,
+    preheader: 'One tap to accept or decline.',
+    heading: `${p.clientName} has logged a job with you`,
+    paragraphs: [
+      `**${p.clientName}** used your WorkedWith job link to log ${aJobLabel(p.jobType)}${p.inProgress ? ` that started in ${p.when}` : ` from ${p.when}`}.`,
+      p.inProgress
+        ? 'If that is right, accept it and the job shows as underway. When it is finished you will both be asked for a review.'
+        : 'If that is right, accept it and you will each review the other.',
+      'If you do not recognise the job, you can decline it.',
+    ],
+    button: { label: 'See the job', url: p.claimUrl },
+  }
+}
+
+export function adminJobLinkBusy(p: { tradeName: string }): EmailContent {
+  return {
+    subject: `Job link busy: ${p.tradeName}`,
+    heading: 'A job link hit its daily limit',
+    paragraphs: [`**${p.tradeName}** has had 30 job link requests in 24 hours, so the link is showing "try again tomorrow". It could be a lot of real customers or someone abusing it.`],
+    button: { label: 'Open admin', url: `${APP_URL}/admin` },
+  }
+}

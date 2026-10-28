@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { TradePicker } from '@/components/trade-picker'
-import { inviteTrade } from '@/actions/invite-trade'
+import { inviteTrade, checkTradeKnown } from '@/actions/invite-trade'
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -27,6 +27,10 @@ export function InviteTradeForm() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [globalError, setGlobalError] = useState<string | null>(null)
   const [success, setSuccess] = useState<{ inviteId: string; stackedCount: number; warning?: string } | null>(null)
+  // Directory offer: shown once, only when the trade is not already known to WorkedWith
+  const [offer, setOffer] = useState(false)
+  const [district, setDistrict] = useState('')
+  const [refUrl, setRefUrl] = useState('')
 
   const currentYear = new Date().getFullYear()
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
@@ -35,18 +39,14 @@ export function InviteTradeForm() {
     setFieldErrors(prev => { const n = { ...prev }; delete n[field]; return n })
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setGlobalError(null)
-    setFieldErrors({})
+  function buildDate(): string | null {
+    if (!month || !year) { setFieldErrors({ job_date: 'Please select a month and year.' }); return null }
+    return `${MONTHS[parseInt(month) - 1]} ${year}`
+  }
 
-    if (!month || !year) {
-      setFieldErrors({ job_date: 'Please select a month and year.' })
-      return
-    }
-
-    const job_date = `${MONTHS[parseInt(month) - 1]} ${year}`
-
+  function send(listing?: { district: string; reference_url?: string }) {
+    const job_date = buildDate()
+    if (!job_date) return
     startTransition(async () => {
       const result = await inviteTrade({
         trade_name: tradeName,
@@ -55,11 +55,14 @@ export function InviteTradeForm() {
         job_date,
         contact_email: contactEmail || undefined,
         contact_phone: contactPhone || undefined,
+        listing,
       })
 
       if (result.success) {
+        setOffer(false)
         setSuccess({ inviteId: result.inviteId, stackedCount: result.stackedCount, warning: result.warning })
       } else {
+        setOffer(false)
         if (result.field) {
           setFieldErrors({ [result.field]: result.error })
         } else {
@@ -67,6 +70,34 @@ export function InviteTradeForm() {
         }
       }
     })
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setGlobalError(null)
+    setFieldErrors({})
+    if (!buildDate()) return
+
+    startTransition(async () => {
+      let known = true
+      try {
+        known = (await checkTradeKnown({ trade_name: tradeName, contact_email: contactEmail || undefined, contact_phone: contactPhone || undefined })).known
+      } catch {
+        known = true
+      }
+      if (known || !tradeName.trim() || !jobType) {
+        send()
+      } else {
+        setOffer(true)
+      }
+    })
+  }
+
+  function addToDirectory() {
+    const d = district.trim().toUpperCase().replace(/\s+/g, '')
+    if (!/^[A-Z]{1,2}\d[A-Z0-9]?$/.test(d)) { setGlobalError('Enter the first part of their postcode, for example M20.'); return }
+    setGlobalError(null)
+    send({ district: d, reference_url: refUrl || undefined })
   }
 
   if (success) {
@@ -104,12 +135,44 @@ export function InviteTradeForm() {
               setTradeName(''); setJobType(''); setDescription('')
               setMonth(''); setYear('')
               setContactEmail(''); setContactPhone('')
+              setDistrict(''); setRefUrl('')
             }}
             className="block w-full rounded-lg border border-gray-300 px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Invite another tradesperson
           </button>
         </div>
+      </div>
+    )
+  }
+
+  if (offer) {
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+        <h2 className="text-xl font-semibold text-brand-navy mb-2">{tradeName} isn&apos;t on WorkedWith yet</h2>
+        <p className="text-sm text-gray-600 leading-relaxed">
+          Would you like to add them to the directory? We&apos;ll only show their business name, trade and area. Nothing about your job is shown.
+        </p>
+        <div className="mt-5 space-y-4">
+          <Field label="First part of their postcode" required>
+            <input value={district} onChange={e => setDistrict(e.target.value.toUpperCase().slice(0, 4))} placeholder="M20" disabled={isPending} className={inputCls(false)} />
+          </Field>
+          <Field label="Where they are listed publicly (optional)" hint="Website, Google or Facebook page">
+            <input value={refUrl} onChange={e => setRefUrl(e.target.value)} placeholder="https://" disabled={isPending} className={inputCls(false)} />
+          </Field>
+        </div>
+        {globalError && <p role="alert" className="mt-3 text-sm text-red-600">{globalError}</p>}
+        <div className="mt-6 flex flex-col gap-3">
+          <button type="button" onClick={addToDirectory} disabled={isPending}
+            className="w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy hover:opacity-90 disabled:opacity-40">
+            {isPending ? 'Sending…' : 'Yes, add them'}
+          </button>
+          <button type="button" onClick={() => { setGlobalError(null); send() }} disabled={isPending}
+            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40">
+            No thanks
+          </button>
+        </div>
+        <p className="mt-3 text-center text-xs text-gray-400">Either way, your invite is sent as normal.</p>
       </div>
     )
   }

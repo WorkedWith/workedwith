@@ -21,6 +21,8 @@ import { TradeChip } from '@/components/trade-chip'
 import { Avatar } from '@/components/avatar'
 import { EvidencePrompts } from '@/components/evidence-prompts'
 import { InsurancePrompt } from '@/components/insurance-prompt'
+import { JobLinkSection } from '@/components/job-link-section'
+import { ShareProfileSection } from '@/components/share-profile-section'
 
 export const metadata = { title: 'Dashboard | WorkedWith', robots: { index: false } }
 
@@ -133,6 +135,8 @@ export default async function DashboardPage() {
 
         <EvidencePrompts userId={user.id} />
         {isTrade && <InsurancePrompt userId={user.id} />}
+        {isTrade && <JobLinkSection userId={user.id} />}
+        {isClient && <ShareProfileSection userId={user.id} />}
 
         {/* ══════════════════════════════════════════════
             TRADE LAYOUT  (trade + both users)

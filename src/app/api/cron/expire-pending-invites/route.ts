@@ -81,6 +81,27 @@ export async function GET(request: Request) {
       results.jobInvitesUnanswered = jobUnanswered
     }
 
+    // Requests that came with a client added listing: tell the client the record has closed
+    {
+      const { data: closing } = await admin
+        .from('pending_invites')
+        .select('id, trade_name, inviting_client_id')
+        .eq('status', 'sent')
+        .lt('expires_at', now)
+        .not('listing_submission_id', 'is', null)
+        .limit(500)
+      for (const c of (closing ?? []) as unknown as { id: string; trade_name: string; inviting_client_id: string }[]) {
+        await admin.from('notifications').insert({
+          user_id: c.inviting_client_id,
+          type: 'job_confirmed',
+          title: 'Your job record has closed',
+          body: `${c.trade_name} didn't join WorkedWith, so the job record has closed.`,
+          link: '/dashboard',
+        })
+      }
+      results.listingInvitesClosed = closing?.length ?? 0
+    }
+
     const { data, error } = await admin
       .from('pending_invites')
       .delete()
@@ -140,6 +161,9 @@ export async function GET(request: Request) {
         expired++
         continue
       }
+
+      // Client added listings never get our outreach: the trade already hears from the client's invite
+      if (profile.source === 'client_added') continue
 
       // Outbound sending is gated; expiry above runs regardless
       if (process.env.SEEDED_OUTREACH_ENABLED !== 'true') continue
@@ -375,6 +399,16 @@ export async function GET(request: Request) {
     if (error) console.error('refresh_all_confirmation_stats failed (non-fatal):', error.message)
     const { error: catErr } = await admin.rpc('refresh_category_averages')
     if (catErr) console.error('refresh_category_averages failed (non-fatal):', catErr.message)
+  }
+
+  // ── 8. Delete share links 90 days after they ended ───────────
+  try {
+    const cutoff = new Date(Date.now() - 90 * 86_400_000).toISOString()
+    const { data: gone } = await admin.from('client_share_links').delete().lt('expires_at', cutoff).select('id')
+    const { data: goneRevoked } = await admin.from('client_share_links').delete().lt('revoked_at', cutoff).select('id')
+    results.shareLinksDeleted = (gone?.length ?? 0) + (goneRevoked?.length ?? 0)
+  } catch (e) {
+    console.error('share link cleanup failed (non-fatal):', e)
   }
 
   return NextResponse.json(results)

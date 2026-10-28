@@ -69,8 +69,10 @@ export async function applyUpheld(
         client_profile_id: clientProfile.id as string,
         initiated_by: 'client',
         description: (invite.description as string | null) ?? null,
-        is_backdated: true,
-        backdated_period: invite.job_date as string,
+        is_backdated: invite.job_state !== 'in_progress',
+        backdated_period: invite.job_state === 'in_progress' ? null : (invite.job_date as string),
+        started_at: invite.job_state === 'in_progress' ? ((invite.job_month as string | null) ?? null) : null,
+        postcode: (invite.postcode_district as string | null) ?? null,
         status: 'active',
         confirmed_at: now,
       })
@@ -79,14 +81,16 @@ export async function applyUpheld(
     if (jobErr || !job) return { ok: false, error: 'Could not create the job.' }
     jobId = job.id as string
 
-    await admin.from('review_windows').insert({
-      job_id: jobId,
-      window_opened_at: now,
-      blind_window_closes_at: addDays(nowDate, 7).toISOString(),
-      window_closes_at: addDays(nowDate, 30).toISOString(),
-      trade_review_submitted: false,
-      client_review_submitted: false,
-    })
+    if (invite.job_state !== 'in_progress') {
+      await admin.from('review_windows').insert({
+        job_id: jobId,
+        window_opened_at: now,
+        blind_window_closes_at: addDays(nowDate, 7).toISOString(),
+        window_closes_at: addDays(nowDate, 30).toISOString(),
+        trade_review_submitted: false,
+        client_review_submitted: false,
+      })
+    }
     await admin.from('pending_invites').update({
       status: 'claimed',
       claimed_by_user_id: req.respondentId,

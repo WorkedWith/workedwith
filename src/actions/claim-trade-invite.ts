@@ -102,8 +102,10 @@ export async function claimTradeInvite(claimToken: string): Promise<ClaimTradeIn
           client_profile_id: clientProfile.id,
           initiated_by: 'client',
           description: inv.description ?? null,
-          is_backdated: true,
-          backdated_period: inv.job_date,
+          is_backdated: inv.job_state !== 'in_progress',
+          backdated_period: inv.job_state === 'in_progress' ? null : inv.job_date,
+          started_at: inv.job_state === 'in_progress' ? inv.job_month : null,
+          postcode: inv.postcode_district ?? null,
           status: 'active',
           confirmed_at: claimedAt,
         })
@@ -114,15 +116,17 @@ export async function claimTradeInvite(claimToken: string): Promise<ClaimTradeIn
 
       jobIds.push(job.id)
 
-      // Open the review window
-      await admin.from('review_windows').insert({
-        job_id: job.id,
-        window_opened_at: claimedAt,
-        blind_window_closes_at: blindWindowCloses,
-        window_closes_at: reviewWindowCloses,
-        trade_review_submitted: false,
-        client_review_submitted: false,
-      })
+      // Open the review window (a job still going gets one when it is marked complete)
+      if (inv.job_state !== 'in_progress') {
+        await admin.from('review_windows').insert({
+          job_id: job.id,
+          window_opened_at: claimedAt,
+          blind_window_closes_at: blindWindowCloses,
+          window_closes_at: reviewWindowCloses,
+          trade_review_submitted: false,
+          client_review_submitted: false,
+        })
+      }
 
       // Mark invite as claimed
       await admin
@@ -134,6 +138,11 @@ export async function claimTradeInvite(claimToken: string): Promise<ClaimTradeIn
           resulting_job_id: job.id,
         })
         .eq('id', inv.id)
+
+      // If the client had added this trade to the directory, the listing is now a real profile
+      if (inv.listing_id) {
+        await admin.from('seeded_profiles').update({ status: 'claimed', claimed_by_user_id: user.id }).eq('id', inv.listing_id).eq('status', 'unclaimed')
+      }
 
       // Counts towards the trade's confirmation rate
       await recordRequestOutcome(admin, {
@@ -153,8 +162,10 @@ export async function claimTradeInvite(claimToken: string): Promise<ClaimTradeIn
           user_id: inv.inviting_client_id,
           type: 'job_confirmed',
           title: 'Your job invite has been claimed',
-          body: `${tradeName} has claimed your ${inv.job_type} invite for ${inv.job_date}. You can now leave each other reviews.`,
-          link: `/jobs/${job.id}/review`,
+          body: inv.job_state === 'in_progress'
+            ? `${tradeName} has accepted your ${inv.job_type} job. You can both leave a review once it is finished.`
+            : `${tradeName} has claimed your ${inv.job_type} invite for ${inv.job_date}. You can now leave each other reviews.`,
+          link: inv.job_state === 'in_progress' ? '/dashboard' : `/jobs/${job.id}/review`,
         }),
       ]
 
