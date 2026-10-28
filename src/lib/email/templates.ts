@@ -812,3 +812,26 @@ export function adminJobLinkBusy(p: { tradeName: string }): EmailContent {
     button: { label: 'Open admin', url: `${APP_URL}/admin` },
   }
 }
+
+export function adminWeeklyDigest(p: {
+  districts: string[]
+  searches: number
+  prevSearches: number
+  unique: number
+  clicks: number
+  gaps: { district: string; category: string; searches: number; trades: number }[]
+}): EmailContent {
+  const change = p.prevSearches === 0 ? (p.searches > 0 ? 'new this week' : 'no change') : `${p.searches >= p.prevSearches ? '+' : ''}${Math.round(((p.searches - p.prevSearches) / p.prevSearches) * 100)}% on the week before`
+  const gapLines = p.gaps.length === 0
+    ? ['No gaps this week.']
+    : p.gaps.map(g => `${g.district} ${g.category}: ${g.searches} search${g.searches === 1 ? '' : 'es'}, ${g.trades} claimed trade${g.trades === 1 ? '' : 's'}`)
+  return {
+    subject: `Last week: ${p.searches} client searches in ${p.districts.join(' and ')}`,
+    heading: 'Your weekly search report',
+    paragraphs: [
+      `**${p.districts.join(', ')}**, last 7 days: **${p.searches} searches** (${change}), **${p.unique} unique searchers**, **${p.clicks} contact clicks**.`,
+      `Top gaps (searched for, fewer than 3 claimed trades):\n${gapLines.join('\n')}`,
+    ],
+    button: { label: 'Open search analytics', url: `${APP_URL}/admin/analytics` },
+  }
+}

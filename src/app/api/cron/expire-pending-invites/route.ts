@@ -1,7 +1,7 @@
 import { recordRequestOutcome, findRecipientUserId } from '@/lib/request-outcomes'
 import { INTEGRITY } from '@/lib/integrity/config'
 import { runGrantMaintenance } from '@/lib/grants'
-import { insuranceExpiring } from '@/lib/email/templates'
+import { insuranceExpiring, adminWeeklyDigest } from '@/lib/email/templates'
 import { loadJobParties } from '@/lib/job-parties'
 import { jobStillGoing as jobStillGoingEmail } from '@/lib/email/templates'
 import { STALE_PROMPT_DAYS } from '@/lib/ended-early'
@@ -419,6 +419,51 @@ export async function GET(request: Request) {
     if (error) console.error('rollup_old_search_events failed (non-fatal):', error.message)
   } catch (e) {
     console.error('search rollup failed (non-fatal):', e)
+  }
+
+  // ── 10. Monday morning search report to admin ─────────────────
+  if (new Date().getUTCDay() === 1) {
+    try {
+      const DAY = 86_400_000
+      const { data: setting } = await admin.from('admin_settings').select('value').eq('key', 'focus_districts').maybeSingle()
+      const districts = (setting?.value as string[] | undefined) ?? ['WA14', 'WA15']
+      const since = new Date(Date.now() - 14 * DAY).toISOString()
+      const { data: evs } = await admin
+        .from('search_events')
+        .select('created_at, district, trade_category, viewer_role, session_hash, real_count')
+        .in('district', districts)
+        .in('viewer_role', ['logged_out', 'client'])
+        .gte('created_at', since)
+        .limit(50000)
+      const rows = (evs ?? []) as unknown as { created_at: string; district: string; trade_category: string; session_hash: string; real_count: number }[]
+      const cut = Date.now() - 7 * DAY
+      const cur = rows.filter(r => new Date(r.created_at).getTime() >= cut)
+      const prev = rows.length - cur.length
+      const { count: clicks } = await admin
+        .from('search_outcomes')
+        .select('id', { count: 'exact', head: true })
+        .eq('kind', 'contact_click')
+        .in('district', districts)
+        .in('viewer_role', ['logged_out', 'client'])
+        .gte('created_at', new Date(cut).toISOString())
+      const gapMap = new Map<string, { district: string; category: string; searches: number; real: number }>()
+      for (const r of cur) {
+        if (r.real_count >= 3) continue
+        const k = `${r.district}|${r.trade_category}`
+        const g = gapMap.get(k) ?? { district: r.district, category: r.trade_category, searches: 0, real: r.real_count }
+        g.searches++
+        gapMap.set(k, g)
+      }
+      const gaps = Array.from(gapMap.values()).sort((a, b) => b.searches - a.searches).slice(0, 5)
+        .map(g => ({ district: g.district, category: g.category, searches: g.searches, trades: g.real }))
+      const r = await sendEmail('hello@workedwith.co.uk', adminWeeklyDigest({
+        districts, searches: cur.length, prevSearches: prev,
+        unique: new Set(cur.map(x => x.session_hash)).size, clicks: clicks ?? 0, gaps,
+      }))
+      results.weeklyDigest = r.ok ? 'sent' : 'failed'
+    } catch (e) {
+      console.error('weekly digest failed (non-fatal):', e)
+    }
   }
 
   return NextResponse.json(results)

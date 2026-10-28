@@ -5,7 +5,7 @@ import { sendEmail } from '@/lib/email/send'
 import { welcomeTrade } from '@/lib/email/templates'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { TRADE_TYPES } from '@/lib/trade-types'
+import { TRADE_TYPES, ALL_TRADE_TERMS } from '@/lib/trade-types'
 import type { SeededProfile } from '@/types/database'
 
 export type CreateTradeProfileInput = {
@@ -157,9 +157,18 @@ export async function createTradeProfile(
     seededProfile = sp
   }
 
+  // A claimed listing keeps every trade it was listed under, not only the first
+  const allTradeTypes = [trade_type]
+  if (seededProfile) {
+    const listed = seededProfile.trade_categories?.length ? seededProfile.trade_categories : [seededProfile.trade_category]
+    for (const t of listed) {
+      if ((ALL_TRADE_TERMS as readonly string[]).includes(t) && !allTradeTypes.includes(t)) allTradeTypes.push(t)
+    }
+  }
+
   const { error: insertError } = await admin.from('trade_profiles').insert({
     user_id: user.id,
-    trade_types: [trade_type],
+    trade_types: allTradeTypes,
     company_name: company_name || null,
     public_slug: username,
     bio: bio || null,

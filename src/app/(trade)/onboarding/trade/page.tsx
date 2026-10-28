@@ -47,16 +47,18 @@ export default async function TradeOnboardingPage({ searchParams }: PageProps) {
   if (existing) redirect(redirectTo ?? '/dashboard')
 
   // Pre-populate form from seeded profile if a token is present
+  let seededExtra: string[] = []
   let seededData: { businessName: string; tradeCategory: string; slug: string; operatingAreas: string[] } | undefined
   if (seeded_token) {
     const { data: rawSeeded } = await admin
       .from('seeded_profiles')
-      .select('business_name, trade_category, slug, operating_areas')
+      .select('business_name, trade_category, trade_categories, slug, operating_areas')
       .eq('claim_token', seeded_token)
       .eq('status', 'unclaimed')
       .maybeSingle()
 
     if (rawSeeded) {
+      seededExtra = ((rawSeeded.trade_categories as string[] | null) ?? []).filter(Boolean)
       seededData = {
         businessName: rawSeeded.business_name as string,
         tradeCategory: parentTrade(rawSeeded.trade_category as string) ?? (rawSeeded.trade_category as string),
@@ -65,6 +67,8 @@ export default async function TradeOnboardingPage({ searchParams }: PageProps) {
       }
     }
   }
+
+  const extraTrades = seededExtra.filter(t => t !== seededData?.tradeCategory)
 
   return (
     <main className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-4">
@@ -78,7 +82,7 @@ export default async function TradeOnboardingPage({ searchParams }: PageProps) {
           </h1>
           {seededData ? (
             <p className="mt-2 text-sm text-white/60">
-              We have pre-filled your details from the listing. Edit anything before saving.
+              We have pre-filled your details from the listing. Edit anything before saving.{extraTrades.length > 0 ? ` Your other listed trades (${extraTrades.join(', ')}) will be added too.` : ''}
             </p>
           ) : (
             <p className="mt-2 text-sm text-white/60">
