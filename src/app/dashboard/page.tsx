@@ -23,6 +23,7 @@ import { EvidencePrompts } from '@/components/evidence-prompts'
 import { InsurancePrompt } from '@/components/insurance-prompt'
 import { JobLinkSection } from '@/components/job-link-section'
 import { ShareProfileSection } from '@/components/share-profile-section'
+import { ClientRequestsSection } from '@/components/client-requests-section'
 
 export const metadata = { title: 'Dashboard | WorkedWith', robots: { index: false } }
 
@@ -134,6 +135,7 @@ export default async function DashboardPage() {
       <div className="mx-auto max-w-2xl lg:max-w-5xl px-4 py-8 sm:px-6">
 
         <EvidencePrompts userId={user.id} />
+        {isClient && <ClientRequestsSection userId={user.id} />}
         {isTrade && <InsurancePrompt userId={user.id} />}
         {isTrade && <JobLinkSection userId={user.id} />}
         {isClient && <ShareProfileSection userId={user.id} />}

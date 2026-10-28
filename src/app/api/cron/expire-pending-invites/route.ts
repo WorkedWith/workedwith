@@ -85,17 +85,19 @@ export async function GET(request: Request) {
     {
       const { data: closing } = await admin
         .from('pending_invites')
-        .select('id, trade_name, inviting_client_id')
+        .select('id, trade_name, inviting_client_id, listing_submission_id, source')
         .eq('status', 'sent')
         .lt('expires_at', now)
-        .not('listing_submission_id', 'is', null)
         .limit(500)
-      for (const c of (closing ?? []) as unknown as { id: string; trade_name: string; inviting_client_id: string }[]) {
+      for (const c of (closing ?? []) as unknown as { id: string; trade_name: string; inviting_client_id: string; listing_submission_id: string | null; source: string }[]) {
+        if (c.source === 'trade_link') continue
         await admin.from('notifications').insert({
           user_id: c.inviting_client_id,
           type: 'job_confirmed',
-          title: 'Your job record has closed',
-          body: `${c.trade_name} didn't join WorkedWith, so the job record has closed.`,
+          title: c.listing_submission_id ? 'Your job record has closed' : `${c.trade_name} didn't answer your request`,
+          body: c.listing_submission_id
+            ? `${c.trade_name} didn't join WorkedWith, so the job record has closed.`
+            : `Your request to ${c.trade_name} ran out after 60 days. You can invite them again, or add the job again with a different contact.`,
           link: '/dashboard',
         })
       }

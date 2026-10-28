@@ -82,6 +82,13 @@ export async function logJob(input: LogJobInput): Promise<LogJobResult> {
   if (!(ALL_TRADE_TERMS as readonly string[]).includes(job_type)) {
     return { success: false, error: 'Please select a valid job type.', field: 'job_type' }
   }
+  if (started_at) {
+    const t = new Date(started_at).getTime()
+    if (Number.isNaN(t)) return { success: false, error: 'Please enter a valid start date.', field: 'started_at' }
+    if (t > Date.now() + 180 * 86_400_000) {
+      return { success: false, error: 'Start date can be at most 6 months from now.', field: 'started_at' }
+    }
+  }
   if (!postcode) {
     return { success: false, error: 'Please enter the job postcode.', field: 'postcode' }
   }

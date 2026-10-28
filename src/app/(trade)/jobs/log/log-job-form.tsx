@@ -166,6 +166,7 @@ export function LogJobForm() {
         <Field label="Approximate start date" hint="Optional">
           <input
             type="date"
+            max={new Date(Date.now() + 180 * 86_400_000).toISOString().slice(0, 10)}
             value={startedAt}
             onChange={e => setStartedAt(e.target.value)}
             disabled={isPending}

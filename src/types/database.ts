@@ -461,6 +461,8 @@ export interface PendingInvite {
   target_user_id: string | null
   listing_submission_id: string | null
   listing_id: string | null
+  reminder_count: number
+  last_reminded_at: string | null
   created_at: string
   expires_at: string
 }
