@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { MAX_RESPONSE_CHARS } from '@/lib/review-response'
+import { canActForReviewee } from '@/lib/org-access'
 
 export type RespondResult = { success: true } | { success: false; error: string }
 
@@ -23,8 +24,8 @@ export async function respondToReview(reviewId: string, text: string): Promise<R
 
   const { data: review } = await admin.from('reviews').select('*').eq('id', reviewId).maybeSingle()
   if (!review) return { success: false, error: 'Review not found.' }
-  if ((review.reviewee_id as string) !== user.id) {
-    return { success: false, error: 'You can only respond to reviews written about you.' }
+  if (!(await canActForReviewee(admin, user.id, review.reviewee_id as string))) {
+    return { success: false, error: 'You can only respond to reviews written about you or your business.' }
   }
   if (!(review.is_visible as boolean)) {
     return { success: false, error: 'This review is not published yet.' }

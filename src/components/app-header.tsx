@@ -16,6 +16,7 @@ function linksFor(userType: string | null): NavLink[] {
   if (userType === 'client_business') {
     return [
       { href: '/dashboard', label: 'Dashboard' },
+      { href: '/org/dashboard', label: 'Business' },
       { href: '/org/members', label: 'Members' },
       { href: '/find', label: 'Find a tradesperson', shortLabel: 'Find a trade' },
       { href: '/profile', label: 'Profile' },

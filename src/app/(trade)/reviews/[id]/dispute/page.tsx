@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { DisputeForm } from './dispute-form'
+import { canActForReviewee } from '@/lib/org-access'
 
 export const metadata = { title: 'Raise a dispute | WorkedWith' }
 
@@ -56,7 +57,7 @@ export default async function DisputePage({ params }: { params: { id: string } }
   if (!review) redirect('/dashboard')
 
   // Must be the reviewee
-  if ((review.reviewee_id as string) !== user.id) redirect('/dashboard')
+  if (!(await canActForReviewee(admin, user.id, review.reviewee_id as string))) redirect('/dashboard')
 
   const reviewJobId = review.job_id as string
 

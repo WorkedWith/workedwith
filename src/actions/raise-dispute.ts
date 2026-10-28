@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { DisputeReason } from '@/types/database'
 import { getUserTier, isProTier } from '@/lib/stripe/get-tier'
+import { canActForReviewee } from '@/lib/org-access'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -43,8 +44,8 @@ export async function raiseDispute(
   if (!review) return { success: false, error: 'Review not found.' }
 
   // Must be the reviewee
-  if ((review.reviewee_id as string) !== user.id) {
-    return { success: false, error: 'You can only dispute reviews that are written about you.' }
+  if (!(await canActForReviewee(admin, user.id, review.reviewee_id as string))) {
+    return { success: false, error: 'You can only dispute reviews that are written about you or your business.' }
   }
 
   // Review must be published

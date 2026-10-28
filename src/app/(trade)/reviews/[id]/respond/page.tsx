@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { RespondForm } from './respond-form'
+import { canActForReviewee } from '@/lib/org-access'
 
 export const metadata = { title: 'Respond to a review | WorkedWith' }
 
@@ -24,7 +25,7 @@ export default async function RespondPage({ params }: { params: { id: string } }
   if (!me?.phone_verified) redirect('/verify/phone')
 
   const { data: review } = await admin.from('reviews').select('*').eq('id', params.id).maybeSingle()
-  if (!review || (review.reviewee_id as string) !== user.id) redirect('/dashboard')
+  if (!review || !(await canActForReviewee(admin, user.id, review.reviewee_id as string))) redirect('/dashboard')
 
   const jobId = review.job_id as string
   let message: string | null = null
