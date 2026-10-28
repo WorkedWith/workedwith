@@ -144,7 +144,7 @@ export default async function FindPage({ searchParams }: PageProps) {
             </p>
             <div className="space-y-4">
               {realResults.map(result => (
-                <ResultCard key={result.id} result={result} />
+                <ResultCard key={result.id} result={result} searchId={searchResult?.success ? searchResult.searchId : null} />
               ))}
               {hasSeededResults && realResults.length > 0 && (
                 <div className="relative my-2 flex items-center gap-3">
@@ -154,7 +154,7 @@ export default async function FindPage({ searchParams }: PageProps) {
                 </div>
               )}
               {seededResults.map(result => (
-                <SeededResultCard key={result.id} result={result} />
+                <SeededResultCard key={result.id} result={result} searchId={searchResult?.success ? searchResult.searchId : null} />
               ))}
             </div>
             <p className="text-xs text-gray-400 text-center mt-4">
@@ -192,7 +192,7 @@ export default async function FindPage({ searchParams }: PageProps) {
 
 // ── Real result card ──────────────────────────────────────────
 
-function ResultCard({ result }: { result: TradesearchResult }) {
+function ResultCard({ result, searchId }: { result: TradesearchResult; searchId: string | null }) {
   const hasReviews = result.total_reviews > 0
 
   return (
@@ -272,7 +272,7 @@ function ResultCard({ result }: { result: TradesearchResult }) {
 
       <div className="mt-5 flex justify-end">
         <a
-          href={`/t/${result.public_slug}`}
+          href={`/t/${result.public_slug}${searchId ? `?s=${searchId}` : ''}`}
           className="inline-flex min-h-[44px] items-center rounded-xl border-2 border-brand-navy px-5 text-sm font-semibold text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
         >
           View profile
@@ -284,7 +284,7 @@ function ResultCard({ result }: { result: TradesearchResult }) {
 
 // ── Seeded result card ────────────────────────────────────────
 
-function SeededResultCard({ result }: { result: SeededSearchResult }) {
+function SeededResultCard({ result, searchId }: { result: SeededSearchResult; searchId: string | null }) {
   return (
     <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6">
       <div className="flex items-start justify-between gap-3">
@@ -306,7 +306,7 @@ function SeededResultCard({ result }: { result: SeededSearchResult }) {
 
       <div className="mt-5 flex justify-end">
         <a
-          href={`/t/${result.public_slug}`}
+          href={`/t/${result.public_slug}${searchId ? `?s=${searchId}` : ''}`}
           className="inline-flex min-h-[44px] items-center rounded-xl border-2 border-gray-300 px-5 text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-colors"
         >
           View listing

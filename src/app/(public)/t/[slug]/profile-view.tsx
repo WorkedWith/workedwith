@@ -1,5 +1,7 @@
 import { getActiveInsurance, coverLabel, monthYear, INSURANCE_TOOLTIP } from '@/lib/insurance'
 import { ReviewResponse } from '@/components/review-response'
+import { TrackedContactLink } from '@/components/tracked-contact-link'
+import { logProfileViewFromSearch } from '@/actions/log-search-outcome'
 import { getOutcomeLabels, endedEarlyLabel } from '@/lib/job-outcome'
 import { confirmationLabel, CONFIRMATION_TOOLTIP_TRADE } from '@/lib/request-outcomes'
 import { getEffectiveTier } from '@/lib/tier'
@@ -138,7 +140,7 @@ function SeededProfilePage({ profile, signedIn }: { profile: SeededProfile; slug
 
 // ── Page ──────────────────────────────────────────────────────
 
-export async function TradeProfileView({ slug, preview = false }: { slug: string; preview?: boolean }) {
+export async function TradeProfileView({ slug, preview = false, searchId = null }: { slug: string; preview?: boolean; searchId?: string | null }) {
   const admin = createAdminClient()
 
   // 1. Trade profile (real, claimed)
@@ -229,6 +231,7 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
       viewer_id: currentUser?.id ?? null,
       source: 'direct',
     }).then(() => {})
+    if (searchId) void logProfileViewFromSearch(tradeProfileId, userId, searchId)
   }
 
   if (!tradeUser) notFound()
@@ -643,20 +646,26 @@ export async function TradeProfileView({ slug, preview = false }: { slug: string
             {currentUser ? (
               <>
                 {contactPhone && (
-                  <a
+                  <TrackedContactLink
                     href={`tel:${contactPhone.replace(/\s+/g, '')}`}
+                    kind="call"
+                    tradeProfileId={tradeProfileId}
+                    searchId={searchId}
                     className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-brand-amber px-4 text-[15px] font-bold text-brand-navy hover:bg-amber-400 transition-colors"
                   >
                     Call
-                  </a>
+                  </TrackedContactLink>
                 )}
                 {contactEmail && (
-                  <a
+                  <TrackedContactLink
                     href={mailtoHref}
+                    kind="email"
+                    tradeProfileId={tradeProfileId}
+                    searchId={searchId}
                     className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl border-2 border-brand-navy px-4 text-[15px] font-bold text-brand-navy hover:bg-gray-50 transition-colors"
                   >
                     Email
-                  </a>
+                  </TrackedContactLink>
                 )}
               </>
             ) : (

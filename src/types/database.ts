@@ -872,6 +872,30 @@ export interface Database {
         Update: Partial<{ revoked_at: string | null }>
         Relationships: []
       }
+      search_events: {
+        Row: WithIndex<{ id: string; created_at: string; district: string; trade_category: string; specialism: string | null; viewer_role: string; user_id: string | null; session_hash: string; real_count: number; seeded_count: number; boosted_count: number; demo_shown: boolean }>
+        Insert: { district: string; trade_category: string; viewer_role: string; session_hash: string } & Partial<{ specialism: string | null; user_id: string | null; real_count: number; seeded_count: number; boosted_count: number; demo_shown: boolean }>
+        Update: Partial<{ real_count: number }>
+        Relationships: []
+      }
+      search_outcomes: {
+        Row: WithIndex<{ id: string; created_at: string; search_event_id: string | null; kind: string; contact_type: string | null; trade_profile_id: string | null; district: string | null; trade_category: string | null; viewer_role: string | null }>
+        Insert: { kind: string } & Partial<{ search_event_id: string | null; contact_type: string | null; trade_profile_id: string | null; district: string | null; trade_category: string | null; viewer_role: string | null }>
+        Update: Partial<{ kind: string }>
+        Relationships: []
+      }
+      search_weekly_rollups: {
+        Row: WithIndex<{ week: string; district: string; trade_category: string; viewer_role: string; searches: number; unique_searchers: number; profile_views: number; contact_clicks: number }>
+        Insert: { week: string; district: string; trade_category: string; viewer_role: string } & Partial<{ searches: number; unique_searchers: number; profile_views: number; contact_clicks: number }>
+        Update: Partial<{ searches: number }>
+        Relationships: []
+      }
+      admin_settings: {
+        Row: WithIndex<{ key: string; value: unknown }>
+        Insert: { key: string; value: unknown }
+        Update: Partial<{ value: unknown }>
+        Relationships: []
+      }
       tier_grants: {
         Row: WithIndex<TierGrant>
         Insert: { user_id: string; tier: TierGrantTier; ends_at: string } & Partial<Omit<TierGrant, 'user_id' | 'tier' | 'ends_at' | 'id' | 'created_at' | 'updated_at'>>
@@ -939,6 +963,7 @@ export interface Database {
       refresh_confirmation_stats: { Args: { p_user: string }; Returns: undefined }
       refresh_category_averages: { Args: Record<string, never>; Returns: undefined }
       refresh_ended_early: { Args: { p_trade: string | null; p_client: string | null }; Returns: undefined }
+      rollup_old_search_events: { Args: Record<string, never>; Returns: number }
       bump_share_link: { Args: { p_id: string; p_trade: boolean }; Returns: undefined }
       refresh_hired_again: { Args: { p_trade: string }; Returns: undefined }
       refresh_all_confirmation_stats: { Args: Record<string, never>; Returns: undefined }

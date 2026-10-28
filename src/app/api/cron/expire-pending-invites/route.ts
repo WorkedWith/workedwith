@@ -413,5 +413,13 @@ export async function GET(request: Request) {
     console.error('share link cleanup failed (non-fatal):', e)
   }
 
+  // ── 9. Roll up search events older than 12 months ─────────────
+  try {
+    const { error } = await admin.rpc('rollup_old_search_events')
+    if (error) console.error('rollup_old_search_events failed (non-fatal):', error.message)
+  } catch (e) {
+    console.error('search rollup failed (non-fatal):', e)
+  }
+
   return NextResponse.json(results)
 }

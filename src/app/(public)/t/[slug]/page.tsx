@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { SeededProfile } from '@/types/database'
 import { TradeProfileView } from './profile-view'
 
-type Props = { params: Promise<{ slug: string }> }
+type Props = { params: Promise<{ slug: string }>; searchParams?: Promise<{ s?: string }> }
 
 // ── Metadata ──────────────────────────────────────────────────
 
@@ -73,7 +73,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // ── Seeded profile page ───────────────────────────────────────
 
-export default async function TradeProfilePage({ params }: Props) {
+export default async function TradeProfilePage({ params, searchParams }: Props) {
   const { slug } = await params
-  return <TradeProfileView slug={slug} />
+  const sp = searchParams ? await searchParams : {}
+  return <TradeProfileView slug={slug} searchId={typeof sp.s === 'string' ? sp.s : null} />
 }

@@ -5,6 +5,8 @@ import { getActiveInsurance } from '@/lib/insurance'
 import { getEffectiveTiers } from '@/lib/tier'
 import { categoryMean, weightedScore, type CategoryAverages } from '@/lib/ranking/weighted'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
+import { logSearchEvent, roleFromUserType, type ViewerRole } from '@/lib/search-analytics'
 import { SPECIALISMS } from '@/lib/trade-types'
 import type { SubscriptionTier, VerificationTier, SeededProfile } from '@/types/database'
 
@@ -62,7 +64,7 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 export type SearchTradesResult =
-  | { success: true; results: TradesearchResult[]; seededResults: SeededSearchResult[]; district: string }
+  | { success: true; results: TradesearchResult[]; seededResults: SeededSearchResult[]; district: string; searchId: string | null }
   | { success: false; error: string }
 
 export async function searchTradespeople(
@@ -229,5 +231,23 @@ export async function searchTradespeople(
     }
   }
 
-  return { success: true, results: realResults, seededResults, district }
+  // Log the search for the demand report (never blocks or fails the search)
+  let role: ViewerRole = 'logged_out'
+  let viewerId: string | null = null
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      viewerId = user.id
+      const { data: u } = await admin.from('users').select('user_type, is_admin').eq('id', user.id).maybeSingle()
+      role = roleFromUserType(Boolean(u?.is_admin), (u?.user_type as string | null | undefined) ?? null)
+    }
+  } catch { /* treat as logged out */ }
+  const searchId = await logSearchEvent(admin, {
+    district, tradeType, userId: viewerId, role,
+    real: realResults.length, seeded: seededResults.length,
+    boosted: realResults.filter(r => r.subscription_tier === 'pro' && r.boosted_districts.includes(district)).length,
+  })
+
+  return { success: true, results: realResults, seededResults, district, searchId }
 }
