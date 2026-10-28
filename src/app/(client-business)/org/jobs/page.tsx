@@ -40,13 +40,12 @@ export default async function OrgJobsPage() {
     ? await admin.from('trade_profiles').select('id, company_name, user_id').in('id', tradeIds)
     : { data: [] }
   const nameOf = new Map(((trades ?? []) as unknown as { id: string; company_name: string | null }[]).map(t => [t.id, t.company_name ?? 'A tradesperson']))
-  const isOwnerSeat = user.id === ctx.identityUserId
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <BackLink href="/org/dashboard" label="Business dashboard" />
       <h1 className="mt-2 text-2xl font-bold text-brand-navy">{ctx.org.company_name}: jobs</h1>
-      <p className="mt-1 text-sm text-gray-600">Every job logged against the business. Jobs are confirmed and reviewed from the account that holds the business record.</p>
+      <p className="mt-1 text-sm text-gray-600">Every job logged against the business. Any verified team member can confirm, update and review these jobs in the business&apos;s name. We record who did it.</p>
       {jobs.length === 0 ? (
         <p className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 text-sm text-gray-600">
           No jobs yet. When a tradesperson logs a job with the business, or you add a past one, it shows here.
@@ -61,9 +60,12 @@ export default async function OrgJobsPage() {
               </div>
               <div className="text-right">
                 <span className="text-xs font-medium text-gray-600">{STATUS[j.status] ?? j.status}</span>
-                {isOwnerSeat && (
-                  <a href={`/jobs/${j.id}`} className="block text-xs font-semibold text-brand-navy underline">Open</a>
-                )}
+                {j.status === 'completed' || j.status === 'ended_early' ? (
+                  <a href={`/jobs/${j.id}/review`} className="block text-xs font-semibold text-brand-navy underline">Review</a>
+                ) : null}
+                {j.status === 'active' || j.status === 'ended_early' ? (
+                  <a href={`/jobs/${j.id}/status`} className="block text-xs font-semibold text-brand-navy underline">Update</a>
+                ) : null}
               </div>
             </li>
           ))}

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { actingPartyId } from '@/lib/org-access'
 import type { ReviewerType } from '@/types/database'
 
 // ── Types ─────────────────────────────────────────────────────
@@ -63,7 +64,8 @@ export async function getReviewFormData(jobId: string): Promise<ReviewFormData> 
 
   let reviewerType: ReviewerType | null = null
   if (tradeProfile?.user_id === user.id) reviewerType = 'trade'
-  else if (clientProfile?.user_id === user.id) reviewerType = 'client'
+  const clientSeat = await actingPartyId(admin, user.id, (clientProfile?.user_id as string | undefined) ?? null)
+  if (tradeProfile?.user_id !== user.id && clientSeat) reviewerType = 'client'
 
   if (!reviewerType) return { status: 'not_participant' }
 
@@ -82,7 +84,7 @@ export async function getReviewFormData(jobId: string): Promise<ReviewFormData> 
     .from('reviews')
     .select('id')
     .eq('job_id', jobId)
-    .eq('reviewer_id', user.id)
+    .eq('reviewer_id', clientSeat && reviewerType === 'client' ? clientSeat : user.id)
     .maybeSingle()
 
   if (existingReview) {

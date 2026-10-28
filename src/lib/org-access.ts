@@ -28,3 +28,16 @@ export async function canActForReviewee(admin: SupabaseClient, actingUserId: str
   const ctx = await getOrgContext(admin, actingUserId)
   return !!ctx && ctx.canManage && ctx.identityUserId === revieweeId
 }
+
+/**
+ * The party this person speaks for on a job. Their own id if they are the party, or the business
+ * record holder's id if they are a phone verified member of that business. Null if neither.
+ */
+export async function actingPartyId(admin: SupabaseClient, actingUserId: string, partyUserId: string | null): Promise<string | null> {
+  if (!partyUserId) return null
+  if (actingUserId === partyUserId) return partyUserId
+  const ctx = await getOrgContext(admin, actingUserId)
+  if (!ctx || ctx.identityUserId !== partyUserId) return null
+  const { data: u } = await admin.from('users').select('phone_verified').eq('id', actingUserId).maybeSingle()
+  return (u as { phone_verified: boolean } | null)?.phone_verified ? partyUserId : null
+}

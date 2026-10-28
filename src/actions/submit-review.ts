@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { ReviewerType, RedFlagReason } from '@/types/database'
 import { jobLabel } from '@/lib/trade-types'
+import { actingPartyId } from '@/lib/org-access'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -118,8 +119,11 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   const clientUserId = clientProfile?.user_id ?? null
 
   let reviewerType: ReviewerType | null = null
+  // A business member reviews in the business's name; the review sits on the record holder's profile
+  const clientSeat = await actingPartyId(admin, user.id, clientUserId)
   if (tradeUserId === user.id) reviewerType = 'trade'
-  else if (clientUserId === user.id) reviewerType = 'client'
+  else if (clientSeat) reviewerType = 'client'
+  const reviewerId = reviewerType === 'client' && clientSeat ? clientSeat : user.id
 
   if (!reviewerType) return { success: false, error: 'You are not a party to this job.' }
 
@@ -133,7 +137,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
     .from('reviews')
     .select('id')
     .eq('job_id', input.job_id)
-    .eq('reviewer_id', user.id)
+    .eq('reviewer_id', reviewerId)
     .maybeSingle()
 
   if (existing) return { success: false, error: 'You have already submitted a review for this job.' }
@@ -153,7 +157,8 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   // Insert review
   const { error: insertErr } = await admin.from('reviews').insert({
     job_id: input.job_id,
-    reviewer_id: user.id,
+    reviewer_id: reviewerId,
+    submitted_by_user_id: user.id,
     reviewee_id: revieweeUserId,
     reviewer_type: reviewerType,
     reviewee_type: revieweeType,
@@ -214,7 +219,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   await admin
     .from('notifications')
     .update({ is_read: true })
-    .eq('user_id', user.id)
+    .eq('user_id', reviewerId)
     .eq('is_read', false)
     .in('type', ['review_window_opened', 'review_reminder'])
     .like('link', `%${input.job_id}%`)
@@ -226,7 +231,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
 
     holdPromises.push(
       admin.from('notifications').insert({
-        user_id: user.id,
+        user_id: reviewerId,
         type: 'new_review',
         title: 'Review saved',
         body: `Your review for ${revieweeName} is saved. It will go live as soon as they have submitted theirs, or after the 7 day window closes.`,
@@ -336,7 +341,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   await Promise.all([
     admin.from('review_windows').update({ both_submitted_at: now }).eq('job_id', input.job_id),
     admin.from('reviews').update({ is_visible: true })
-      .eq('job_id', input.job_id).eq('reviewer_id', user.id),
+      .eq('job_id', input.job_id).eq('reviewer_id', reviewerId),
   ])
 
   // Recalculate reviewee's profile scores
@@ -370,7 +375,7 @@ export async function submitReview(input: SubmitReviewInput): Promise<SubmitRevi
   const singlePromises: PromiseLike<unknown>[] = []
 
   singlePromises.push(admin.from('notifications').insert({
-    user_id: user.id, type: 'reviews_published',
+    user_id: reviewerId, type: 'reviews_published',
     title: 'Your review is now live',
     body: `Your review of ${revieweeName} is live. They did not submit their review within the 7 day window.`,
     link: `/jobs/${input.job_id}`,

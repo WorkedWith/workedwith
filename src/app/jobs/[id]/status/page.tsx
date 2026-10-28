@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { AppHeader } from '@/components/app-header'
 import { BackLink } from '@/components/back-link'
 import { loadJobParties } from '@/lib/job-parties'
+import { actingPartyId } from '@/lib/org-access'
 import { jobLabel } from '@/lib/trade-types'
 import { ENDED_EARLY_MIN_HOURS, OBJECTION_DAYS } from '@/lib/ended-early'
 import { StatusActions } from './status-actions'
@@ -18,7 +19,8 @@ export default async function JobStatusPage({ params }: { params: { id: string }
   const admin = createAdminClient()
   const p = await loadJobParties(admin, params.id)
   const isTrade = !!p && p.tradeUserId === user.id
-  const isClient = !!p && p.clientUserId === user.id
+  const clientSeat = p ? await actingPartyId(admin, user.id, p.clientUserId) : null
+  const isClient = !!clientSeat
 
   const shell = (children: React.ReactNode) => (
     <main className="min-h-screen bg-gray-50">
@@ -59,7 +61,7 @@ export default async function JobStatusPage({ params }: { params: { id: string }
 
   if (job.status === 'ended_early') {
     const { data: details } = await admin.from('job_early_end_details').select('ended_by').eq('job_id', job.id).maybeSingle()
-    const iEnded = (details?.ended_by as string | null | undefined) === user.id
+    const iEnded = (details?.ended_by as string | null | undefined) === (clientSeat ?? user.id)
     const endedAt = job.ended_early_at ? new Date(job.ended_early_at).getTime() : 0
     const canObject = !iEnded && !job.outcome_disputed && Date.now() - endedAt <= OBJECTION_DAYS * 86_400_000
     return shell(

@@ -170,6 +170,7 @@ export interface Job {
   is_backdated: boolean
   backdated_period: string | null
   confirmed_at: string | null
+  confirmed_by_user_id: string | null
   confirmation_token: string | null
   confirmation_expires_at: string | null
   agreed_payment_terms_days: number | null
@@ -312,6 +313,7 @@ export interface Review {
   id: string
   job_id: string
   reviewer_id: string
+  submitted_by_user_id: string | null
   reviewee_id: string
   reviewer_type: ReviewerType | null
   reviewee_type: ReviewerType | null
@@ -843,9 +845,9 @@ export interface Database {
         Relationships: []
       }
       job_early_end_details: {
-        Row: WithIndex<{ job_id: string; ended_by: string | null; note: string | null; created_at: string }>
-        Insert: { job_id: string } & Partial<{ ended_by: string | null; note: string | null }>
-        Update: Partial<{ ended_by: string | null; note: string | null }>
+        Row: WithIndex<{ job_id: string; ended_by: string | null; acted_by_user_id: string | null; note: string | null; created_at: string }>
+        Insert: { job_id: string } & Partial<{ ended_by: string | null; acted_by_user_id: string | null; note: string | null }>
+        Update: Partial<{ ended_by: string | null; acted_by_user_id: string | null; note: string | null }>
         Relationships: []
       }
       trade_insurance: {

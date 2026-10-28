@@ -9,6 +9,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { jobLabel } from '@/lib/trade-types'
 import { evaluateJob } from '@/lib/integrity/evaluate'
 import { hashSignal } from '@/lib/integrity/hash'
+import { getOrgContext } from '@/lib/org-access'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -89,6 +90,7 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
   let clientName = 'the client'
   let clientUserId: string | null = null
   let clientEmail: string | null = null
+  let actedByUserId: string | null = null
 
   if (isClientInitiated) {
     const { data: tradeProfile } = await admin
@@ -122,10 +124,14 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
       }
     }
   } else {
+    // A member of a business confirms in the business's name, on the record holder's client profile
+    const orgCtx = await getOrgContext(admin, user.id)
+    const clientSeatId = orgCtx ? orgCtx.identityUserId : user.id
+    actedByUserId = orgCtx && orgCtx.identityUserId !== user.id ? user.id : null
     const { data: clientProfile } = await admin
       .from('client_profiles')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', clientSeatId)
       .maybeSingle()
 
     if (!clientProfile) {
@@ -137,8 +143,8 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
     }
 
     clientProfileId = clientProfile.id
-    clientName = userData.full_name
-    clientUserId = user.id
+    clientName = orgCtx ? orgCtx.org.company_name : userData.full_name
+    clientUserId = clientSeatId
     clientEmail = userData.email
 
     if (job.trade_profile_id) {
@@ -166,6 +172,7 @@ export async function confirmJob(token: string): Promise<ConfirmJobResult> {
       updated_at: now,
       trade_profile_id: tradeProfileId,
       client_profile_id: clientProfileId,
+      confirmed_by_user_id: actedByUserId ?? user.id,
       confirmed_from_ip,
       confirmed_from_user_agent,
       ...(job.is_backdated ? { completed_at: today } : {}),

@@ -54,7 +54,7 @@ export default async function OrgDashboardPage() {
       <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
         <Link href="/org/members" className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">{ctx.canManage ? 'Manage members' : 'Members'} ({members ?? 0})</Link>
         <Link href="/dashboard" className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">Log or add a job</Link>
-        <Link href="/profile" className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">Business profile</Link>
+        <Link href="/org/profile" className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">Business profile</Link>
       </div>
     </main>
   )
