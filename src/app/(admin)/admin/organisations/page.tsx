@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Organisation } from '@/types/database'
+import { TransferForm } from './transfer-form'
 
 export const metadata = { title: 'Organisations — WorkedWith Admin' }
 
@@ -24,16 +25,17 @@ export default async function AdminOrganisationsPage({ searchParams }: PageProps
     orgIds.length ? admin.from('organisation_members').select('organisation_id, user_id, role').in('organisation_id', orgIds) : Promise.resolve({ data: [] }),
     orgs.length ? admin.from('users').select('id, email, full_name').in('id', orgs.map(o => o.primary_contact_user_id).filter((x): x is string => !!x)) : Promise.resolve({ data: [] }),
   ])
+  const memberRows = (members ?? []) as unknown as { organisation_id: string; user_id: string }[]
   const memberCount = new Map<string, number>()
-  for (const m of (members ?? []) as unknown as { organisation_id: string }[]) {
-    memberCount.set(m.organisation_id, (memberCount.get(m.organisation_id) ?? 0) + 1)
-  }
+  for (const m of memberRows) memberCount.set(m.organisation_id, (memberCount.get(m.organisation_id) ?? 0) + 1)
+  const { data: memberUsers } = memberRows.length ? await admin.from('users').select('id, email, full_name').in('id', memberRows.map(m => m.user_id)) : { data: [] }
+  const memberLabel = new Map(((memberUsers ?? []) as unknown as { id: string; email: string | null; full_name: string | null }[]).map(u => [u.id, `${u.full_name ?? 'Unnamed'} (${u.email ?? 'no email'})`]))
   const contact = new Map(((users ?? []) as unknown as { id: string; email: string | null; full_name: string | null }[]).map(u => [u.id, u]))
 
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="text-2xl font-bold text-brand-navy">Organisations</h1>
-      <p className="mt-1 text-sm text-gray-600">Business clients. Read only.</p>
+      <p className="mt-1 text-sm text-gray-600">Business clients. Moving a business record is the only change you can make here.</p>
       <form className="mt-4 flex gap-2">
         <input name="q" defaultValue={q} placeholder="Company name or number" className="min-w-[16rem] rounded-lg border border-gray-300 px-3 py-2 text-sm" />
         <button className="rounded-lg bg-brand-navy px-4 py-2 text-sm font-semibold text-white">Search</button>
@@ -56,6 +58,10 @@ export default async function AdminOrganisationsPage({ searchParams }: PageProps
               <p className="mt-1 text-xs text-gray-600">
                 Contact: {c ? `${c.full_name ?? 'Unnamed'} (${c.email ?? 'no email'})` : 'none'} · {o.total_reviews} reviews, {Number(o.average_rating).toFixed(1)} average, {o.red_flag_count} red flags
               </p>
+              <TransferForm
+                orgId={o.id}
+                members={memberRows.filter(m => m.organisation_id === o.id && m.user_id !== o.primary_contact_user_id).map(m => ({ id: m.user_id, label: memberLabel.get(m.user_id) ?? m.user_id }))}
+              />
             </li>
           )
         })}

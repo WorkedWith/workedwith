@@ -959,6 +959,7 @@ export interface Database {
       refresh_confirmation_stats: { Args: { p_user: string }; Returns: undefined }
       refresh_category_averages: { Args: Record<string, never>; Returns: undefined }
       refresh_ended_early: { Args: { p_trade: string | null; p_client: string | null }; Returns: undefined }
+      transfer_org_record: { Args: { p_org: string; p_to: string; p_admin: string; p_note: string | null }; Returns: string }
       rollup_old_search_events: { Args: Record<string, never>; Returns: number }
       refresh_hired_again: { Args: { p_trade: string }; Returns: undefined }
       refresh_all_confirmation_stats: { Args: Record<string, never>; Returns: undefined }
