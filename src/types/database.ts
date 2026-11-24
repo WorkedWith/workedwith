@@ -238,6 +238,8 @@ export interface Job {
   booked_at: string | null
   retain_until: string | null
   early_start_requested_at: string | null
+  chasing_paused: boolean
+  chasing_stopped: boolean
   created_at: string
   updated_at: string
 }

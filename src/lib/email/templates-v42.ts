@@ -237,3 +237,54 @@ export function variationTradeEmail(p: { client: string; description: string; jo
     button: { label: 'Open the job', url: url(`/jobs/${p.jobId}`) },
   }
 }
+
+// ── Chasing (phase 8). Firm but accurate: never threaten anything the trade can't or won't do. ──
+
+export type ChaseCopyStep = 'heads_up' | 'due_today' | 'late_1' | 'late_2' | 'final'
+
+export function chaseEmail(p: { step: ChaseCopyStep; business: string; invoiceNumber: string; balancePence: number; dueOn: string; link: string; payee: Payee; requestedByTrade: boolean }): EmailContent {
+  const amt = formatPence(p.balancePence)
+  const copy: Record<ChaseCopyStep, { s: string; h: string; b: string }> = {
+    heads_up: { s: `Invoice ${p.invoiceNumber} is due on ${p.dueOn}`, h: 'A friendly heads up', b: `Invoice ${p.invoiceNumber} from ${p.business} for **${amt}** is due on ${p.dueOn}.` },
+    due_today: { s: `Invoice ${p.invoiceNumber} is due today`, h: 'Payment due today', b: `Invoice ${p.invoiceNumber} from ${p.business} for **${amt}** is due today.` },
+    late_1: { s: `Late payment: invoice ${p.invoiceNumber}`, h: 'Your payment is late', b: `Invoice ${p.invoiceNumber} from ${p.business} for **${amt}** was due on ${p.dueOn} and has not been paid. Please pay it now.` },
+    late_2: { s: `Second notice: invoice ${p.invoiceNumber} is overdue`, h: 'Second late payment notice', b: `Invoice ${p.invoiceNumber} from ${p.business} for **${amt}** is now a week overdue. Please pay it now, or reply to this email if there is a problem.` },
+    final: { s: `Final notice: invoice ${p.invoiceNumber}`, h: 'Final notice', b: `Invoice ${p.invoiceNumber} from ${p.business} for **${amt}** is 14 days overdue. Please pay within 7 days. If it is not paid, ${p.business} may start formal steps to recover the money.` },
+  }
+  const c = copy[p.step]
+  return {
+    subject: c.s,
+    heading: c.h,
+    paragraphs: [
+      c.b,
+      ...(p.requestedByTrade ? ['Payment requested by the trade. Not approved by the client.'] : []),
+      ...payLines(p.payee, p.invoiceNumber),
+      'If you have already paid, thank you. Tap "I’ve paid" in your account so the reminders pause while the money arrives.',
+    ],
+    button: { label: 'See the invoice', url: url(p.link) },
+  }
+}
+
+export function lbaPromptTradeEmail(p: { client: string; invoiceNumber: string; balancePence: number; jobId: string }): EmailContent {
+  return {
+    subject: `Invoice ${p.invoiceNumber} is 21 days overdue`,
+    heading: 'You can now send a letter before action',
+    paragraphs: [
+      `${p.client} still owes **${formatPence(p.balancePence)}** on invoice ${p.invoiceNumber}, now 21 days overdue.`,
+      'You can preview a letter before action made from the job record and send it with one tap. WorkedWith does not collect debts or file claims; you decide what to do next.',
+    ],
+    button: { label: 'Preview the letter', url: url(`/jobs/${p.jobId}/letter`) },
+  }
+}
+
+export function lbaClientEmail(p: { business: string; balancePence: number; respondBy: string; link: string }): EmailContent {
+  return {
+    subject: `Letter before action from ${p.business}`,
+    heading: 'Letter before action',
+    paragraphs: [
+      `${p.business} has sent you a letter before action about **${formatPence(p.balancePence)}** owed on your job.`,
+      `Please read it and respond by **${p.respondBy}**. You can pay, or reply using the details in the letter.`,
+    ],
+    button: { label: 'Read the letter', url: url(p.link) },
+  }
+}

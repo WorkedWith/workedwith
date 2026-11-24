@@ -18,3 +18,11 @@ export const smsApprovalReminder = (business: string, stage: string, link: strin
 export const smsPaymentRequested = (business: string, stage: string, link: string) => `${business} has requested payment for ${stage}. Not approved by you. Details: ${link}`
 
 export const smsVariation = (business: string, link: string) => `${business} has sent a change to your job for you to approve before the work: ${link}`
+
+export const smsChase = (business: string, step: string, number: string, link: string) => ({
+  heads_up: `${business}: invoice ${number} is due soon. Details: ${link}`,
+  due_today: `${business}: invoice ${number} is due today. Details: ${link}`,
+  late_1: `${business}: invoice ${number} is overdue. Please pay now: ${link}`,
+  late_2: `${business}: second notice, invoice ${number} is overdue. ${link}`,
+  final: `${business}: final notice for invoice ${number}. Please pay within 7 days: ${link}`,
+}[step] ?? `${business}: invoice ${number}. ${link}`)

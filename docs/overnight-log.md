@@ -17,6 +17,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 5 Stages and payments | Done (mock bank) | Mark done with photos, approve or raise an issue with photos, issue notes thread, resubmit, reminders at day 5, 10 and 14 plus a once a day manual reminder, request payment anyway after 14 days (always labelled not approved by the client), invoices with sequential numbers issued when a stage becomes due, bank details with copy buttons, "I've paid", automatic matching (exact, part payment, overpayment, probable match to confirm), daily bank sync, mark received, paid elsewhere with client confirmation, refunds with client confirmation, receipts, cancellation by either side with the deposit position, made to measure question, and a test mode "simulate a bank transfer" |
 | 6 Invoices and exports | Done | Invoice pages for both sides (client page with copy buttons), invoice and credit note PDFs (HMRC VAT fields when VAT registered, PAID stamp, "requested by the trade" label), credit notes with their own sequential numbers issued for refunds, invoices and credit notes list on both job pages, and exports for any date range: invoices, payments (with Stripe fees) and credit notes as CSV, plus all invoices as one PDF |
 | 7 Variations | Done | The trade adds a variation (addition or reduction, photos, note, the stage it goes on or a new stage) from the job page on a phone; it goes to the client by text and email; the client approves or declines with a note in their account; approved changes update the stage and job total for both sides and show on the invoice; withdraw while waiting |
+| 8 Chasing, letters and claim pack | Done | Daily chasing on every due stage (2 days before, due date, 3, 7 and 14 days late) by text and email in the trade's name with the bank details and reference, a 21 day prompt to the trade, the review window at 30 days, overdue status, "I've paid" pause of 3 working days, pause, resume and stop per job, letter before action (person: 30 days with information sheet and reply form; company: 14 days with optional statutory interest and fixed compensation) previewed and sent with one tap, readable by the client, and a claim pack PDF with the Money Claim Online figures, terms, acceptance record, events, variations, stages with photos, issues, payments, reminders and all invoices |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -90,6 +91,13 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 7.1 | A variation goes on a stage that is not yet due (upcoming, awaiting approval or issue raised), or on a new stage of its own for additions. Reductions must come off an existing stage and can't take it below zero. Money already invoiced is corrected with a refund and credit note instead. | 8, 11 |
 | 7.2 | Variations can be added while the job is booked or in progress, and need an active trial or plan to send. | 3, 8 |
 | 7.3 | Approved variations are listed as their own lines on the stage's invoice. | 11 |
+| 8.1 | Only the latest step due is sent, so a missed day never sends a backlog. Each step is sent once per stage. | 10 |
+| 8.2 | Chasing skips a job whose trade's trial or plan has ended, a paused or stopped job, and a stage the client said they had paid for 3 working days. Deposits are never chased here (they have their own reminders) and never reach a letter. | 3, 10 |
+| 8.3 | The review window opening at 30 days overdue is not affected by pausing or stopping chasing, so non payment can always be reviewed. | 13 |
+| 8.4 | A letter can be sent once an invoice is 21 days overdue, at most once every 7 days. The figures are saved with the letter so the PDF is always what was sent. The client gets an email with a link to read it in their account; the trade downloads the PDF to post. Email attachments are not used. | 10 |
+| 8.5 | The person letter, information sheet and reply form follow the shape of the Pre Action Protocol but are my wording, not the official annexes. Both letters and all chasing copy need the solicitor review. | 10, 19 |
+| 8.6 | Statutory interest uses `LATE_PAYMENT_REFERENCE_RATE` plus 8%, simple, from each due date to the letter date. The default reference rate is a placeholder of 4%. Fixed compensation is £40, £70 or £100 per invoice by size. | 10 |
+| 8.7 | The claim pack embeds up to 4 JPG or PNG photos per stage; other formats are listed by file name. The court fee is not calculated; the pack tells the trade to add it from the current fee table. | 10 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -104,6 +112,8 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 8. Generate `DATA_ENCRYPTION_KEY` (run `openssl rand -base64 32`) and add it to Vercel before any trade saves bank details. Keep a safe copy: losing it means losing the stored account numbers.
 9. Twilio Verify: confirm `TWILIO_VERIFY_SERVICE_SID` is set in production. Supabase Auth: allow the email magic link redirect `https://workedwith.co.uk/auth/callback`.
 10. Accountant check of the invoice layout and the export columns (PRD 19 item 9).
+11. Set `LATE_PAYMENT_REFERENCE_RATE` to the current Bank of England reference rate, and update it each January and July.
+12. Solicitor review of both letters, the information sheet and reply form, and every chasing message (`src/lib/email/templates-v42.ts`, `src/lib/sms/copy-v42.ts`, `src/lib/pdf/lba-pdf.ts`).
 <!-- needs -->
 
 ## 4. To run
@@ -117,6 +127,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 6. `20261124000500_stages_payments.sql` (includes `allocate_invoice_number`)
 7. `20261124000600_credit_notes.sql`
 8. `20261124000700_variations.sql`
+9. `20261124000800_chasing.sql`
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -127,6 +138,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 - `OPEN_BANKING_PROVIDER` (`mock` or `truelayer`)
 - `TRUELAYER_CLIENT_ID`, `TRUELAYER_CLIENT_SECRET`, `TRUELAYER_ENV` (`sandbox` or `live`)
 - `OTP_PROVIDER` (`twilio` or `mock`; leave unset in production)
+- `LATE_PAYMENT_REFERENCE_RATE` (for example `4.0`)
 <!-- env -->
 
 **Commands**
@@ -193,5 +205,11 @@ supabase db push
 - On a booked or in progress job, at phone width: + Add a variation, take a photo, price it, pick the final stage, Send. The client sees Changes to approve at the top of their job page and approves it: the stage amount and job total go up, and the history records it.
 - Send a reduction and decline it as the client with a note: the trade sees the note.
 - Mark that stage done and approve it: the invoice shows the variation as its own line.
+
+**Phase 8**
+- Make a stage due (approve it), then set its `due_at` to 2 days ahead and run the cron: a heads up is logged. Move it to 3, 7, 14 days in the past and run again: each notice is logged once. Tap I've paid as the client and run again: nothing is sent.
+- Pause and resume chasing on the job.
+- Set `due_at` 22 days back: the trade is prompted, and Letter before action opens. Preview the PDF as a person client and as a company client (tick interest). Send it: the client sees the red notice and can read it.
+- Set the letter's `response_due_at` in the past: Download the claim pack and check every section.
 
 <!-- tests -->

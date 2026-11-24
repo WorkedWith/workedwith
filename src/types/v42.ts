@@ -330,7 +330,28 @@ export interface Variation {
   created_at: string
 }
 
+// ── Phase 8: chasing and letters ─────────────────────────────
+
+export type ChaseStep = 'heads_up' | 'due_today' | 'late_1' | 'late_2' | 'final' | 'lba_prompt' | 'review_window'
+
+export interface ChaseEvent { id: string; stage_id: string; job_id: string; step: ChaseStep; channel: string; sent_at: string; opened_at: string | null; paused: boolean; stopped_by: string | null }
+
+export interface LegalDocument {
+  id: string
+  job_id: string
+  type: 'letter_before_action' | 'claim_pack' | 'chargeback_evidence'
+  version: 'person' | 'company' | null
+  file_path: string | null
+  data: Record<string, unknown> | null
+  generated_at: string
+  sent_at: string | null
+  response_due_at: string | null
+  created_by: string | null
+}
+
 export type V42Tables = {
+  chase_events: TableDef<ChaseEvent, 'stage_id' | 'job_id' | 'step'>
+  legal_documents: TableDef<LegalDocument, 'job_id' | 'type'>
   variations: TableDef<Variation, 'job_id' | 'description' | 'amount_pence'>
   credit_notes: TableDef<CreditNote, 'invoice_id' | 'trade_id' | 'job_id' | 'credit_note_number' | 'sequence' | 'amount_pence' | 'net_pence' | 'reason'>
   stage_evidence: TableDef<StageEvidence, 'stage_id'>

@@ -4,6 +4,7 @@ import { TradeStartPanel } from './trade-start-panel'
 import { TradeStagesPanel } from './trade-stages-panel'
 import { SuggestedMatches } from './suggested-matches'
 import { CancelPanel } from './cancel-panel'
+import { ChasingPanel } from './chasing-panel'
 import { VariationsPanel } from './variations-panel'
 import { InvoicesPanel } from '@/components/invoices/invoices-panel'
 
@@ -17,6 +18,7 @@ export async function TradeJobSections({ admin, bundle, userId }: { admin: Admin
       <TradeStartPanel admin={admin} bundle={bundle} userId={userId} />
       <TradeStagesPanel admin={admin} bundle={bundle} userId={userId} />
       <VariationsPanel admin={admin} bundle={bundle} role="trade" />
+      <ChasingPanel admin={admin} bundle={bundle} />
       <InvoicesPanel admin={admin} jobId={bundle.job.id} role="trade" />
       <CancelPanel bundle={bundle} role="trade" />
     </>

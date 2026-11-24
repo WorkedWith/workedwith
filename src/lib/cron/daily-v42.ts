@@ -4,6 +4,7 @@ import { runConnectionMaintenance } from '@/lib/getting-paid/connection-maintena
 import { runQuoteFollowUps } from '@/lib/quotes/follow-ups'
 import { runStageReminders } from '@/lib/stages/reminders'
 import { runBankSync } from '@/lib/payments/bank-sync'
+import { runChasing } from '@/lib/chasing/engine'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -19,6 +20,7 @@ export async function runDailyV42(admin: AdminClient): Promise<Record<string, un
     ['bankSync', () => runBankSync(admin)],
     ['quoteFollowUps', () => runQuoteFollowUps(admin)],
     ['stageReminders', () => runStageReminders(admin)],
+    ['chasing', () => runChasing(admin)],
   ]
   for (const [name, fn] of steps) {
     try {

@@ -94,6 +94,23 @@ export class PdfWriter {
     this.y -= h
   }
 
+  /** A photo, scaled to fit the width (max 220pt high). Unsupported formats are skipped. */
+  async image(bytes: Uint8Array, kind: 'jpg' | 'png', caption?: string): Promise<void> {
+    try {
+      const img = kind === 'png' ? await this.doc.embedPng(bytes) : await this.doc.embedJpg(bytes)
+      const maxW = A4[0] - 2 * MARGIN
+      const scale = Math.min(maxW / img.width, 220 / img.height, 1)
+      const w = img.width * scale
+      const h = img.height * scale
+      this.ensure(h + 20)
+      this.page.drawImage(img, { x: MARGIN, y: this.y - h, width: w, height: h })
+      this.y -= h + 4
+      if (caption) this.text(caption, { size: 8, color: 'grey' })
+    } catch {
+      if (caption) this.text(`${caption} (photo could not be included)`, { size: 8, color: 'grey' })
+    }
+  }
+
   stamp(label: string): void {
     this.page.drawText(this.clean(label), { x: A4[0] - MARGIN - 140, y: A4[1] - MARGIN - 30, size: 22, font: this.bold, color: rgb(0.1, 0.55, 0.25), opacity: 0.8 })
   }
