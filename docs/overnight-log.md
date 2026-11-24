@@ -4,6 +4,18 @@ Branch: `overnight/v4.2-build`. Built against `docs/prd-v4.2.md` and `docs/proje
 No migrations were run against any database. No Supabase CLI was available in the build container, so every
 phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` only.
 
+## Summary
+
+All 16 phases (0, 0.5 and 1 to 15) are built, each committed and pushed with type check, lint and build passing. Everything that needs an outside service works end to end in mock mode (open banking, text codes, accounting, cards, Companies House), with real adapters written as far as the public docs allow. Nothing has been run against a database: see Needs Adam item 1.
+
+**Known gaps**
+- Not tested against a real database or real providers (no keys, no Supabase CLI in the build container).
+- Real adapter TODOs: Confirmation of Payee, provider webhooks for instant matching, QuickBooks items and tax codes, refunds in QuickBooks, FreeAgent and Sage, card fee bank charges in accounting, chargeback evidence PDF upload to Stripe.
+- No automated tests were added; the repository has none to extend.
+- Privacy policy and terms pages are not rewritten (needs the solicitor review).
+- Trade logo is not on invoice PDFs.
+- Old v3 screens are hidden, not deleted (as the PRD says); delete after launch.
+
 ## 1. Progress
 
 | Phase | Status | What was built |
@@ -143,22 +155,25 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 
 ## 3. Needs Adam
 
-1. Create one Stripe price at £19.99 a month (`STRIPE_PLAN_PRICE_ID`) and one at £10 a month for boosts (`STRIPE_BOOST_PRICE_ID`). Archive the old Standard and Pro prices.
-2. Set `MESSAGE_DELIVERY=live` in Vercel production (it is also live automatically when `VERCEL_ENV=production`).
-3. Check the counts printed by `supabase/scripts/reset-test-data.sql`, then change `rollback` to `commit` and run it once before the first real trade.
-5. Supply the landing video and set `NEXT_PUBLIC_LANDING_VIDEO_URL` (and optionally `NEXT_PUBLIC_LANDING_VIDEO_POSTER`).
-6. Logos for Xero, QuickBooks, FreeAgent and Sage, once each partner programme allows it.
-4. Switch boosts on for WA14 and WA15 in Admin, Boosted Districts, when you are ready to sell them.
-7. Choose the open banking provider (PRD 19 item 1). If it is TrueLayer, add `TRUELAYER_CLIENT_ID`, `TRUELAYER_CLIENT_SECRET`, `TRUELAYER_ENV`, register the redirect URL `https://workedwith.co.uk/api/open-banking/callback`, and test in their sandbox. If it is another provider, a new adapter beside `src/lib/open-banking/truelayer.ts` is needed.
-8. Generate `DATA_ENCRYPTION_KEY` (run `openssl rand -base64 32`) and add it to Vercel before any trade saves bank details. Keep a safe copy: losing it means losing the stored account numbers.
-9. Twilio Verify: confirm `TWILIO_VERIFY_SERVICE_SID` is set in production. Supabase Auth: allow the email magic link redirect `https://workedwith.co.uk/auth/callback`.
-10. Accountant check of the invoice layout and the export columns (PRD 19 item 9).
-11. Set `LATE_PAYMENT_REFERENCE_RATE` to the current Bank of England reference rate, and update it each January and July.
-12. Solicitor review of both letters, the information sheet and reply form, and every chasing message (`src/lib/email/templates-v42.ts`, `src/lib/sms/copy-v42.ts`, `src/lib/pdf/lba-pdf.ts`).
-13. Legal check on showing the full client record without consent (PRD 19 item 4), and the privacy notice wording clients see when they open their account (currently a short line on the open link page linking to /privacy).
-14. Register developer apps with Xero, Intuit (QuickBooks), FreeAgent and Sage (PRD 19 item 2), add the redirect URL `https://workedwith.co.uk/api/accounting/callback`, add the client ids and secrets, and test each adapter against its sandbox before setting `ACCOUNTING_MODE=live`. Check Xero's app partner tier.
-15. Stripe: enable Connect on the platform account, add the Connect webhook events (`checkout.session.completed`, `account.updated`, `charge.dispute.created`, `charge.dispute.closed`) for connected accounts to the existing webhook endpoint, test in Stripe test mode, then set `CARDS_MODE=live`. Confirm the 1.5% + 20p figure before quoting it.
-<!-- needs -->
+In priority order. Items 1 to 6 block a working deploy; the rest block going live with each integration.
+
+1. **Apply the migrations to a test project first** (not production) and click through the test list below. Nothing was run against a database overnight; the code only type checks and builds. Expect a few query or policy fixes once it runs for real.
+2. **`DATA_ENCRYPTION_KEY`**: generate with `openssl rand -base64 32` and add to Vercel before any trade saves bank details. Keep a safe copy: losing it loses the stored account numbers. Production refuses to run without it.
+3. **Stripe prices**: one at £19.99 a month (`STRIPE_PLAN_PRICE_ID`) and one at £10 a month for boosts (`STRIPE_BOOST_PRICE_ID`). Archive the old Standard and Pro prices.
+4. **Message delivery**: set `MESSAGE_DELIVERY=live` in production only (it is also live automatically when `VERCEL_ENV=production`). Previews stay on `log`.
+5. **Twilio Verify and Supabase Auth**: confirm `TWILIO_VERIFY_SERVICE_SID` in production; allow the magic link redirect `https://workedwith.co.uk/auth/callback`.
+6. **Cron**: all new daily jobs run inside the existing 08:00 cron (`/api/cron/publish-reviews`). If you move to Vercel Pro, bank matching would benefit from running hourly.
+7. **Open banking provider** (PRD 19 item 1). If TrueLayer: add `TRUELAYER_CLIENT_ID`, `TRUELAYER_CLIENT_SECRET`, `TRUELAYER_ENV`, register `https://workedwith.co.uk/api/open-banking/callback`, and test in their sandbox. Another provider needs a new adapter beside `src/lib/open-banking/truelayer.ts`. Also set `OPEN_BANKING_COST_PER_CONNECTION_PENCE` once priced.
+8. **Accounting apps** (PRD 19 item 2): register with Xero, Intuit, FreeAgent and Sage, register `https://workedwith.co.uk/api/accounting/callback`, add the ids and secrets, test each adapter in its sandbox (the TODOs in `src/lib/accounting/*.ts` mark what needs checking), then set `ACCOUNTING_MODE=live`. Check Xero's partner tier.
+9. **Stripe Connect** for cards: enable Connect, add the connected account events (`checkout.session.completed`, `account.updated`, `charge.dispute.created`, `charge.dispute.closed`) to the existing webhook, test in test mode, then `CARDS_MODE=live`. Confirm the 1.5% + 20p figure.
+10. **Solicitor review** (PRD 19 item 3): standard terms, cancellation notice and early start consent (`src/lib/quotes/wording.ts`), deposit wording, request payment anyway wording, both letters before action with the information sheet and reply form (`src/lib/pdf/lba-pdf.ts`), all chasing copy (`src/lib/email/templates-v42.ts`, `src/lib/sms/copy-v42.ts`) and the review rules.
+11. **Legal check on the client record** (PRD 19 item 4), and the privacy notice clients see when they first open a link (currently one line linking to /privacy). Update the privacy policy and terms pages for payments, bank data, accounting, client records, reviews and retention (PRD 19 item 10); I only changed the pricing paragraph in the terms.
+12. **`LATE_PAYMENT_REFERENCE_RATE`**: set the current Bank of England reference rate; update each January and July.
+13. **Accountant check** of the invoice layout and export columns (PRD 19 item 9).
+14. **Companies House**: confirm `COMPANIES_HOUSE_API_KEY` is set, then turn `SEEDED_OUTREACH_ENABLED=true` when ready. Confirm the PECR position (PRD 19 item 6).
+15. **Test data reset**: run `supabase/scripts/reset-test-data.sql`, check the counts, change `rollback` to `commit`, run once before the first real trade.
+16. **Boosts**: switch WA14 and WA15 on in Admin, Boosted Districts when ready to sell them.
+17. **Landing video and logos**: set `NEXT_PUBLIC_LANDING_VIDEO_URL` (and poster); accounting brand logos once allowed.
 
 ## 4. To run
 
