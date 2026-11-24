@@ -1,7 +1,6 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { isStandardOrAbove } from '@/lib/stripe/get-tier'
 
 export type GalleryImagePublic = {
   id: string
@@ -9,9 +8,8 @@ export type GalleryImagePublic = {
   caption: string | null
 }
 
-/** Approved photos for the public profile. Hidden (not deleted) while the trade is on Free. */
-export async function getGalleryImages(tradeProfileId: string, tier: string | null): Promise<GalleryImagePublic[]> {
-  if (!isStandardOrAbove(tier)) return []
+/** Approved photos for the public profile. Every trade gets a gallery (PRD 3). */
+export async function getGalleryImages(tradeProfileId: string): Promise<GalleryImagePublic[]> {
   const admin = createAdminClient()
   const { data } = await admin
     .from('profile_gallery_images')

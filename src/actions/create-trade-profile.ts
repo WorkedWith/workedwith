@@ -173,6 +173,12 @@ export async function createTradeProfile(
     public_slug: username,
     bio: bio || null,
     operating_areas,
+    // Joining or claiming starts the 30 day free trial (PRD 3, 16)
+    trial_started_at: new Date().toISOString(),
+    trial_ends_at: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+    subscription_status: 'trialing',
+    is_searchable: true,
+    business_email: seededProfile?.contact_email ?? user.email ?? null,
   })
 
   if (insertError) {

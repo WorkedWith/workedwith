@@ -10,7 +10,7 @@ type PageProps = {
 }
 
 type UserRow = Pick<User, 'id' | 'email' | 'full_name' | 'user_type' | 'verification_tier' | 'id_verification_status' | 'created_at' | 'is_admin'>
-type TradeProfileRow = Pick<TradeProfile, 'user_id' | 'subscription_tier'>
+type TradeProfileRow = Pick<TradeProfile, 'user_id' | 'subscription_status'>
 
 export default async function UsersPage({ searchParams }: PageProps) {
   const { q } = await searchParams
@@ -34,7 +34,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
   // Subscription tier from trade_profiles for trade users
   const tradeUserIds = users.filter(u => u.user_type === 'trade' || u.user_type === 'both').map(u => u.id)
   const { data: rawProfiles } = tradeUserIds.length
-    ? await admin.from('trade_profiles').select('user_id, subscription_tier').in('user_id', tradeUserIds)
+    ? await admin.from('trade_profiles').select('user_id, subscription_status').in('user_id', tradeUserIds)
     : { data: [] }
   const tradeProfiles = (rawProfiles ?? []) as unknown as TradeProfileRow[]
 
@@ -122,7 +122,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-xs text-gray-500">
-                          {tradeProfile?.subscription_tier ?? (user.user_type === 'trade' ? 'free' : '—')}
+                          {tradeProfile?.subscription_status ?? '—'}
                         </span>
                         {tradeProfile && (
                           <a href={`/admin/grants?email=${encodeURIComponent(user.email)}`} className="ml-2 text-xs font-medium text-brand-navy underline">

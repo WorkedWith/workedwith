@@ -57,7 +57,7 @@ export default async function DisputesPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Disputes</h1>
         <p className="mt-1 text-sm text-gray-500">
-          {disputes.length} open dispute{disputes.length === 1 ? '' : 's'} — Pro priority first, then by deadline.
+          {disputes.length} open dispute{disputes.length === 1 ? '' : 's'} , ordered by deadline.
         </p>
       </div>
       <DisputeQueue disputes={enriched} />

@@ -7,7 +7,6 @@ import { createHash } from 'crypto'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getUserTier, isStandardOrAbove } from '@/lib/stripe/get-tier'
 import { DAILY_LOOKUP_LIMIT, classifyIdentifier, clientLookupName } from '@/lib/lookup'
 import type { ClientProfileResult } from './get-client-profile'
 import type { VerificationTier } from '@/types/database'
@@ -47,8 +46,7 @@ export async function getClientProfileByIdentifier(rawInput: string): Promise<Cl
     return { status: 'unauthorized' }
   }
 
-  const tier = await getUserTier(user.id)
-  const isFullAccess = isStandardOrAbove(tier)
+  const isFullAccess = true
 
   const h = headers()
   const ip = h.get('x-forwarded-for') ?? h.get('x-real-ip') ?? null

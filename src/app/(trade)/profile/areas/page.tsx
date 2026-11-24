@@ -1,4 +1,4 @@
-import { getEffectiveTier } from '@/lib/tier'
+import { getPlanState } from '@/lib/plan'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
@@ -18,14 +18,16 @@ export default async function OperatingAreasPage() {
   const admin = createAdminClient()
   const { data: profile } = await admin
     .from('trade_profiles')
-    .select('operating_areas, boosted_districts, boosted_district_addon_quantity, boosted_district_addon_paid_quantity, subscription_tier, subscription_expires_at')
+    .select('operating_areas, boosted_districts, boosted_district_addon_quantity, boosted_district_addon_paid_quantity, subscription_expires_at')
     .eq('user_id', user.id)
     .maybeSingle()
 
   if (!profile) redirect('/onboarding/trade')
 
-  // A Pro grant counts: it includes the 3 Boosted Districts (paid add ons still need a paid plan)
-  const isPro = (await getEffectiveTier(user.id)) === 'pro'
+  // Boosts are for the paid plan only, never during the trial (decision 17)
+  const canBoost = (await getPlanState(user.id, admin)).onPaidPlan
+  const { data: enabledRows } = await admin.from('boost_district_settings').select('district').eq('boosts_enabled', true)
+  const enabledDistricts = (enabledRows ?? []).map(r => r.district as string)
 
   const billed = (profile.boosted_district_addon_quantity as number | null) ?? 0
   const paid = Math.max((profile.boosted_district_addon_paid_quantity as number | null) ?? 0, billed)
@@ -37,9 +39,6 @@ export default async function OperatingAreasPage() {
     renewsOn: (profile.subscription_expires_at as string | null) ?? null,
   }
 
-  // Annual billing is deferred (PRD v3.5), so the monthly add-on price is the only one in use
-  const extraDistrictsAvailable = !!process.env.STRIPE_PRO_ADDON_PRICE_ID
-  const unavailableNote = extraDistrictsAvailable ? null : 'Extra boosted districts are not available right now.'
 
   const initialAreas: DistrictEntry[] = ((profile.operating_areas as string[]) ?? []).map(code => ({
     code,
@@ -60,10 +59,9 @@ export default async function OperatingAreasPage() {
       <div className="space-y-6">
         <AreasForm
           initialAreas={initialAreas}
-          isPro={isPro}
+          canBoost={canBoost}
           initialBoost={initialBoost}
-          extraDistrictsAvailable={extraDistrictsAvailable}
-          unavailableNote={unavailableNote}
+          enabledDistricts={enabledDistricts}
         />
       </div>
 

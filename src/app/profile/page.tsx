@@ -6,6 +6,7 @@ import { ProfileForm } from './profile-form'
 import { VerifyIdPrompt } from '@/components/verify-id-prompt'
 import { ClientProfileView } from './client-profile-view'
 import { TradeProfileView } from '@/app/(public)/t/[slug]/profile-view'
+import { TradeProfileMenu } from '@/components/trade-profile-menu'
 import type { User, TradeProfile, ClientProfile } from '@/types/database'
 
 export const metadata = { title: 'My profile | WorkedWith', robots: { index: false } }
@@ -47,8 +48,11 @@ export default async function ProfilePage() {
             Edit profile
           </a>
         </div>
+        <div className="mx-auto max-w-2xl px-4 pb-6 pt-4 sm:px-6">
+          <TradeProfileMenu />
+        </div>
         <p className="mx-auto max-w-2xl px-4 pb-4 pt-1 text-sm text-gray-500 sm:px-6">
-          This is how clients see you.
+          Below is how clients see you.
         </p>
         {userData.verification_tier !== 'fully_verified' && userData.id_verification_status !== 'pending' && (
           <div className="mx-auto max-w-2xl px-4 pb-4 sm:px-6">

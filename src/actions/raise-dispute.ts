@@ -6,7 +6,6 @@ import { formatDateLong } from '@/lib/email/format'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { DisputeReason } from '@/types/database'
-import { getUserTier, isProTier } from '@/lib/stripe/get-tier'
 import { canActForReviewee } from '@/lib/org-access'
 
 // ── Types ─────────────────────────────────────────────────────
@@ -36,11 +35,7 @@ export async function raiseDispute(
     return { success: false, error: 'Details must be 1000 characters or fewer.', field: 'details' }
   }
 
-  // Fetch review + raiser tier in parallel
-  const [{ data: review }, tier] = await Promise.all([
-    admin.from('reviews').select('*').eq('id', reviewId).maybeSingle(),
-    getUserTier(user.id),
-  ])
+  const { data: review } = await admin.from('reviews').select('*').eq('id', reviewId).maybeSingle()
   if (!review) return { success: false, error: 'Review not found.' }
 
   // Must be the reviewee
@@ -79,7 +74,8 @@ export async function raiseDispute(
     }
   }
 
-  const isPriority = isProTier(tier)
+  // Same priority for everyone (PRD 3)
+  const isPriority = false
 
   // Create dispute
   const { data: dispute, error: insertErr } = await admin

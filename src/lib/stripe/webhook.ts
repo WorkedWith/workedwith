@@ -1,21 +1,15 @@
-import { supersedeGrantIfCovered, hasActiveProGrant } from '@/lib/grants'
 import type Stripe from 'stripe'
+import { supersedeGrantIfCovered } from '@/lib/grants'
 import { sendEmail } from '@/lib/email/send'
-import { paymentFailed, planCancelled, planChanged, planStarted } from '@/lib/email/templates'
+import { paymentFailed, planCancelled, planStarted } from '@/lib/email/templates'
 import { formatDateLong } from '@/lib/email/format'
 import type { EmailContent } from '@/lib/email/layout'
 import { getStripeClient } from './client'
+import { boostPriceId, planPriceId } from './prices'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { BillingPeriod, SubscriptionTier } from '@/types/database'
-
-const tierMap: Record<string, { tier: SubscriptionTier; period: BillingPeriod }> = {
-  [process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID!]: { tier: 'standard', period: 'monthly' },
-  [process.env.STRIPE_STANDARD_ANNUAL_PRICE_ID!]:  { tier: 'standard', period: 'annual'  },
-  [process.env.STRIPE_PRO_MONTHLY_PRICE_ID!]:      { tier: 'pro',      period: 'monthly' },
-  [process.env.STRIPE_PRO_ANNUAL_PRICE_ID!]:       { tier: 'pro',      period: 'annual'  },
-}
-
-const PLAN_LABEL: Record<string, string> = { free: 'Free', standard: 'Standard', pro: 'Pro' }
+import { refreshPlanState } from '@/lib/plan'
+import type { SubscriptionStatus } from '@/types/database'
+import { handleConnectEvent } from '@/lib/cards/connect-webhook'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -27,24 +21,30 @@ async function emailUser(admin: AdminClient, userId: string, content: EmailConte
   if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
 }
 
-const ADDON_PRICE_IDS = [process.env.STRIPE_PRO_ADDON_PRICE_ID].filter((id): id is string => !!id)
-
-function activeTier(subscription: Stripe.Subscription): { tier: SubscriptionTier; billingPeriod: BillingPeriod } {
-  if (subscription.status !== 'active' && subscription.status !== 'trialing') {
-    return { tier: 'free', billingPeriod: 'monthly' }
+/** Stripe status to the plan status (PRD 21). A Stripe trial with a card saved counts as subscribed. */
+function planStatus(subscription: Stripe.Subscription): SubscriptionStatus {
+  const s = subscription.status
+  if (s === 'active' || s === 'trialing' || s === 'past_due') {
+    const hasPlan = subscription.items.data.some(i => i.price.id === planPriceId())
+    // If the price env var is missing, trust Stripe rather than lapsing everyone
+    return hasPlan || !planPriceId() ? 'active' : 'lapsed'
   }
-  // Search all items for the base plan — add-on items are not in tierMap
-  const baseItem = subscription.items.data.find(item => tierMap[item.price.id])
-  const match = baseItem ? tierMap[baseItem.price.id] : undefined
-  return {
-    tier: match?.tier ?? 'free',
-    billingPeriod: match?.period ?? 'monthly',
-  }
+  if (s === 'canceled') return 'cancelled'
+  return 'lapsed'
 }
 
-function addonQuantity(subscription: Stripe.Subscription): number {
-  const addonItem = subscription.items.data.find(item => ADDON_PRICE_IDS.includes(item.price.id))
-  return addonItem?.quantity ?? 0
+function boostQuantity(subscription: Stripe.Subscription): number {
+  const id = boostPriceId()
+  if (!id) return 0
+  return subscription.items.data.find(item => item.price.id === id)?.quantity ?? 0
+}
+
+function periodDates(subscription: Stripe.Subscription): { start: string | null; end: string | null } {
+  const item = subscription.items.data[0]
+  return {
+    start: item?.current_period_start ? new Date(item.current_period_start * 1000).toISOString() : null,
+    end: item?.current_period_end ? new Date(item.current_period_end * 1000).toISOString() : null,
+  }
 }
 
 export async function handleStripeWebhook(body: string, sig: string): Promise<void> {
@@ -60,149 +60,113 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
 
   const admin = createAdminClient()
 
+  // Events from trades' own connected Stripe accounts (optional cards, phase 13)
+  if (event.account) {
+    await handleConnectEvent(admin, event)
+    return
+  }
+
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session
       const customerId = session.customer as string | null
       const subscriptionId = session.subscription as string | null
       const userId = session.client_reference_id
-
       if (!userId || !subscriptionId || !customerId) break
 
       const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-      const { tier, billingPeriod } = activeTier(subscription)
-      const addonQty = addonQuantity(subscription)
-      const periodEndTs = subscription.items.data[0]?.current_period_end ?? null
-      const currentPeriodEnd = periodEndTs ? new Date(periodEndTs * 1000).toISOString() : null
-      const periodStartTs = subscription.items.data[0]?.current_period_start ?? null
-      const currentPeriodStart = periodStartTs ? new Date(periodStartTs * 1000).toISOString() : null
+      const status = planStatus(subscription)
+      const { start, end } = periodDates(subscription)
 
       await admin
         .from('trade_profiles')
         .update({
-          subscription_tier: tier,
-          billing_period: billingPeriod,
-          subscription_expires_at: currentPeriodEnd,
-          subscription_period_start_at: currentPeriodStart,
+          subscription_status: status,
+          subscription_expires_at: end,
+          subscription_period_start_at: start,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
-          is_searchable: tier !== 'free',
-          boosted_district_addon_quantity: tier === 'pro' ? addonQty : 0,
-          boosted_district_addon_paid_quantity: tier === 'pro' ? addonQty : 0,
         })
         .eq('user_id', userId)
+      await refreshPlanState(admin, userId)
 
-      await supersedeGrantIfCovered(admin, userId, tier)
+      if (status === 'active') await supersedeGrantIfCovered(admin, userId)
 
       await emailUser(admin, userId, planStarted({
-        plan: PLAN_LABEL[tier] ?? tier,
         trialEnds: subscription.trial_end ? formatDateLong(new Date(subscription.trial_end * 1000)) : null,
       }))
-
       break
     }
 
     case 'customer.subscription.updated': {
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
-      const { tier, billingPeriod } = activeTier(subscription)
-      const addonQty = addonQuantity(subscription)
-      const periodEndTs = subscription.items.data[0]?.current_period_end ?? null
-      const currentPeriodEnd = periodEndTs ? new Date(periodEndTs * 1000).toISOString() : null
-      const periodStartTs = subscription.items.data[0]?.current_period_start ?? null
-      const currentPeriodStart = periodStartTs ? new Date(periodStartTs * 1000).toISOString() : null
+      const status = planStatus(subscription)
+      const qty = boostQuantity(subscription)
+      const { start, end } = periodDates(subscription)
 
-      // On downgrade away from Pro, clear all boost state so the subset constraint
-      // isn't circumvented and billing stops cleanly.
-      const boostClear = tier !== 'pro'
-        ? { boosted_districts: [], boosted_districts_updated_at: null }
-        : {}
-
-      // Slots already paid for stay usable until the billing period rolls over.
-      // A new period start means renewal: paid slots reset to what was actually billed.
       const { data: existing } = await admin
         .from('trade_profiles')
-        .select('user_id, subscription_tier, subscription_period_start_at, boosted_district_addon_paid_quantity')
+        .select('user_id, subscription_period_start_at, boosted_district_addon_paid_quantity')
         .eq('stripe_customer_id', customerId)
         .maybeSingle()
+      if (!existing) break
+      const userId = existing.user_id as string
 
-      // An active Pro grant keeps the Boosted Districts it includes
-      const grantKeepsBoosts = existing?.user_id ? await hasActiveProGrant(admin, existing.user_id as string) : false
-
-      const storedStart = (existing?.subscription_period_start_at as string | null) ?? null
-      const storedPaid = (existing?.boosted_district_addon_paid_quantity as number | null) ?? 0
-      const periodRolledOver =
-        !storedStart || !currentPeriodStart || new Date(storedStart).getTime() !== new Date(currentPeriodStart).getTime()
-      const paidQty = tier !== 'pro' ? 0 : periodRolledOver ? addonQty : Math.max(storedPaid, addonQty)
+      // Slots already paid for stay usable until the billing period rolls over
+      const storedStart = (existing.subscription_period_start_at as string | null) ?? null
+      const storedPaid = (existing.boosted_district_addon_paid_quantity as number | null) ?? 0
+      const rolledOver = !storedStart || !start || new Date(storedStart).getTime() !== new Date(start).getTime()
+      const active = status === 'active'
+      const paidQty = !active ? 0 : rolledOver ? qty : Math.max(storedPaid, qty)
 
       await admin
         .from('trade_profiles')
         .update({
-          subscription_tier: tier,
-          billing_period: billingPeriod,
-          subscription_expires_at: currentPeriodEnd,
-          subscription_period_start_at: currentPeriodStart,
+          subscription_status: status,
+          subscription_expires_at: end,
+          subscription_period_start_at: start,
           stripe_subscription_id: subscription.id,
-          is_searchable: tier !== 'free',
-          boosted_district_addon_quantity: tier === 'pro' ? addonQty : 0,
+          boosted_district_addon_quantity: active ? qty : 0,
           boosted_district_addon_paid_quantity: paidQty,
-          ...(grantKeepsBoosts ? {} : boostClear),
+          // Cancelling the plan, or the plan lapsing, ends all boosts (PRD 3)
+          ...(active ? {} : { boosted_districts: [], boosted_districts_updated_at: null }),
         })
-        .eq('stripe_customer_id', customerId)
+        .eq('user_id', userId)
+      await refreshPlanState(admin, userId)
+      if (active) await supersedeGrantIfCovered(admin, userId)
 
-      if (existing?.user_id) await supersedeGrantIfCovered(admin, existing.user_id as string, tier)
-
-      // Customer emails: only on a real change, never on routine renewals
-      const existingUserId = (existing?.user_id as string | null) ?? null
       const previous = (event.data as { previous_attributes?: Partial<Stripe.Subscription> }).previous_attributes
-      if (existingUserId) {
-        if (subscription.cancel_at_period_end && previous && previous.cancel_at_period_end === false) {
-          await emailUser(admin, existingUserId, planCancelled({
-            plan: PLAN_LABEL[tier] ?? tier,
-            endsOn: formatDateLong(currentPeriodEnd) ?? 'the end of this billing period',
-          }))
-        } else if (
-          existing?.subscription_tier &&
-          existing.subscription_tier !== 'free' &&
-          tier !== 'free' &&
-          existing.subscription_tier !== tier
-        ) {
-          await emailUser(admin, existingUserId, planChanged({ plan: PLAN_LABEL[tier] ?? tier }))
-        }
+      if (subscription.cancel_at_period_end && previous && previous.cancel_at_period_end === false) {
+        await emailUser(admin, userId, planCancelled({ endsOn: formatDateLong(end) ?? 'the end of this billing period' }))
       }
-
       break
     }
 
     case 'customer.subscription.deleted': {
       const subscription = event.data.object as Stripe.Subscription
       const customerId = subscription.customer as string
-
       const { data: lapsed } = await admin
         .from('trade_profiles')
         .select('user_id')
         .eq('stripe_customer_id', customerId)
         .maybeSingle()
-      const lapsedUserId = (lapsed?.user_id as string | null | undefined) ?? null
-      // An active Pro grant keeps the Boosted Districts it includes
-      const grantKeepsBoosts = lapsedUserId ? await hasActiveProGrant(admin, lapsedUserId) : false
+      if (!lapsed) break
 
-      // Clear boosted districts and add-on on lapse/cancel — no silent reinstatement on resubscribe
       await admin
         .from('trade_profiles')
         .update({
-          subscription_tier: 'free',
-          billing_period: 'monthly',
+          subscription_status: 'cancelled',
           subscription_expires_at: null,
           subscription_period_start_at: null,
           stripe_subscription_id: null,
-          is_searchable: false,
-          ...(grantKeepsBoosts ? {} : { boosted_districts: [], boosted_districts_updated_at: null }),
+          boosted_districts: [],
+          boosted_districts_updated_at: null,
           boosted_district_addon_quantity: 0,
           boosted_district_addon_paid_quantity: 0,
         })
-        .eq('stripe_customer_id', customerId)
-
+        .eq('user_id', lapsed.user_id as string)
+      await refreshPlanState(admin, lapsed.user_id as string)
       break
     }
 
@@ -211,7 +175,6 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
       const customerId = typeof invoice.customer === 'string'
         ? invoice.customer
         : (invoice.customer as Stripe.Customer | null)?.id ?? null
-
       if (!customerId) break
 
       const { data: tradeProfile } = await admin
@@ -219,30 +182,17 @@ export async function handleStripeWebhook(body: string, sig: string): Promise<vo
         .select('user_id')
         .eq('stripe_customer_id', customerId)
         .maybeSingle()
-
       if (!tradeProfile) break
-
       const userId = tradeProfile.user_id as string
-
-      const { data: userData } = await admin
-        .from('users')
-        .select('email')
-        .eq('id', userId)
-        .single()
 
       await admin.from('notifications').insert({
         user_id: userId,
         type: 'subscription_updated',
         title: 'Payment failed',
-        body: 'Your WorkedWith payment failed. Please update your payment method to keep your subscription active.',
+        body: 'Your WorkedWith payment failed. Please update your card to keep your plan active.',
         link: '/subscription',
       })
-
-      if (userData?.email) {
-        const r = await sendEmail(userData.email as string, paymentFailed())
-        if (!r.ok) console.error('Email send failed (non-fatal):', r.error)
-      }
-
+      await emailUser(admin, userId, paymentFailed())
       break
     }
   }

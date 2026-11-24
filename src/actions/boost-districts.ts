@@ -66,3 +66,25 @@ export async function swapDistrictBoost(from: string, to: string): Promise<Boost
     event: { type: 'swap', from: fromCode, to: toCode },
   })
 }
+
+/** Join the waiting list for a district where the Boosted slots for a trade type are full (decision 15). */
+export async function joinBoostWaitlist(district: string, tradeTypes: string[]): Promise<{ ok: true } | { ok: false; error: string }> {
+  const code = district.trim().toUpperCase()
+  if (!OUTCODE_RE.test(code)) return { ok: false, error: 'That district code is not valid.' }
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'You must be signed in.' }
+  const admin = createAdminClient()
+  for (const t of tradeTypes.slice(0, 10)) {
+    const { data: existing } = await admin
+      .from('boost_waitlist')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('district', code)
+      .eq('trade_type', t)
+      .is('removed_at', null)
+      .maybeSingle()
+    if (!existing) await admin.from('boost_waitlist').insert({ user_id: user.id, district: code, trade_type: t })
+  }
+  return { ok: true }
+}

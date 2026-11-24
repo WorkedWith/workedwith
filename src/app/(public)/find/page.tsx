@@ -9,6 +9,8 @@ import { createClient } from '@/lib/supabase/server'
 import { DEMO_TRADE_PROFILES } from '@/lib/demo-data'
 import { DemoProfileCard } from '@/components/demo/demo-profile-card'
 import { SiteHeader } from '@/components/site-header'
+import { BoostedBadge } from '@/components/boosted-badge'
+import { InviteYourTradeLink } from '@/components/invite-your-trade'
 
 export const metadata: Metadata = {
   title: 'Find a Tradesperson | WorkedWith',
@@ -27,17 +29,6 @@ export default async function FindPage({ searchParams }: PageProps) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const isAuthenticated = !!user
-
-  let isClient = false
-  if (user) {
-    const { data: userData } = await supabase
-      .from('users')
-      .select('user_type')
-      .eq('id', user.id)
-      .maybeSingle()
-    const userType = (userData?.user_type as string | null | undefined) ?? null
-    isClient = userType === 'client_individual' || userType === 'client_business' || userType === 'both'
-  }
 
   let searchResult: Awaited<ReturnType<typeof searchTradespeople>> | null = null
   if (hasSearch) {
@@ -108,14 +99,9 @@ export default async function FindPage({ searchParams }: PageProps) {
                 Nobody on WorkedWith covers {district ?? 'your area'} yet.
               </h2>
               <p className="mt-2 text-sm text-gray-600">
-                Invite the tradesperson you already have in mind. They confirm the job, and you both build a record.
+                Already have a tradesperson in mind? Send them a note about WorkedWith from your own email.
               </p>
-              <a
-                href={isClient ? '/jobs/log/invite-trade' : '/join/client'}
-                className="mt-4 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-brand-amber px-6 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors sm:w-auto"
-              >
-                Invite a tradesperson
-              </a>
+              <InviteYourTradeLink className="mt-4 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-brand-amber px-6 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors sm:w-auto" />
               <p className="mt-4">
                 <a
                   href="/for-trades"
@@ -144,7 +130,7 @@ export default async function FindPage({ searchParams }: PageProps) {
             </p>
             <div className="space-y-4">
               {realResults.map(result => (
-                <ResultCard key={result.id} result={result} searchId={searchResult?.success ? searchResult.searchId : null} />
+                <ResultCard key={`${result.id}${result.in_boosted_band ? '-boosted' : ''}`} result={result} searchId={searchResult?.success ? searchResult.searchId : null} />
               ))}
               {hasSeededResults && realResults.length > 0 && (
                 <div className="relative my-2 flex items-center gap-3">
@@ -158,7 +144,7 @@ export default async function FindPage({ searchParams }: PageProps) {
               ))}
             </div>
             <p className="text-xs text-gray-400 text-center mt-4">
-              Pro members who have boosted this district appear first. All other matches appear below in no particular order.
+              Boosted trades pay to appear first and are always labelled. Everyone is then ranked on reviews from paid jobs.
             </p>
           </div>
         )}
@@ -203,7 +189,7 @@ function ResultCard({ result, searchId }: { result: TradesearchResult; searchId:
           <h2 className="text-lg font-bold text-brand-navy leading-snug">{result.company_name || result.full_name}</h2>
           {result.verification_tier === 'fully_verified' && (
             <span className="mt-1.5 inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
-              ID verified
+              ID checked
             </span>
           )}
           {result.verification_tier === 'phone_verified' && (
@@ -213,16 +199,7 @@ function ResultCard({ result, searchId }: { result: TradesearchResult; searchId:
           )}
         </div>
         <div className="shrink-0 flex items-center gap-2">
-          {result.subscription_tier === 'pro' && (
-            <span title="On a WorkedWith Pro plan." className="rounded-full bg-brand-amber px-2.5 py-0.5 text-xs font-bold text-brand-navy">
-              Pro member
-            </span>
-          )}
-          {result.subscription_tier === 'standard' && (
-            <span title="On a WorkedWith Standard plan." className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500">
-              Member
-            </span>
-          )}
+          {result.in_boosted_band && <BoostedBadge />}
         </div>
       </div>
 
@@ -259,12 +236,15 @@ function ResultCard({ result, searchId }: { result: TradesearchResult; searchId:
           ✓ Insured
         </p>
       )}
+      <p className="mt-3 text-sm text-gray-600">
+        {result.paid_jobs > 0 ? `${result.paid_jobs} paid ${result.paid_jobs === 1 ? 'job' : 'jobs'} on WorkedWith · ` : ''}Member since {new Date(result.member_since).getFullYear()}
+      </p>
       {result.hired_again_count > 0 && (
         <p className="mt-2 text-xs font-medium text-brand-navy">
           Hired again by {result.hired_again_count} client{result.hired_again_count === 1 ? '' : 's'}
         </p>
       )}
-      {result.confirmation_label && (
+      {false && result.confirmation_label && (
         <p className="mt-2 text-xs text-gray-500" title="How often this trade confirms jobs other people log with them, over the last 2 years.">
           {result.confirmation_label}
         </p>

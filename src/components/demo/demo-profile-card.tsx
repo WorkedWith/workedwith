@@ -32,7 +32,7 @@ export function DemoProfileCard({ profile }: Props) {
           )}
           {profile.subscription_tier === 'pro' && (
             <span className="rounded-full bg-brand-amber px-2.5 py-0.5 text-xs font-bold text-brand-navy">
-              Pro member
+              Boosted
             </span>
           )}
           {profile.subscription_tier === 'standard' && (

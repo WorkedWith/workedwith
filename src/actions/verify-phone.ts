@@ -207,8 +207,6 @@ export async function verifyOTP(phone: string, code: string, options?: VerifyOTP
     redirect(options.next)
   } else if (userType === 'trade') {
     redirect('/onboarding/trade')
-  } else if (userType === 'client_business') {
-    redirect('/onboarding/business')
   } else {
     redirect('/onboarding/individual')
   }

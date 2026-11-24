@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { runDailyV42 } from '@/lib/cron/daily-v42'
 import { formatDateLong } from '@/lib/email/format'
 import { sendEmail } from '@/lib/email/send'
 import { bothReviewsLive, reviewReminder, theirReviewLive, yourReviewLive } from '@/lib/email/templates'
@@ -39,6 +40,8 @@ export async function GET(request: Request) {
   const { data: rawWindows } = await admin
     .from('review_windows')
     .select('*')
+    // v4.2 windows (flow = 'quote') have their own rules in src/lib/reviews/windows.ts
+    .eq('flow', 'legacy')
     .or(`blind_window_closes_at.lt.${nowIso},and(trade_review_submitted.eq.true,client_review_submitted.eq.true)`)
     .is('both_submitted_at', null)
 
@@ -59,7 +62,10 @@ export async function GET(request: Request) {
 
   const reminders = await sendDayFourReminders(admin, now)
 
-  return NextResponse.json({ processed, reminders })
+  // v4.2 daily jobs (trials, chasing, reminders, review windows) share this cron
+  const v42 = await runDailyV42(admin)
+
+  return NextResponse.json({ processed, reminders, v42 })
 }
 
 // ── Day 4 reminder ────────────────────────────────────────────
@@ -72,6 +78,7 @@ async function sendDayFourReminders(
   const { data: rawWindows } = await admin
     .from('review_windows')
     .select('*')
+    .eq('flow', 'legacy')
     .gt('blind_window_closes_at', now.toISOString())
     .lte('window_opened_at', fourDaysAgo)
     .is('reminder_4_sent_at', null)

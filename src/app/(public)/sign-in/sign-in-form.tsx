@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { PublicTopBar } from '@/components/public-top-bar'
+import { EmailLinkButton } from './email-link-button'
 
 export function SignInForm({ message, next }: { message?: string; next?: string }) {
   const [email, setEmail] = useState('')
@@ -181,6 +182,16 @@ export function SignInForm({ message, next }: { message?: string; next?: string 
             </button>
           </form>
         )}
+
+        <div className="mt-4 space-y-2">
+          <a
+            href={`/sign-in/code${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ''}`}
+            className="flex min-h-[48px] w-full items-center justify-center rounded-xl border-2 border-brand-amber px-6 text-sm font-semibold text-brand-amber hover:bg-white/5"
+          >
+            No password? Sign in with a text code
+          </a>
+          <EmailLinkButton email={email} next={safeNext} />
+        </div>
 
         <div className="mt-6 text-center space-y-3">
           {safeNext ? (

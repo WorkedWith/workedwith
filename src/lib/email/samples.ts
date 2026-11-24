@@ -15,7 +15,7 @@ const seed = {
   removeUrl: `${APP_URL}/claim/sample/remove`,
 }
 
-export const EMAIL_SAMPLES: EmailSample[] = [
+export const EMAIL_SAMPLES_V3: EmailSample[] = [
   { id: 'E1', group: 'Jobs', label: 'Job to confirm (existing client)', to: 'Client with an account', content: t.jobToConfirmExisting({ tradeName: 'RG Tiling Services', jobType: 'Tiling', postcode: 'M20 3HD', token: 'sample' }) },
   { id: 'E2', group: 'Jobs', label: 'Job logged (client not on WorkedWith)', to: 'Stranger', content: t.jobInviteNewClient({ tradeName: 'RG Tiling Services', jobType: 'Tiling', district: 'M20', token: 'sample' }) },
   { id: 'E3', group: 'Jobs', label: 'Past job to confirm (existing user)', to: 'User with an account', content: t.pastJobExisting({ callerName: 'Raul Garcia', jobType: 'Tiling', period: 'March 2026', token: 'sample' }) },
@@ -40,16 +40,15 @@ export const EMAIL_SAMPLES: EmailSample[] = [
   { id: 'E25', group: 'Invites', label: 'Team invite', to: 'Stranger', content: t.teamInvite({ inviterName: 'Jo Hart', orgName: 'Hart Property Management', role: 'member', token: 'sample' }) },
   { id: 'N3', group: 'Account', label: 'NEW: Welcome (tradesperson)', to: 'New trade', content: t.welcomeTrade() },
   { id: 'N4', group: 'Account', label: 'NEW: Welcome (client, with username)', to: 'New client', content: t.welcomeClient({ username: 'sam.patel' }) },
-  { id: 'N5', group: 'Account', label: 'NEW: Plan started (trial)', to: 'Trade', content: t.planStarted({ plan: 'Pro', trialEnds: '21st October 2026' }) },
-  { id: 'N6', group: 'Account', label: 'NEW: Plan cancelled', to: 'Trade', content: t.planCancelled({ plan: 'Pro', endsOn: '7th November 2026' }) },
-  { id: 'N7', group: 'Account', label: 'NEW: Plan changed', to: 'Trade', content: t.planChanged({ plan: 'Standard' }) },
+  { id: 'N5', group: 'Account', label: 'NEW: Plan started (trial)', to: 'Trade', content: t.planStarted({ trialEnds: '21st October 2026' }) },
+  { id: 'N6', group: 'Account', label: 'NEW: Plan cancelled', to: 'Trade', content: t.planCancelled({ endsOn: '7th November 2026' }) },
   { id: 'E28', group: 'Account', label: 'Payment failed', to: 'Trade', content: t.paymentFailed() },
   { id: 'N8', group: 'Account', label: 'NEW: Account deleted', to: 'Former user', content: t.accountDeleted() },
-  { id: 'E34', group: 'Plans', label: 'Free plan granted (Standard)', to: 'Trade', content: t.grantStarted({ plan: 'Standard', endsOn: '27th April 2027', isPro: false }) },
-  { id: 'E35', group: 'Plans', label: 'Free plan granted (Pro)', to: 'Trade', content: t.grantStarted({ plan: 'Pro', endsOn: '27th April 2027', isPro: true }) },
-  { id: 'E36', group: 'Plans', label: 'Free plan ends in 14 days', to: 'Trade', content: t.grantEnding({ plan: 'Standard', endsOn: '27th April 2027', daysLeft: 14, benefits: ['full client lookups with payment reliability and red flags', 'your Member badge', 'a gallery of up to 5 photos'] }) },
-  { id: 'E37', group: 'Plans', label: 'Free plan ends in 3 days', to: 'Trade', content: t.grantEnding({ plan: 'Standard', endsOn: '27th April 2027', daysLeft: 3, benefits: ['full client lookups with payment reliability and red flags', 'your Member badge', 'a gallery of up to 5 photos'] }) },
-  { id: 'E38', group: 'Plans', label: 'Free plan has ended', to: 'Trade', content: t.grantEnded({ plan: 'Standard' }) },
+  { id: 'E34', group: 'Plans', label: 'Free plan granted', to: 'Trade', content: t.grantStarted({ plan: 'the WorkedWith plan', endsOn: '27th April 2027' }) },
+  { id: 'E35', group: 'Plans', label: 'Trial ends in 7 days', to: 'Trade', content: t.trialReminder({ day: 23, endsOn: '27th April 2027' }) },
+  { id: 'E36', group: 'Plans', label: 'Free plan ends in 14 days', to: 'Trade', content: t.grantEnding({ plan: 'the WorkedWith plan', endsOn: '27th April 2027', daysLeft: 14, benefits: ['quotes, invoices and automatic chasing', 'your directory listing'] }) },
+  { id: 'E37', group: 'Plans', label: 'Free plan ends in 3 days', to: 'Trade', content: t.grantEnding({ plan: 'the WorkedWith plan', endsOn: '27th April 2027', daysLeft: 3, benefits: ['quotes, invoices and automatic chasing', 'your directory listing'] }) },
+  { id: 'E38', group: 'Plans', label: 'Free plan has ended', to: 'Trade', content: t.grantEnded({ plan: 'the WorkedWith plan' }) },
   { id: 'E39', group: 'Declines and proof', label: 'Job request declined', to: 'Person who logged it', content: t.jobRequestDeclined({ name: 'Sam Patel', jobType: 'Tiling', notMe: false, requestId: 'sample' }) },
   { id: 'E40', group: 'Declines and proof', label: 'Job request declined (says not them)', to: 'Person who logged it', content: t.jobRequestDeclined({ name: 'Sam Patel', jobType: 'Tiling', notMe: true, requestId: 'sample' }) },
   { id: 'E41', group: 'Declines and proof', label: 'Proof of a job received', to: 'Person who declined', content: t.evidenceReceived({ requesterName: 'Raul Garcia', jobType: 'Tiling', deadline: '4th November 2026', requestId: 'sample' }) },
@@ -78,10 +77,15 @@ export const EMAIL_SAMPLES: EmailSample[] = [
   { id: 'E32', group: 'Seeded outreach', label: 'Day 14', to: 'Stranger', content: t.seededOutreach({ day: 'day14', ...seed }) },
 ]
 
-export const SMS_SAMPLES: SmsSample[] = [
+export const SMS_SAMPLES_V3: SmsSample[] = [
   { id: 'S1', label: 'Client invites a tradesperson', to: 'Stranger', text: tradeInviteSms({ callerName: 'Sam Patel', jobType: 'Tiling', token: 'sample', days: 60 }) },
   { id: 'S2', label: 'Seeded, day 0', to: 'Stranger', text: seededSms({ day: 'day0', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
   { id: 'S3', label: 'Seeded, day 3', to: 'Stranger', text: seededSms({ day: 'day3', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
   { id: 'S4', label: 'Seeded, day 7', to: 'Stranger', text: seededSms({ day: 'day7', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
   { id: 'S5', label: 'Seeded, day 14', to: 'Stranger', text: seededSms({ day: 'day14', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
 ]
+
+import { EMAIL_SAMPLES_V42, SMS_SAMPLES_V42 } from './samples-v42'
+
+export const EMAIL_SAMPLES: EmailSample[] = [...EMAIL_SAMPLES_V42, ...EMAIL_SAMPLES_V3]
+export const SMS_SAMPLES: SmsSample[] = [...SMS_SAMPLES_V42, ...SMS_SAMPLES_V3]

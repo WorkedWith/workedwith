@@ -1,15 +1,6 @@
-import type { SubscriptionTier } from '@/types/database'
-
-/** Profile gallery photos allowed per plan. Free has none. */
-export const GALLERY_LIMITS: Record<SubscriptionTier, number> = {
-  free: 0,
-  standard: 5,
-  pro: 10,
-}
-
-/** Photos allowed on each job linked featured job (Pro only, any number of jobs). */
+/** Flat limits for every trade (PRD 3, decision 1). */
+export const GALLERY_LIMIT = 10
+export const FEATURED_JOBS_LIMIT = 3
 export const FEATURED_IMAGES_PER_JOB = 5
-
-export function galleryLimit(tier: string | null | undefined): number {
-  return tier === 'standard' || tier === 'pro' ? GALLERY_LIMITS[tier] : 0
-}
+export const OPERATING_DISTRICTS_LIMIT = 20
+export const REVIEW_PHOTOS_LIMIT = 5

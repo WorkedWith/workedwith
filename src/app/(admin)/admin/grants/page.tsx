@@ -1,10 +1,9 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import { GRANT_REASON_LABEL, PLAN_NAME } from '@/lib/grants'
+import { GRANT_REASON_LABEL } from '@/lib/grants'
 import {
   createGrantAction,
   giveFoundingOfferAction,
   extendGrantAction,
-  changeGrantTierAction,
   endGrantEarlyAction,
 } from '@/actions/admin/grants'
 import type { TierGrant } from '@/types/database'
@@ -56,12 +55,12 @@ export default async function GrantsPage({ searchParams }: PageProps) {
   // Did people with ended grants go on to pay?
   const endedUserIds = Array.from(new Set(ended.map(g => g.user_id)))
   const { data: rawPaid } = endedUserIds.length
-    ? await admin.from('trade_profiles').select('user_id, subscription_tier').in('user_id', endedUserIds)
+    ? await admin.from('trade_profiles').select('user_id, subscription_status').in('user_id', endedUserIds)
     : { data: [] }
   const paidNow = new Map(
-    ((rawPaid ?? []) as unknown as { user_id: string; subscription_tier: string | null }[]).map(r => [
+    ((rawPaid ?? []) as unknown as { user_id: string; subscription_status: string | null }[]).map(r => [
       r.user_id,
-      !!r.subscription_tier && r.subscription_tier !== 'free',
+      r.subscription_status === 'active',
     ]),
   )
   const conversion = new Map<string, { ended: number; paid: number }>()
@@ -72,34 +71,19 @@ export default async function GrantsPage({ searchParams }: PageProps) {
     conversion.set(g.reason, row)
   }
 
-  // Founding offer helper: claimed trades with a completed profile, 5+ backdated jobs, never had a grant
+  // Founding offer helper (PRD 20 milestones): trades working in WA14 or WA15, not paying, never had a grant.
+  // Oldest first, so the first 50 to join get it.
   const everGranted = new Set(grants.map(g => g.user_id))
   const { data: rawProfiles } = await admin
     .from('trade_profiles')
-    .select('id, user_id, bio, operating_areas, company_name, subscription_tier')
-    .not('bio', 'is', null)
-    .limit(1000)
-  const completed = ((rawProfiles ?? []) as unknown as {
-    id: string; user_id: string; bio: string | null; operating_areas: string[] | null; company_name: string | null; subscription_tier: string | null
-  }[]).filter(p => (p.bio ?? '').trim().length > 0 && (p.operating_areas ?? []).length > 0 && !everGranted.has(p.user_id))
-
-  const backdatedCounts = new Map<string, number>()
-  if (completed.length > 0) {
-    const { data: rawJobs } = await admin
-      .from('jobs')
-      .select('trade_profile_id')
-      .eq('is_backdated', true)
-      .neq('status', 'cancelled')
-      .in('trade_profile_id', completed.map(p => p.id))
-    for (const j of (rawJobs ?? []) as unknown as { trade_profile_id: string | null }[]) {
-      if (!j.trade_profile_id) continue
-      backdatedCounts.set(j.trade_profile_id, (backdatedCounts.get(j.trade_profile_id) ?? 0) + 1)
-    }
-  }
-  const eligibleBase = completed
-    .map(p => ({ ...p, backdated: backdatedCounts.get(p.id) ?? 0 }))
-    .filter(p => p.backdated >= 5 && (!p.subscription_tier || p.subscription_tier === 'free'))
-    .sort((a, b) => b.backdated - a.backdated)
+    .select('id, user_id, operating_areas, company_name, subscription_status, created_at')
+    .overlaps('operating_areas', ['WA14', 'WA15'])
+    .order('created_at', { ascending: true })
+    .limit(200)
+  const eligibleBase = ((rawProfiles ?? []) as unknown as {
+    id: string; user_id: string; operating_areas: string[] | null; company_name: string | null; subscription_status: string | null
+  }[])
+    .filter(p => !everGranted.has(p.user_id) && p.subscription_status !== 'active')
     .slice(0, 50)
   const { data: rawEligibleUsers } = eligibleBase.length
     ? await admin.from('users').select('id, email, full_name').in('id', eligibleBase.map(p => p.user_id))
@@ -111,7 +95,7 @@ export default async function GrantsPage({ searchParams }: PageProps) {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Plan grants</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Give a trade Standard or Pro free for a set time. No card, no Stripe. One grant per trade at a time.
+          Give a trade the plan free for a set time. No card, no Stripe. One grant per trade at a time.
         </p>
       </div>
 
@@ -128,10 +112,8 @@ export default async function GrantsPage({ searchParams }: PageProps) {
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-gray-700">Plan</span>
-            <select name="tier" className={`${input} w-full`} defaultValue="standard">
-              <option value="standard">Standard</option>
-              <option value="pro">Pro</option>
-            </select>
+            <input type="hidden" name="tier" value="plan" />
+            <p className={`${input} w-full bg-gray-50`}>The WorkedWith plan</p>
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-gray-700">Reason</span>
@@ -188,7 +170,7 @@ export default async function GrantsPage({ searchParams }: PageProps) {
                     <div>
                       <p className="text-sm font-semibold text-gray-900">{u?.full_name ?? 'Unknown'} <span className="font-normal text-gray-400">{u?.email}</span></p>
                       <p className="mt-0.5 text-xs text-gray-500">
-                        {PLAN_NAME[g.tier]} · {GRANT_REASON_LABEL[g.reason] ?? g.reason} · {fmt(g.starts_at)} to {fmt(g.ends_at)}
+                        Free plan · {GRANT_REASON_LABEL[g.reason] ?? g.reason} · {fmt(g.starts_at)} to {fmt(g.ends_at)}
                       </p>
                       {g.note && <p className="mt-1 text-xs text-gray-400">Note: {g.note}</p>}
                     </div>
@@ -203,16 +185,6 @@ export default async function GrantsPage({ searchParams }: PageProps) {
                         <input name="endDate" type="date" required defaultValue={dateInput(g.ends_at)} className={`${input} mt-1 block`} />
                       </label>
                       <button type="submit" className={btnGhost}>Change end date</button>
-                    </form>
-                    <form action={changeGrantTierAction} className="flex items-end gap-2">
-                      <input type="hidden" name="grantId" value={g.id} />
-                      <label className="text-xs text-gray-500">Plan
-                        <select name="tier" defaultValue={g.tier} className={`${input} mt-1 block`}>
-                          <option value="standard">Standard</option>
-                          <option value="pro">Pro</option>
-                        </select>
-                      </label>
-                      <button type="submit" className={btnGhost}>Change plan</button>
                     </form>
                     <form action={endGrantEarlyAction}>
                       <input type="hidden" name="grantId" value={g.id} />
@@ -230,8 +202,8 @@ export default async function GrantsPage({ searchParams }: PageProps) {
       <section>
         <h2 className="mb-1 text-base font-semibold text-gray-900">Eligible for the founding offer ({eligibleBase.length})</h2>
         <p className="mb-3 text-xs text-gray-500">
-          Claimed trades on Free with a bio, operating areas and at least 5 backdated jobs logged, who have never had a grant.
-          One click gives 6 months of Standard. You still decide who gets it.
+          Trades working in WA14 or WA15 who are not paying and have never had a grant, oldest first.
+          One click gives 3 months free (the founding offer for the first 50 trades in WA14 and WA15). You still decide who gets it.
         </p>
         {eligibleBase.length === 0 ? (
           <p className="rounded-2xl border border-gray-200 bg-white p-6 text-sm text-gray-500">Nobody qualifies yet.</p>
@@ -243,7 +215,7 @@ export default async function GrantsPage({ searchParams }: PageProps) {
                 <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                   <div>
                     <p className="text-sm font-medium text-gray-900">{u?.full_name ?? 'Unknown'} <span className="font-normal text-gray-400">{u?.email}</span></p>
-                    <p className="text-xs text-gray-500">{p.company_name ?? 'No business name'} · {p.backdated} backdated jobs</p>
+                    <p className="text-xs text-gray-500">{p.company_name ?? 'No business name'} · {(p.operating_areas ?? []).filter(a => a === 'WA14' || a === 'WA15').join(', ')}</p>
                   </div>
                   <form action={giveFoundingOfferAction}>
                     <input type="hidden" name="userId" value={p.user_id} />
@@ -291,7 +263,7 @@ export default async function GrantsPage({ searchParams }: PageProps) {
                     return (
                       <tr key={g.id}>
                         <td className="px-4 py-3"><p className="font-medium text-gray-900">{u?.full_name ?? 'Unknown'}</p><p className="text-xs text-gray-400">{u?.email}</p></td>
-                        <td className="px-4 py-3 text-gray-600">{PLAN_NAME[g.tier]}</td>
+                        <td className="px-4 py-3 text-gray-600">Free plan</td>
                         <td className="px-4 py-3 text-gray-600">{GRANT_REASON_LABEL[g.reason] ?? g.reason}</td>
                         <td className="px-4 py-3 text-xs text-gray-500">{fmt(g.starts_at)} to {fmt(g.ends_at)}</td>
                         <td className="px-4 py-3 text-xs text-gray-500">{g.ended_reason?.replace('_', ' ')}</td>

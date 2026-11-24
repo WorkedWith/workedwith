@@ -20,6 +20,7 @@ export function AddSeededProfileForm() {
   const [email, setEmail] = useState('')
   const [sourceNote, setSourceNote] = useState('')
   const [bio, setBio] = useState('')
+  const [chNumber, setChNumber] = useState('')
 
   function parseAreas(raw: string): string[] {
     return raw
@@ -48,6 +49,7 @@ export function AddSeededProfileForm() {
         contact_email: email.trim() || null,
         source_note: sourceNote.trim() || null,
         bio: bio.trim() || null,
+        companies_house_number: chNumber.trim() || null,
       })
 
       if (result.success) {
@@ -55,7 +57,7 @@ export function AddSeededProfileForm() {
           result.outreach === 'sent' ? 'First message sent.'
           : result.outreach === 'queued' ? 'Message could not be sent now. It will be retried tonight.'
           : result.outreach === 'switched_off' ? 'Outreach is switched off, so nothing was sent.'
-          : 'No email or phone, so nothing was sent.'
+          : 'Not emailed: outreach needs an email and an active limited company number (PECR).'
         setSuccess(`Created: /t/${result.profile.slug}. ${note}`)
         setBusinessName('')
         setTradeCategories([])
@@ -164,6 +166,19 @@ export function AddSeededProfileForm() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
           />
         </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          Companies House number <span className="font-normal text-gray-400">(needed for outreach: only active limited companies are emailed)</span>
+        </label>
+        <input
+          type="text"
+          value={chNumber}
+          onChange={e => setChNumber(e.target.value)}
+          placeholder="01234567"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber"
+        />
       </div>
 
       <div>

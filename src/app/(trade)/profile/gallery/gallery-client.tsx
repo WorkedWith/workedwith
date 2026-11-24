@@ -98,13 +98,9 @@ export function GalleryClient({ images, limit, isPro, supabaseUrl }: Props) {
         <span>
           {used} of {limit} photos used
         </span>
-        {isPro ? (
+        {isPro && (
           <Link href="/profile/featured-jobs" className="font-semibold text-brand-navy underline">
-            Add photos to a confirmed job
-          </Link>
-        ) : (
-          <Link href="/subscription" className="font-semibold text-brand-navy underline">
-            Pro adds 10 photos and job photos
+            Featured jobs
           </Link>
         )}
       </div>

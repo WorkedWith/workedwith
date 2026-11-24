@@ -1,10 +1,11 @@
 import { getActiveInsurance, coverLabel, monthYear, INSURANCE_TOOLTIP } from '@/lib/insurance'
 import { ReviewResponse } from '@/components/review-response'
 import { TrackedContactLink } from '@/components/tracked-contact-link'
+import { EmailNowButton } from '@/components/email-now-button'
+import { paidJobCounts } from '@/lib/profile-activity'
 import { logProfileViewFromSearch } from '@/actions/log-search-outcome'
 import { getOutcomeLabels, endedEarlyLabel } from '@/lib/job-outcome'
 import { confirmationLabel, CONFIRMATION_TOOLTIP_TRADE } from '@/lib/request-outcomes'
-import { getEffectiveTier } from '@/lib/tier'
 import { SiteHeader } from '@/components/site-header'
 import { Avatar } from '@/components/avatar'
 import { ALL_SPECIALISMS } from '@/lib/trade-types'
@@ -21,7 +22,7 @@ import { OwnerPhotosPanel } from '@/components/owner-photos-panel'
 import { TradeIcon } from '@/components/trade-icon'
 import { getGalleryImages } from '@/actions/gallery/get-gallery-images'
 
-function SeededProfilePage({ profile, signedIn }: { profile: SeededProfile; slug: string; signedIn: boolean }) {
+function SeededProfilePage({ profile }: { profile: SeededProfile; slug: string; signedIn: boolean }) {
   return (
     <main className="min-h-screen bg-gray-50">
       <header className="bg-brand-navy px-4 pb-8 pt-10 sm:px-6">
@@ -29,10 +30,16 @@ function SeededProfilePage({ profile, signedIn }: { profile: SeededProfile; slug
           {/* "Not yet on WorkedWith" — prominent, always visible */}
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-semibold text-white/80 ring-1 ring-white/20">
             <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
-            Not yet on WorkedWith
+            Not yet on WorkedWith. No reviews yet.
           </div>
 
           <h1 className="text-3xl font-bold text-white sm:text-4xl">{profile.business_name}</h1>
+          {profile.companies_house_number && profile.companies_house_status && (
+            <p className="mt-2 text-sm text-white/70">
+              Companies House: {profile.companies_house_status === 'active' ? 'active' : profile.companies_house_status}
+              {profile.incorporated_on ? `. Trading since ${new Date(profile.incorporated_on).getFullYear()}` : ''}
+            </p>
+          )}
 
           <div className="mt-3 flex flex-wrap gap-2">
             {(profile.trade_categories?.length ? profile.trade_categories : [profile.trade_category]).map(t => (
@@ -75,38 +82,12 @@ function SeededProfilePage({ profile, signedIn }: { profile: SeededProfile; slug
           </section>
         )}
 
-        {/* Contact: email only, signed in members only. Phone numbers are never seeded. */}
+        {/* Email now to the publicly listed email (PRD 15, 16). Phone numbers are never seeded. */}
         {profile.contact_email && (
           <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Contact</h2>
-            {signedIn ? (
-              <a
-                href={`mailto:${profile.contact_email}`}
-                className="inline-flex min-h-[44px] w-full items-center justify-center break-all rounded-xl border border-gray-300 px-5 text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors sm:w-auto"
-              >
-                {profile.contact_email}
-              </a>
-            ) : (
-              <div>
-                <p className="text-sm text-gray-600">
-                  Contact details are shown to signed in members only. It is free to join.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-3">
-                  <a
-                    href="/join/client"
-                    className="inline-flex min-h-[44px] items-center rounded-xl bg-brand-amber px-5 text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors"
-                  >
-                    Create a free account
-                  </a>
-                  <a
-                    href="/sign-in"
-                    className="inline-flex min-h-[44px] items-center rounded-xl border border-gray-300 px-5 text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors"
-                  >
-                    Sign in
-                  </a>
-                </div>
-              </div>
-            )}
+            <EmailNowButton seededProfileId={profile.id} businessName={profile.business_name} profileUrl={`${APP_URL}/t/${profile.slug}`} />
+            <p className="mt-2 text-xs text-gray-500">Opens your email app. Your message goes straight to the business, not through WorkedWith.</p>
           </section>
         )}
 
@@ -114,8 +95,8 @@ function SeededProfilePage({ profile, signedIn }: { profile: SeededProfile; slug
         <section className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-5">
           <p className="text-sm font-semibold text-amber-900">This business has not joined WorkedWith yet</p>
           <p className="mt-1 text-sm leading-relaxed text-amber-700">
-            WorkedWith is where clients and tradespeople review each other after every job. This listing
-            was created to help clients find local tradespeople. The business has been invited to claim it.
+            This listing was made from public information to help clients find local trades. It has no reviews,
+            because every review on WorkedWith comes from a paid job run through WorkedWith.
           </p>
         </section>
 
@@ -160,6 +141,8 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
       .maybeSingle()
 
     if (rawSeeded) {
+      // Seeded views feed the activity figures in claim reminder emails (PRD 16)
+      if (!preview) admin.from('seeded_profile_views').insert({ seeded_profile_id: rawSeeded.id as string }).then(() => {})
       const seededSupabase = await createClient()
       const { data: { user: seededViewer } } = await seededSupabase.auth.getUser()
       return (
@@ -179,10 +162,9 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
   const tradeProfileId = tradeProfile.id as string
 
   const hiredAgain = (tradeProfile.hired_again_count as number | null) ?? 0
-  const confLabel = confirmationLabel(tradeProfile.confirmation_counted as number | null, tradeProfile.confirmation_confirmed as number | null)
-
-  // Plan used for features: paid subscription or an active admin grant, whichever is higher
-  const effTier = await getEffectiveTier(userId)
+  // v3.7 confirmation rate is superseded by quotes (PRD 23); kept hidden
+  const confLabel: string | null = null
+  void confirmationLabel
 
   // 2. Parallel: user row + visible reviews + reviewer activity + featured jobs + current viewer
   const supabase = await createClient()
@@ -211,7 +193,7 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
       .eq('is_visible', true)
       .limit(1),
     getFeaturedJobs(tradeProfileId),
-    getGalleryImages(tradeProfileId, effTier),
+    getGalleryImages(tradeProfileId),
     admin
       .from('profile_gallery_images')
       .select('id', { count: 'exact', head: true })
@@ -220,8 +202,7 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
     supabase.auth.getUser(),
   ])
 
-  // Photos linked to confirmed jobs are a Pro feature; hidden, not deleted, if the plan lapses
-  const featuredJobs = effTier === 'pro' ? featuredJobsAll : []
+  const featuredJobs = featuredJobsAll
   const isOwner = currentUser?.id === userId
 
   // Fire-and-forget view log
@@ -241,21 +222,18 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
   const reviewList = reviews ?? []
   const outcomeLabels = await getOutcomeLabels(admin, reviewList.map(r => r.job_id as string))
   const insurance = (await getActiveInsurance(admin, [tradeProfileId])).get(tradeProfileId) ?? null
-  const endedLabel = endedEarlyLabel(tradeProfile.ended_early_count as number | null, tradeProfile.total_jobs as number | null)
+  // v3.9 ended early is replaced by cancellation after start (PRD 23); kept hidden
+  const endedLabel: string | null = null
+  void endedEarlyLabel
+  const paidJobs = (await paidJobCounts(admin, [userId])).get(userId) ?? 0
   const reviewsClients = (reviewerActivity?.length ?? 0) > 0
   const profileUrl = `${APP_URL}/t/${slug}`
   // Contact details are only sent to signed in viewers
-  const contactPhone = currentUser && tradeUser.phone_verified && typeof tradeUser.phone === 'string' ? tradeUser.phone : null
+  // The phone is shown to signed in members only; the business email is public via Email now (PRD 15)
+  const contactPhone = currentUser ? ((tradeProfile.business_phone as string | null) ?? (tradeUser.phone_verified && typeof tradeUser.phone === 'string' ? tradeUser.phone : null)) : null
+  const businessEmail = (tradeProfile.business_email as string | null) ?? null
   const mainTrades = tradeTypes.filter(t => !ALL_SPECIALISMS.includes(t))
   const specialisms = tradeTypes.filter(t => ALL_SPECIALISMS.includes(t))
-  const mailtoHref = (() => {
-    const subject = `Enquiry via WorkedWith: ${displayName}`
-    const body = `Hello,\n\nI found your profile on WorkedWith (${profileUrl}) and would like to ask about some work.\n\nThe job:\nMy postcode:\nWhen I need it done:\n\nThank you`
-    return `mailto:${tradeUser.email as string}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-  })()
-  const contactEmail = currentUser && typeof tradeUser.email === 'string' ? tradeUser.email : null
-  const hasContactBar = Boolean(currentUser) ? Boolean(contactPhone || contactEmail) : true
-
   // JSON-LD structured data
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -334,7 +312,7 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
           </div>
         </header>
 
-        <div className={`mx-auto max-w-2xl px-4 py-6 sm:px-6 space-y-4 ${hasContactBar && !preview ? 'pb-32' : ''}`}>
+        <div className={`mx-auto max-w-2xl px-4 py-6 sm:px-6 space-y-4 ${!isOwner && !preview ? 'pb-32' : ''}`}>
 
           {/* ── Trust card ───────────────────────────────────── */}
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -349,12 +327,12 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
                 <div className="text-sm leading-relaxed text-gray-600">
                   <p>
                     <span className="font-semibold text-brand-navy">{tradeProfile.total_reviews as number}</span>{' '}
-                    review{(tradeProfile.total_reviews as number) !== 1 ? 's' : ''} confirmed by both sides
+                    review{(tradeProfile.total_reviews as number) !== 1 ? 's' : ''}, each tied to a paid job
                   </p>
-                  {(tradeProfile.total_jobs as number) > 0 && (
+                  {paidJobs > 0 && (
                     <p>
-                      <span className="font-semibold text-brand-navy">{tradeProfile.total_jobs as number}</span>{' '}
-                      job{(tradeProfile.total_jobs as number) !== 1 ? 's' : ''} confirmed on WorkedWith
+                      <span className="font-semibold text-brand-navy">{paidJobs}</span>{' '}
+                      paid job{paidJobs !== 1 ? 's' : ''} on WorkedWith
                     </p>
                   )}
                 </div>
@@ -387,19 +365,17 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
                 </p>
               </div>
             )}
-            {((verTier === 'phone_verified' || verTier === 'fully_verified') || effTier === 'pro' || effTier === 'standard' || confLabel || hiredAgain > 0 || endedLabel || insurance) && (
+            {((verTier === 'phone_verified' || verTier === 'fully_verified') || confLabel || hiredAgain > 0 || endedLabel || insurance) && (
               <ul className="mt-4 space-y-2.5 border-t border-gray-100 pt-4">
                 {(verTier === 'phone_verified' || verTier === 'fully_verified') && (
                   <TrustTick>Phone number checked</TrustTick>
                 )}
-                {verTier === 'fully_verified' && <TrustTick title="WorkedWith has checked their photo ID and a live selfie.">ID verified</TrustTick>}
+                {verTier === 'fully_verified' && <TrustTick title="WorkedWith has checked their photo ID and a live selfie.">ID checked</TrustTick>}
                 {insurance && (
                   <TrustTick title={INSURANCE_TOOLTIP}>
                     Insured to {coverLabel(insurance.cover_amount_gbp)} until {monthYear(insurance.expires_on)}
                   </TrustTick>
                 )}
-                {effTier === 'pro' && <TrustTick amber title="On a WorkedWith Pro plan.">Pro member</TrustTick>}
-                {effTier === 'standard' && <TrustTick amber title="On a WorkedWith Standard plan.">Member</TrustTick>}
                 {hiredAgain > 0 && (
                   <TrustTick title="Clients who have hired this trade for more than one job, at least two weeks apart.">
                     Hired again by {hiredAgain} client{hiredAgain === 1 ? '' : 's'}
@@ -485,20 +461,6 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
                   </div>
                 )
               })()}
-            </section>
-          )}
-
-          {/* ── Job link ──────────────────────────────────────── */}
-          {!isOwner && !preview && !(tradeProfile.job_link_paused as boolean | null) && (
-            <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-              <h2 className="text-base font-bold text-brand-navy">Had a job done by {displayName}?</h2>
-              <p className="mt-1 text-sm text-gray-600">Log it here. Once {displayName} confirms, you can both leave a review.</p>
-              <a
-                href={`/t/${slug}/job`}
-                className="mt-3 inline-flex min-h-[44px] items-center rounded-xl border-2 border-brand-navy px-5 text-sm font-semibold text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
-              >
-                Log a job with {displayName}
-              </a>
             </section>
           )}
 
@@ -611,7 +573,7 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
           )}
 
           {/* ── Photos ───────────────────────────────────────── */}
-          {isOwner && <OwnerPhotosPanel tier={effTier} galleryCount={ownGalleryCount ?? 0} />}
+          {isOwner && <OwnerPhotosPanel galleryCount={ownGalleryCount ?? 0} />}
           <GallerySection images={galleryImages} supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''} />
 
           {/* ── Featured work ────────────────────────────────── */}
@@ -648,50 +610,25 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
         </div>
       </main>
       {/* ── Contact bar ───────────────────────────────────── */}
-      {hasContactBar && (
-        <div className={preview ? 'mx-auto max-w-2xl px-4 pb-6 sm:px-6' : 'fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white shadow-[0_-4px_16px_rgba(15,31,61,0.08)]'}>
-          <div className={preview ? 'flex gap-3' : 'mx-auto flex max-w-2xl gap-3 px-4 pb-5 pt-3 sm:px-6'}>
-            {currentUser ? (
-              <>
-                {contactPhone && (
-                  <TrackedContactLink
-                    href={`tel:${contactPhone.replace(/\s+/g, '')}`}
-                    kind="call"
-                    tradeProfileId={tradeProfileId}
-                    searchId={searchId}
-                    className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl bg-brand-amber px-4 text-[15px] font-bold text-brand-navy hover:bg-amber-400 transition-colors"
-                  >
-                    Call
-                  </TrackedContactLink>
-                )}
-                {contactEmail && (
-                  <TrackedContactLink
-                    href={mailtoHref}
-                    kind="email"
-                    tradeProfileId={tradeProfileId}
-                    searchId={searchId}
-                    className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl border-2 border-brand-navy px-4 text-[15px] font-bold text-brand-navy hover:bg-gray-50 transition-colors"
-                  >
-                    Email
-                  </TrackedContactLink>
-                )}
-              </>
-            ) : (
-              <>
-                <a
-                  href="/join/client"
-                  className="inline-flex min-h-[48px] flex-[2] items-center justify-center rounded-xl bg-brand-amber px-4 text-[15px] font-bold text-brand-navy hover:bg-amber-400 transition-colors"
-                >
-                  Sign up free to get in touch
-                </a>
-                <a
-                  href="/sign-in"
-                  className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-xl border-2 border-brand-navy px-4 text-[15px] font-bold text-brand-navy hover:bg-gray-50 transition-colors"
-                >
-                  Sign in
-                </a>
-              </>
-            )}
+      {!isOwner && (businessEmail || contactPhone || !currentUser) && (
+        <div className={preview ? 'mx-auto max-w-2xl px-4 pb-6 sm:px-6' : `fixed inset-x-0 ${currentUser ? 'bottom-14 sm:bottom-0' : 'bottom-0'} z-30 border-t border-gray-200 bg-white shadow-[0_-4px_16px_rgba(15,31,61,0.08)]`}>
+          <div className={preview ? 'flex gap-3' : 'mx-auto flex max-w-2xl items-start gap-3 px-4 pb-5 pt-3 sm:px-6'}>
+            {businessEmail && <EmailNowButton tradeProfileId={tradeProfileId} businessName={displayName} profileUrl={profileUrl} />}
+            {contactPhone ? (
+              <TrackedContactLink
+                href={`tel:${contactPhone.replace(/\s+/g, '')}`}
+                kind="call"
+                tradeProfileId={tradeProfileId}
+                searchId={searchId}
+                className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl border-2 border-brand-navy px-4 text-[15px] font-bold text-brand-navy hover:bg-gray-50"
+              >
+                Call
+              </TrackedContactLink>
+            ) : !currentUser ? (
+              <a href={`/sign-in?next=/t/${slug}`} className="inline-flex min-h-[48px] flex-1 items-center justify-center rounded-xl border-2 border-brand-navy px-4 text-sm font-semibold text-brand-navy hover:bg-gray-50">
+                Sign in to see their phone
+              </a>
+            ) : null}
           </div>
         </div>
       )}

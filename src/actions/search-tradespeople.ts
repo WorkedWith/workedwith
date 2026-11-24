@@ -2,13 +2,14 @@
 
 import { confirmationLabel } from '@/lib/request-outcomes'
 import { getActiveInsurance } from '@/lib/insurance'
-import { getEffectiveTiers } from '@/lib/tier'
+import { getActivePlans, isOnPaidPlan } from '@/lib/plan'
+import { paidJobCounts } from '@/lib/profile-activity'
 import { categoryMean, weightedScore, type CategoryAverages } from '@/lib/ranking/weighted'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { logSearchEvent, roleFromUserType, type ViewerRole } from '@/lib/search-analytics'
 import { SPECIALISMS } from '@/lib/trade-types'
-import type { SubscriptionTier, VerificationTier, SeededProfile } from '@/types/database'
+import type { VerificationTier, SeededProfile } from '@/types/database'
 
 const UK_POSTCODE_RE = /^[A-Z]{1,2}\d[A-Z0-9]?\s?\d[A-Z]{2}$/i
 
@@ -36,11 +37,16 @@ export type TradesearchResult = {
   average_rating: number
   total_reviews: number
   total_jobs: number
-  subscription_tier: SubscriptionTier
+  /** On the paid plan and boosting this district, in a district where admin has switched boosts on */
+  boosted_here: boolean
+  /** True only for the copy shown in the labelled Boosted band at the top */
+  in_boosted_band?: boolean
   verification_tier: VerificationTier
   confirmation_label: string | null
   hired_again_count: number
   insured: boolean
+  paid_jobs: number
+  member_since: string
   is_seeded?: false
 }
 
@@ -104,32 +110,45 @@ export async function searchTradespeople(
 
   const admin = createAdminClient()
 
-  // Fetch real trade profiles. Every tier appears in search (PRD 5.2/5.3);
-  // subscription only affects boosted placement, not whether a trade is listed.
-  const { data: rawProfiles } = await admin
+  // Every trade with an active trial or plan is listed; lapsed trades are hidden (PRD 15).
+  const { data: rawListed } = await admin
     .from('trade_profiles')
-    .select('id, user_id, trade_types, company_name, operating_areas, boosted_districts, public_slug, average_rating, total_reviews, total_jobs, subscription_tier, confirmation_counted, confirmation_confirmed, hired_again_count')
+    .select('id, user_id, trade_types, company_name, operating_areas, boosted_districts, public_slug, average_rating, total_reviews, total_jobs, subscription_status, trial_ends_at, confirmation_counted, confirmation_confirmed, hired_again_count')
     .contains('trade_types', [tradeType])
     .contains('operating_areas', [district])
+  const plans = await getActivePlans(
+    admin,
+    (rawListed ?? []).map(p => ({
+      user_id: p.user_id as string,
+      subscription_status: p.subscription_status as string,
+      trial_ends_at: p.trial_ends_at as string | null,
+    })),
+  )
+  const rawProfiles = (rawListed ?? []).filter(p => plans.get(p.user_id as string))
+
+  // Boosts only count where admin has switched them on for this district (PRD 15)
+  const { data: boostSetting } = await admin
+    .from('boost_district_settings')
+    .select('boosts_enabled')
+    .eq('district', district)
+    .maybeSingle()
+  const boostsOn = Boolean(boostSetting?.boosts_enabled)
 
   // Build real results
   let realResults: TradesearchResult[] = []
 
   if (rawProfiles && rawProfiles.length > 0) {
     const userIds = rawProfiles.map(p => p.user_id as string)
-    const effectiveTiers = await getEffectiveTiers(
-      admin,
-      rawProfiles.map(p => ({ user_id: p.user_id as string, subscription_tier: p.subscription_tier as string | null })),
-    )
     const { data: rawUsers } = await admin
       .from('users')
-      .select('id, full_name, verification_tier, profile_photo_url')
+      .select('id, full_name, verification_tier, profile_photo_url, created_at')
       .in('id', userIds)
 
     const userMap = new Map(
       (rawUsers ?? []).map(u => [u.id as string, u])
     )
 
+    const paidJobs = await paidJobCounts(admin, rawProfiles.map(p => p.user_id as string))
     const insuredIds = new Set((await getActiveInsurance(admin, rawProfiles.map(p => p.id as string))).keys())
 
     for (const profile of rawProfiles) {
@@ -148,18 +167,22 @@ export async function searchTradespeople(
         average_rating: (profile.average_rating as number) ?? 0,
         total_reviews: (profile.total_reviews as number) ?? 0,
         total_jobs: (profile.total_jobs as number) ?? 0,
-        subscription_tier: effectiveTiers.get(profile.user_id as string) ?? 'free',
+        boosted_here:
+          boostsOn &&
+          ((profile.boosted_districts as string[] | null) ?? []).includes(district) &&
+          isOnPaidPlan({ subscription_status: profile.subscription_status as string, trial_ends_at: profile.trial_ends_at as string | null }),
         verification_tier: user.verification_tier as VerificationTier,
         hired_again_count: (profile.hired_again_count as number | null) ?? 0,
         insured: insuredIds.has(profile.id as string),
+        paid_jobs: paidJobs.get(profile.user_id as string) ?? 0,
+        member_since: user.created_at as string,
         confirmation_label: confirmationLabel(profile.confirmation_counted as number | null, profile.confirmation_confirmed as number | null),
       })
     }
 
-    // Two bands. Boosted Pro first, rotated at random. Everyone else ranked by a confidence
-    // weighted score (never shown), so a couple of friendly reviews do not beat a long record.
-    const isBoostedHere = (r: TradesearchResult) =>
-      r.subscription_tier === 'pro' && r.boosted_districts.includes(district)
+    // Two bands. The labelled Boosted band first, rotated at random. Then everyone, boosted trades
+    // included in their normal place, ranked by a confidence weighted score (never shown).
+    const isBoostedHere = (r: TradesearchResult) => r.boosted_here
 
     const { data: rawAverages } = await admin.from('category_rating_averages').select('trade_type, avg_rating, review_count')
     const averages: CategoryAverages = new Map(
@@ -182,20 +205,19 @@ export async function searchTradespeople(
     }
 
     const score = (r: TradesearchResult) => (r.total_reviews > 0 ? weightedScore(r.average_rating, r.total_reviews, m) : m)
-    const standardResults = realResults
-      .filter(r => !isBoostedHere(r))
+    const standardResults = [...realResults]
       .sort((a, b) =>
         score(b) - score(a) ||
         b.total_jobs - a.total_jobs ||
         (latestJob.get(b.id) ?? 0) - (latestJob.get(a.id) ?? 0))
-    const boostedResults = shuffleArray(realResults.filter(isBoostedHere))
-    realResults = [...boostedResults, ...standardResults].slice(0, 20)
+    const boostedResults = shuffleArray(realResults.filter(isBoostedHere)).map(r => ({ ...r, in_boosted_band: true }))
+    realResults = [...boostedResults, ...standardResults.slice(0, 20)]
   }
 
   // Fire-and-forget search appearance log for real results
   if (realResults.length > 0) {
     admin.from('search_appearances').insert(
-      realResults.map(r => ({
+      realResults.filter(r => !r.in_boosted_band).map(r => ({
         trade_profile_id: r.id,
         search_postcode: postcode,
         search_trade_type: tradeType,
@@ -208,8 +230,9 @@ export async function searchTradespeople(
   // They never appear above a real result and are capped so real + seeded <= 3.
   let seededResults: SeededSearchResult[] = []
 
-  if (realResults.length < DENSITY_THRESHOLD) {
-    const seededSlots = DENSITY_THRESHOLD - realResults.length
+  const realCount = realResults.filter(r => !r.in_boosted_band).length
+  if (realCount < DENSITY_THRESHOLD) {
+    const seededSlots = DENSITY_THRESHOLD - realCount
     const { data: rawSeeded } = await admin
       .from('seeded_profiles')
       .select('id, slug, business_name, trade_category, trade_categories, operating_areas')
@@ -245,8 +268,8 @@ export async function searchTradespeople(
   } catch { /* treat as logged out */ }
   const searchId = await logSearchEvent(admin, {
     district, tradeType, userId: viewerId, role,
-    real: realResults.length, seeded: seededResults.length,
-    boosted: realResults.filter(r => r.subscription_tier === 'pro' && r.boosted_districts.includes(district)).length,
+    real: realCount, seeded: seededResults.length,
+    boosted: realResults.filter(r => r.in_boosted_band).length,
   })
 
   return { success: true, results: realResults, seededResults, district, searchId }

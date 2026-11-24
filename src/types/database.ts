@@ -1,3 +1,5 @@
+import type { V42Tables } from './v42'
+
 // ── Scalar types ──────────────────────────────────────────────
 
 export type UserType = 'trade' | 'client_individual' | 'client_business' | 'both'
@@ -6,6 +8,7 @@ export type VerificationTier = 'unverified' | 'phone_verified' | 'fully_verified
 export type IdVerificationStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected'
 export type SubscriptionTier = 'free' | 'standard' | 'pro'
 export type BillingPeriod = 'monthly' | 'annual'
+export type SubscriptionStatus = 'trialing' | 'active' | 'lapsed' | 'cancelled'
 
 // ── Row interfaces ────────────────────────────────────────────
 
@@ -30,6 +33,7 @@ export interface User {
   organisation_id: string | null
   is_admin: boolean
   profile_photo_url: string | null
+  closed_at?: string | null
 }
 
 export interface TradeProfile {
@@ -61,13 +65,36 @@ export interface TradeProfile {
   hired_again_count: number
   ended_early_count: number
   job_link_paused: boolean
+  trial_started_at: string | null
+  trial_ends_at: string | null
+  subscription_status: SubscriptionStatus
+  trial_reminder_23_sent_at: string | null
+  trial_reminder_28_sent_at: string | null
+  trial_reminder_30_sent_at: string | null
+  // v4.2 business details (phase 1)
+  trading_address: string | null
+  business_email: string | null
+  business_phone: string | null
+  reply_email: string | null
+  vat_number: string | null
+  logo_path: string | null
+  extra_terms: string | null
+  invoice_prefix: string | null
+  next_invoice_number: number
+  default_deposit_for: 'materials' | 'labour' | 'materials_and_labour' | null
+  default_deposit_refundable: boolean
+  default_non_refundable_from: 'materials_ordered' | 'work_started' | 'payment' | null
+  payment_terms_days: number
+  part_payments_enabled: boolean
+  next_credit_note_number: number
+  closed_at: string | null
   created_at: string
 }
 
 export interface ClientProfile {
   id: string
   user_id: string
-  postcode: string
+  postcode: string | null
   display_name: string | null
   username: string | null
   client_type: ClientType | null
@@ -84,6 +111,8 @@ export interface ClientProfile {
   confirmation_counted: number
   confirmation_confirmed: number
   ended_early_count: number
+  closed_at: string | null
+  client_type_confirmed_at: string | null
   created_at: string
 }
 
@@ -152,6 +181,11 @@ export type JobStatus =
   | 'disputed'
   | 'cancelled'
   | 'ended_early'
+  // v4.2
+  | 'quoted'
+  | 'booked'
+  | 'in_progress'
+  | 'paid'
 
 export type JobInitiatedBy = 'trade' | 'client'
 
@@ -182,6 +216,33 @@ export interface Job {
   outcome_disputed: boolean
   outcome_disputed_at: string | null
   last_stale_prompt_at: string | null
+  // v4.2 (flow = 'quote')
+  flow: 'legacy' | 'quote'
+  trade_user_id: string | null
+  client_user_id: string | null
+  title: string | null
+  job_address: string | null
+  source: 'own_customer' | 'directory'
+  current_quote_id: string | null
+  client_type_at_acceptance: 'person' | 'company' | null
+  agreed_start_date: string | null
+  materials_ordered_at: string | null
+  materials_order_evidence_path: string | null
+  cancellation_period_ends_at: string | null
+  early_start_consent_at: string | null
+  early_start_consent_by_user_id: string | null
+  cancelled_at: string | null
+  cancelled_by_user_id: string | null
+  cancellation_reason: string | null
+  deposit_outcome: 'refund_due' | 'refunded' | 'retained' | null
+  made_to_measure_confirmed: boolean | null
+  total_pence: number | null
+  booked_at: string | null
+  retain_until: string | null
+  early_start_requested_at: string | null
+  chasing_paused: boolean
+  chasing_stopped: boolean
+  anonymised_at: string | null
   created_at: string
   updated_at: string
 }
@@ -298,6 +359,11 @@ export interface ReviewWindow {
   reminder_7_sent_at: string | null
   reminder_14_sent_at: string | null
   both_submitted_at: string | null
+  flow: 'legacy' | 'quote'
+  opened_reason: 'paid' | 'overdue_30_days' | 'cancelled_after_start' | null
+  closed_at: string | null
+  reminder_3_sent_at: string | null
+  reminder_10_sent_at: string | null
 }
 
 export type ReviewerType = 'trade' | 'client'
@@ -336,6 +402,9 @@ export interface Review {
   dispute_status: DisputeStatus
   response_text: string | null
   response_submitted_at: string | null
+  label: 'paid_job' | 'unpaid' | 'ended_early' | null
+  published_at: string | null
+  updated_at: string | null
   created_at: string
 }
 
@@ -421,6 +490,16 @@ export type NotificationType =
   | 'subscription_updated'
   | 'red_flag_received'
   | 'job_invite'
+  // v4.2
+  | 'boost_slot_free'
+  | 'quote'
+  | 'job'
+  | 'stage'
+  | 'payment'
+  | 'variation'
+  | 'connection'
+  | 'account'
+  | 'review'
 
 export interface Notification {
   id: string
@@ -564,7 +643,7 @@ export interface PhotoReport {
 }
 
 // ── Admin plan grants (PRD v3.8 item 6) ──────────────────────
-export type TierGrantTier = 'standard' | 'pro'
+export type TierGrantTier = 'plan'
 export type TierGrantReason = 'founding' | 'goodwill' | 'partnership' | 'other'
 export type TierGrantEndReason = 'expired' | 'ended_early' | 'superseded'
 export type TierGrantAction = 'created' | 'extended' | 'tier_changed' | 'ended_early' | 'expired' | 'superseded'
@@ -644,6 +723,11 @@ export interface SeededProfile {
   source: 'admin' | 'client_added'
   added_by_client_id: string | null
   public_reference_url: string | null
+  companies_house_number: string | null
+  companies_house_status: string | null
+  company_type: string | null
+  incorporated_on: string | null
+  companies_house_checked_at: string | null
 }
 
 export type ListingSubmissionStatus = 'pending' | 'approved' | 'rejected' | 'merged'
@@ -680,7 +764,7 @@ type WithIndex<T> = T & Record<string, unknown>
 
 export interface Database {
   public: {
-    Tables: {
+    Tables: V42Tables & {
       users: {
         Row: WithIndex<User>
         Insert: Omit<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated' | 'is_admin'> & Partial<Pick<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated' | 'is_admin'>>
@@ -689,13 +773,13 @@ export interface Database {
       }
       trade_profiles: {
         Row: WithIndex<TradeProfile>
-        Insert: Omit<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'job_link_paused' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'job_link_paused' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
+        Insert: Pick<TradeProfile, 'user_id' | 'public_slug'> & Partial<TradeProfile>
         Update: Partial<TradeProfile>
         Relationships: []
       }
       client_profiles: {
         Row: WithIndex<ClientProfile>
-        Insert: Omit<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'ended_early_count' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'> & Partial<Pick<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'ended_early_count' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'>>
+        Insert: Pick<ClientProfile, 'user_id'> & Partial<ClientProfile>
         Update: Partial<ClientProfile>
         Relationships: []
       }
@@ -963,6 +1047,8 @@ export interface Database {
       rollup_old_search_events: { Args: Record<string, never>; Returns: number }
       refresh_hired_again: { Args: { p_trade: string }; Returns: undefined }
       refresh_all_confirmation_stats: { Args: Record<string, never>; Returns: undefined }
+      allocate_invoice_number: { Args: { p_trade: string }; Returns: { seq: number; prefix: string }[] }
+      allocate_credit_note_number: { Args: { p_trade: string }; Returns: { seq: number; prefix: string }[] }
     }
   }
 }

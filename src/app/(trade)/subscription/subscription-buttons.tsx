@@ -1,116 +1,51 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createCheckoutSession, type CheckoutTier, type CheckoutPeriod } from '@/actions/create-checkout-session'
+import { createCheckoutSession } from '@/actions/create-checkout-session'
 import { createPortalSession } from '@/actions/manage-subscription'
-import type { SubscriptionTier } from '@/types/database'
 
-// ── Upgrade button ────────────────────────────────────────────
-
-export function UpgradeButton({
-  tier,
-  period,
-  label,
-  className,
-}: {
-  tier: CheckoutTier
-  period: CheckoutPeriod
-  label: string
-  className?: string
-}) {
+function useRedirectAction(action: () => Promise<{ url: string } | { error: string }>) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-
-  function handleClick() {
+  function run() {
     setError(null)
     startTransition(async () => {
-      const result = await createCheckoutSession(tier, period)
-      if ('url' in result) {
-        window.location.href = result.url
-      } else {
-        setError(result.error)
-      }
+      const result = await action()
+      if ('url' in result) window.location.href = result.url
+      else setError(result.error)
     })
   }
+  return { isPending, error, run }
+}
 
+export function AddCardButton({ label = 'Add a card' }: { label?: string }) {
+  const { isPending, error, run } = useRedirectAction(createCheckoutSession)
   return (
     <div>
       <button
-        onClick={handleClick}
+        onClick={run}
         disabled={isPending}
-        className={`${className ?? 'w-full rounded-lg bg-brand-amber px-4 py-3 text-base font-semibold text-brand-navy transition-opacity hover:opacity-90'} disabled:opacity-40 disabled:cursor-not-allowed`}
+        className="min-h-[48px] w-full rounded-xl bg-brand-amber px-4 text-base font-semibold text-brand-navy hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-8"
       >
-        {isPending ? 'Redirecting…' : label}
+        {isPending ? 'Opening Stripe…' : label}
       </button>
-      {error && <p className="mt-2 text-xs text-red-600 text-center">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
   )
 }
 
-// ── Manage subscription button ────────────────────────────────
-
-export function ManageButton({ currentTier }: { currentTier: SubscriptionTier }) {
-  const [isPending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
-
-  function handleClick() {
-    setError(null)
-    startTransition(async () => {
-      const result = await createPortalSession()
-      if ('url' in result) {
-        window.location.href = result.url
-      } else {
-        setError(result.error)
-      }
-    })
-  }
-
-  const label = currentTier === 'pro' ? 'Pro' : 'Standard'
-
+export function ManageButton() {
+  const { isPending, error, run } = useRedirectAction(createPortalSession)
   return (
     <div>
       <button
-        onClick={handleClick}
+        onClick={run}
         disabled={isPending}
-        className="w-full rounded-lg border-2 border-brand-navy px-4 py-3 text-base font-semibold text-brand-navy
-          transition-opacity hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="min-h-[48px] w-full rounded-xl border-2 border-brand-navy px-4 text-base font-semibold text-brand-navy hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:px-8"
       >
-        {isPending ? 'Opening portal…' : `Manage ${label} subscription`}
+        {isPending ? 'Opening Stripe…' : 'Manage billing'}
       </button>
-      {error && <p className="mt-2 text-xs text-red-600 text-center">{error}</p>}
-    </div>
-  )
-}
-
-// ── Downgrade button (opens the same secure Stripe page) ──────
-
-export function DowngradeButton({ label }: { label: string }) {
-  const [isPending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
-
-  function handleClick() {
-    setError(null)
-    startTransition(async () => {
-      const result = await createPortalSession()
-      if ('url' in result) {
-        window.location.href = result.url
-      } else {
-        setError(result.error)
-      }
-    })
-  }
-
-  return (
-    <div>
-      <button
-        onClick={handleClick}
-        disabled={isPending}
-        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-700
-          transition-colors hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        {isPending ? 'Opening…' : label}
-      </button>
-      {error && <p className="mt-2 text-xs text-red-600 text-center">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
   )
 }
