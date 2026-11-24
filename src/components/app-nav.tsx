@@ -13,7 +13,7 @@ export function AppNav({ links }: { links: NavLink[] }) {
   const pathname = usePathname() ?? ''
   return (
     <nav aria-label="Main" className="border-t border-white/10">
-      <div className="mx-auto flex max-w-3xl justify-center gap-0 overflow-x-auto px-2 sm:gap-1 sm:px-4">
+      <div className="mx-auto flex max-w-5xl justify-center gap-0 overflow-x-auto px-2 sm:gap-1 sm:px-4">
         {links.map(link => {
           const active = isActive(pathname, link.href)
           return (

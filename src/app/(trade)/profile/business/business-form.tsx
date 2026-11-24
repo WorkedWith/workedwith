@@ -100,7 +100,7 @@ export function BusinessForm({ initial, prefixLocked }: { initial: BusinessDetai
 
       <ErrorText>{error}</ErrorText>
       {saved && <Notice tone="green">Saved.</Notice>}
-      <div className="sticky bottom-16 z-10 bg-gray-50/95 py-2 lg:bottom-0">
+      <div className="sticky bottom-16 z-10 bg-gray-50/95 py-2 sm:bottom-0">
         <Button type="submit" full disabled={pending}>{pending ? 'Saving…' : 'Save details'}</Button>
       </div>
     </form>

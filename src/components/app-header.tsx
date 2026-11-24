@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { UserMenu } from '@/components/user-menu'
 import { AppNav, type NavLink } from '@/components/app-nav'
+import { BottomTabBar } from '@/components/bottom-tab-bar'
 
 function linksFor(userType: string | null): NavLink[] {
   if (userType === 'trade' || userType === 'both') {
@@ -37,7 +38,7 @@ export async function AppHeader() {
 
   return (
     <header className="sticky top-0 z-40 bg-brand-navy">
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
         <a href="/dashboard" className="text-xl font-bold tracking-tight text-white">
           Worked<span className="text-brand-amber">With</span>
         </a>
@@ -46,7 +47,8 @@ export async function AppHeader() {
           <UserMenu />
         </div>
       </div>
-      {user && <AppNav links={linksFor(userType)} />}
+      {user && <div className="hidden sm:block"><AppNav links={linksFor(userType)} /></div>}
+      {user && <BottomTabBar links={linksFor(userType)} />}
     </header>
   )
 }

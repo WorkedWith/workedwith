@@ -24,6 +24,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 12 Seeded changes | Done | Listings live 90 days (existing ones extended), reminder emails at day 30, 60 and 80 that include the month's profile views and Email now clicks, then removal onto the do not reseed list; outreach only to active limited companies checked at Companies House (number added on the admin form), email only, opt out in every email; seeded profiles show Companies House status and trading since; claiming starts the 30 day trial, carries the listed email over as the business email, and lands on the set up steps |
 | 13 Optional cards | Done (mock); live needs Stripe Connect | Trades connect their own Stripe account (Stripe handles pricing, no application fee), switch cards on or off and set a card limit per payment; clients pay a due stage by card, Apple Pay or Google Pay (in full, or in parts of £10 or more) above which they see bank only; payments arrive by Connect webhook with Stripe's fee recorded for exports and sync; card refunds through Stripe with a credit note; chargebacks open automatically with a text and email to the trade, evidence is built from the job record and submitted with one tap, a reminder goes 3 days before the deadline, and a lost chargeback makes the stage due again and counts on the client's record |
 | 14 Record retention | Done | Accounts with WorkedWith jobs are closed instead of deleted: identity hashes blocked, reviews anonymised but kept, login removed (scrubbed email, banned), personal details scrubbed; a closing trade has the bank and accounting connections revoked, bank details deleted (issued invoices keep a frozen encrypted copy), cards off, plan cancelled, open quotes withdrawn and listing hidden. Daily retention sets a 6 year date on paid or cancelled jobs and then anonymises them (names, contacts, addresses, notes, photos and letters go; amounts, numbers and dates stay). Unanswered bank match suggestions are forgotten after 90 days. Accounts with no WorkedWith jobs still use the existing full delete |
+| 15 Home, navigation, polish, claim page | Done | New trade home (owed to you, overdue, awaiting approval, paid this month; a "Needs you" list of payments to confirm, start dates, stages you can request, issues, bank and accounting problems, chargebacks, deposit refunds and reviews to write; set up checklist; one New quote button; trial ending notice; client lookup and profile activity), bottom tab bar on phones with the top bar on larger screens, claim page selling the platform, and an admin Platform page (plans, rolling 12 month revenue against the VAT threshold, jobs needing attention, bank connection health and open banking usage, accounting sync by platform, review windows, seeded outreach, quotes sent, accepted and paid per week) |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -135,6 +136,9 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 14.3 | Anonymisation after 6 years keeps invoice numbers, amounts, VAT and dates, so totals in exports still add up; everything personal goes. | 11 |
 | 14.4 | Emails to a closed account's scrubbed `.invalid` address are never sent. | 11 |
 | 14.5 | The client's own copy: when a trade closes, the client still opens their jobs, invoices and receipts. When a client closes, their login is gone, so they keep no access; the trade keeps the job record with the name and address as quoted. | 11 |
+| 15.1 | The old dashboard code stays (hidden) behind `LEGACY_DASHBOARD=true`, so it can be compared before it is deleted. | 20 |
+| 15.2 | The bottom tab bar shows below 640px; at tablet width and up the links sit under the header. | 18 |
+| 15.3 | Open banking cost per trade uses `OPEN_BANKING_COST_PER_CONNECTION_PENCE` until the provider's price is known. Revenue comes from Stripe paid invoices, or an estimate from active subscribers if Stripe isn't set up. | 3, 18 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -192,6 +196,8 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 - `SAGE_CLIENT_ID`, `SAGE_CLIENT_SECRET`
 - `COMPANIES_HOUSE_MODE` (`mock` only for testing; leave unset in production)
 - `CARDS_MODE` (`mock` or `live`)
+- `OPEN_BANKING_COST_PER_CONNECTION_PENCE` (for the admin cost estimate)
+- `LEGACY_DASHBOARD` (leave unset)
 <!-- env -->
 
 **Commands**
@@ -302,5 +308,11 @@ supabase db push
 - As a client with a job, Account, Close my account: you are signed out, can't sign in again by text code, and the trade still sees the job and invoices with the name and address as quoted.
 - As a trade with jobs, close the account: the bank and accounting connections are gone, the listing is hidden, and the client can still open their invoices with the bank details as issued.
 - Set a paid job's `retain_until` in the past and run the cron: the quote shows "Removed" for the client, photos are deleted, amounts and invoice numbers remain.
+
+**Phase 15**
+- Sign in as a trade at 390px: the home shows the four figures, Needs you, the set up checklist and + New quote; the tab bar is at the bottom. At 1440px the links are in the top bar and the home is two columns.
+- Let a trial get within 7 days of ending: the home shows the notice.
+- Open a seeded claim link: the page explains the platform and the 30 day trial.
+- Admin, Platform: every box loads.
 
 <!-- tests -->

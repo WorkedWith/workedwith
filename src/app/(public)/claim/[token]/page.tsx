@@ -68,7 +68,7 @@ export default async function ClaimTokenPage({ params }: Props) {
           <span className="text-2xl font-bold text-white">Worked<span className="text-brand-amber">With</span></span>
           <h1 className="mt-8 text-xl font-bold text-white">This invite has expired</h1>
           <p className="mt-3 text-sm text-white/60">
-            This link was valid for 60 days and has now expired. Contact{' '}
+            This listing has reached the end of its 90 days and has been removed. Contact{' '}
             <a href="mailto:hello@workedwith.co.uk" className="text-brand-amber hover:underline">
               hello@workedwith.co.uk
             </a>{' '}
@@ -113,6 +113,19 @@ export default async function ClaimTokenPage({ params }: Props) {
             View public page /t/{profile.slug}
           </a>
         </div>
+
+        {/* What claiming gets them (PRD 16: the claim page sells the platform) */}
+        <section className="mt-6 rounded-2xl bg-white p-6">
+          <h2 className="text-lg font-bold text-brand-navy">Every job agreed. Every job paid.</h2>
+          <ul className="mt-3 space-y-2 text-sm text-gray-700">
+            <li>✓ Quotes from your phone that clients accept in their own account</li>
+            <li>✓ Extras approved before you do the work, so there are no arguments at the end</li>
+            <li>✓ Clients pay by bank transfer with no transaction fees, and invoices mark themselves paid</li>
+            <li>✓ Late payments chased automatically in your name</li>
+            <li>✓ A reputation built from real, paid jobs, and every client is reviewed too</li>
+          </ul>
+          <p className="mt-4 text-sm font-semibold text-brand-navy">Claim it to start your 30 day free trial. No card needed. Then £19.99 a month.</p>
+        </section>
 
         {/* Claim / remove form */}
         <div className="mt-6">

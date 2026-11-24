@@ -110,7 +110,7 @@ export function QuoteBuilder({ initial, businessName, vatRegistered, savedItems,
         </>
       )}
 
-      <div className="sticky bottom-16 z-20 -mx-4 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border lg:bottom-4">
+      <div className="sticky bottom-16 z-20 sm:bottom-4 -mx-4 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border ">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs text-gray-500">Total</p>

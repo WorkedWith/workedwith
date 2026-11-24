@@ -611,7 +611,7 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
       </main>
       {/* ── Contact bar ───────────────────────────────────── */}
       {!isOwner && (businessEmail || contactPhone || !currentUser) && (
-        <div className={preview ? 'mx-auto max-w-2xl px-4 pb-6 sm:px-6' : 'fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white shadow-[0_-4px_16px_rgba(15,31,61,0.08)]'}>
+        <div className={preview ? 'mx-auto max-w-2xl px-4 pb-6 sm:px-6' : `fixed inset-x-0 ${currentUser ? 'bottom-14 sm:bottom-0' : 'bottom-0'} z-30 border-t border-gray-200 bg-white shadow-[0_-4px_16px_rgba(15,31,61,0.08)]`}>
           <div className={preview ? 'flex gap-3' : 'mx-auto flex max-w-2xl items-start gap-3 px-4 pb-5 pt-3 sm:px-6'}>
             {businessEmail && <EmailNowButton tradeProfileId={tradeProfileId} businessName={displayName} profileUrl={profileUrl} />}
             {contactPhone ? (

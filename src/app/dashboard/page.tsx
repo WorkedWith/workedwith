@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { AppHeader } from '@/components/app-header'
+import { TradeHome } from '@/components/home/trade-home'
 import { UsernameCard } from '@/components/username-card'
 import { getJobHistory } from '@/actions/get-job-history'
 import { getTradeRequests } from '@/actions/get-trade-requests'
@@ -41,8 +42,19 @@ export default async function DashboardPage() {
   const isTrade = user_type === 'trade' || user_type === 'both'
   const isBoth = user_type === 'both'
   const isClient = isBoth || !isTrade
-  // Clients live in My jobs now (PRD 18). The old client dashboard below is kept until it is deleted.
+  // Clients live in My jobs now (PRD 18). The old dashboard below is kept until it is deleted.
   if (!isTrade) redirect('/my/jobs')
+  // The new trade home (PRD 18). LEGACY_DASHBOARD=true shows the old screen below, kept until deleted.
+  if (process.env.LEGACY_DASHBOARD !== 'true') {
+    const { data: tpRow } = await admin.from('trade_profiles').select('id').eq('user_id', user.id).maybeSingle()
+    if (!tpRow) redirect('/onboarding/trade')
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <AppHeader />
+        <TradeHome userId={user.id} firstName={full_name.split(' ')[0] ?? ''} tradeProfileId={tpRow.id as string} />
+      </div>
+    )
+  }
   const firstName = full_name.split(' ')[0]
 
   const [
