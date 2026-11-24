@@ -20,7 +20,14 @@ const RETURN_MESSAGES: Record<string, { tone: 'green' | 'amber' | 'red'; text: s
   wrong_account: { tone: 'red', text: 'That bank account is not the one on your invoices. Connect the account clients pay into.' },
 }
 
-export default async function GettingPaidPage({ searchParams }: { searchParams: { bank?: string } }) {
+const ACCOUNTING_MESSAGES: Record<string, { tone: 'green' | 'amber' | 'red'; text: string }> = {
+  connected: { tone: 'green', text: 'Accounting software connected. New invoices and payments will be sent automatically.' },
+  cancelled: { tone: 'amber', text: 'You did not finish connecting your accounting software.' },
+  expired: { tone: 'amber', text: 'That link has expired. Please try again.' },
+  failed: { tone: 'red', text: 'We could not connect your accounting software. Please try again.' },
+}
+
+export default async function GettingPaidPage({ searchParams }: { searchParams: { bank?: string; accounting?: string } }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/sign-in')
@@ -29,7 +36,7 @@ export default async function GettingPaidPage({ searchParams }: { searchParams: 
   if (!tp) redirect('/onboarding/trade')
 
   const bank = await getBankAccountSummary(admin, user.id)
-  const message = searchParams.bank ? RETURN_MESSAGES[searchParams.bank] : undefined
+  const message = searchParams.bank ? RETURN_MESSAGES[searchParams.bank] : searchParams.accounting ? ACCOUNTING_MESSAGES[searchParams.accounting] : undefined
 
   return (
     <PageShell>

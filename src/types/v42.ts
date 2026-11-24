@@ -359,7 +359,53 @@ export interface ClientRecordView { id: string; trade_id: string; client_id: str
 export interface ProfileContactClick { id: string; trade_profile_id: string | null; seeded_profile_id: string | null; kind: 'email_now' | 'call'; viewer_role: string | null; created_at: string }
 export interface SeededProfileView { id: string; seeded_profile_id: string; created_at: string }
 
+// ── Phase 11: accounting ─────────────────────────────────────
+
+export type AccountingPlatform = 'xero' | 'quickbooks' | 'freeagent' | 'sage'
+export type SyncEntity = 'contact' | 'invoice' | 'payment' | 'credit_note' | 'refund'
+
+export interface AccountingConnection {
+  id: string
+  trade_id: string
+  platform: AccountingPlatform
+  external_org_id: string | null
+  external_org_name: string | null
+  tokens_encrypted: string | null
+  token_expires_at: string | null
+  sales_account_code: string | null
+  payment_account_id: string | null
+  vat_mapping: Record<string, string> | null
+  sync_from: string | null
+  status: 'setup' | 'connected' | 'expired' | 'revoked' | 'error'
+  connected_at: string | null
+  expired_notified_at: string | null
+  setup_options: { sales: { id: string; code: string | null; name: string }[]; bank: { id: string; code: string | null; name: string }[]; defaultSales: string | null; defaultBank: string | null } | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AccountingConnectState { state: string; trade_id: string; platform: string; created_at: string; used_at: string | null }
+
+export interface AccountingSyncItem {
+  id: string
+  connection_id: string
+  trade_id: string
+  entity_type: SyncEntity
+  entity_id: string
+  external_id: string | null
+  status: 'pending' | 'synced' | 'failed'
+  attempts: number
+  last_error: string | null
+  first_attempt_at: string | null
+  next_attempt_at: string
+  synced_at: string | null
+  created_at: string
+}
+
 export type V42Tables = {
+  accounting_connections: TableDef<AccountingConnection, 'trade_id' | 'platform'>
+  accounting_connect_states: TableDef<AccountingConnectState, 'state' | 'trade_id' | 'platform'>
+  accounting_sync_items: TableDef<AccountingSyncItem, 'connection_id' | 'trade_id' | 'entity_type' | 'entity_id'>
   profile_contact_clicks: TableDef<ProfileContactClick, never>
   seeded_profile_views: TableDef<SeededProfileView, 'seeded_profile_id'>
   review_photos: TableDef<ReviewPhoto, 'review_id' | 'path'>

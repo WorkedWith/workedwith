@@ -20,6 +20,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 8 Chasing, letters and claim pack | Done | Daily chasing on every due stage (2 days before, due date, 3, 7 and 14 days late) by text and email in the trade's name with the bank details and reference, a 21 day prompt to the trade, the review window at 30 days, overdue status, "I've paid" pause of 3 working days, pause, resume and stop per job, letter before action (person: 30 days with information sheet and reply form; company: 14 days with optional statutory interest and fixed compensation) previewed and sent with one tap, readable by the client, and a claim pack PDF with the Money Claim Online figures, terms, acceptance record, events, variations, stages with photos, issues, payments, reminders and all invoices |
 | 9 Reviews and client records | Done | Review windows open on full payment, 30 days overdue, or cancellation after work started; 14 days for both sides with reminders at day 3 and 10; hidden until both submit or the window ends, then published together (a single review publishes alone at the close); edit until then, then locked; up to 5 photos; labels Paid job, Unpaid (updates to Paid job if later paid) and Ended early; responses and disputes reuse the existing routes. Client record with a good payer summary, payment figures, reviews from trades with photos, labels and red flags, shown to quoting trades (open, or within 12 months) and on lookup by exact email or mobile (20 a day, logged), and to the client on My record. Username lookup and /c pages removed |
 | 10 Directory and profiles | Done | Email now on member and seeded profiles (address put together in the browser on tap, then shown as text; rate limited per visitor; clicks counted), phone for signed in members only, paid jobs on WorkedWith and member since on cards and profiles, featured jobs only from paid WorkedWith jobs with an automatic title (job type, month, district), Log a job removed, profile activity (views and Email now clicks, 30 and 90 days) for every trade, seeded profiles labelled "Not yet on WorkedWith. No reviews yet." with view tracking |
+| 11 Accounting integrations | Done (mock); real adapters need keys | One internal interface (connect, refresh, contact, invoice, payment, credit note, refund, disconnect) with a working mock and adapters for Xero, QuickBooks, FreeAgent and Sage written to their public APIs. Connect from Getting paid, confirm sales account, bank account, VAT and whether to send existing invoices. Invoices, payments (paid elsewhere once the client confirms), credit notes and refunds queue automatically, retry for 24 hours, then show as failed with a retry button. Expired connections pause sync and catch up on reconnect; lapsed plans pause sync. Sync status shows on each invoice |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -111,6 +112,11 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 10.3 | The phone shown to signed in members is the business phone from Business details, falling back to the verified mobile. | 15 |
 | 10.4 | Featured job titles are generated from the job (type, month paid, postcode district taken from the job address), so a client's name or address can't appear. Older featured jobs not linked to a paid WorkedWith job are kept but hidden. | 15 |
 | 10.5 | The v3.7 confirmation rate and v3.9 ended early labels are hidden on profiles and cards (the code stays). Hired again and Insured stay. | 23 |
+| 11.1 | Listing the trade's accounts once at set up (so they can pick the sales and bank accounts) is the only read we do. Nothing else is ever read, changed or deleted. | 12 |
+| 11.2 | `ACCOUNTING_MODE=mock` (the default) uses the mock for all four platforms. A client name containing "fail" makes the mock fail, to try the retry screens. `ACCOUNTING_MODE=live` switches to the real adapters. | 12 |
+| 11.3 | Xero contacts are matched by name before creating; QuickBooks customers by display name; FreeAgent and Sage create a contact the first time a client is synced, then reuse it. | 12 |
+| 11.4 | Sync happens straight after the event (with any failure caught) and again in the daily cron. Retries back off 5, 15, 60, 180, 360 minutes over 24 hours, then the item is marked failed and the trade is told. A sync failure never blocks the job or the payment. | 12 |
+| 11.5 | Card fee bank charges, QuickBooks items and tax codes, and refunds for QuickBooks, FreeAgent and Sage are marked TODO in the adapters: they need sandbox testing to get right. | 12 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -128,6 +134,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 11. Set `LATE_PAYMENT_REFERENCE_RATE` to the current Bank of England reference rate, and update it each January and July.
 12. Solicitor review of both letters, the information sheet and reply form, and every chasing message (`src/lib/email/templates-v42.ts`, `src/lib/sms/copy-v42.ts`, `src/lib/pdf/lba-pdf.ts`).
 13. Legal check on showing the full client record without consent (PRD 19 item 4), and the privacy notice wording clients see when they open their account (currently a short line on the open link page linking to /privacy).
+14. Register developer apps with Xero, Intuit (QuickBooks), FreeAgent and Sage (PRD 19 item 2), add the redirect URL `https://workedwith.co.uk/api/accounting/callback`, add the client ids and secrets, and test each adapter against its sandbox before setting `ACCOUNTING_MODE=live`. Check Xero's app partner tier.
 <!-- needs -->
 
 ## 4. To run
@@ -144,6 +151,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 9. `20261124000800_chasing.sql`
 10. `20261124000900_reviews_client_record.sql`
 11. `20261124001000_directory_profiles.sql`
+12. `20261124001100_accounting.sql`
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -155,6 +163,11 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 - `TRUELAYER_CLIENT_ID`, `TRUELAYER_CLIENT_SECRET`, `TRUELAYER_ENV` (`sandbox` or `live`)
 - `OTP_PROVIDER` (`twilio` or `mock`; leave unset in production)
 - `LATE_PAYMENT_REFERENCE_RATE` (for example `4.0`)
+- `ACCOUNTING_MODE` (`mock` or `live`)
+- `XERO_CLIENT_ID`, `XERO_CLIENT_SECRET`
+- `QUICKBOOKS_CLIENT_ID`, `QUICKBOOKS_CLIENT_SECRET`, `QUICKBOOKS_ENV` (`sandbox` or `live`)
+- `FREEAGENT_CLIENT_ID`, `FREEAGENT_CLIENT_SECRET`, `FREEAGENT_ENV` (`sandbox` or `live`)
+- `SAGE_CLIENT_ID`, `SAGE_CLIENT_SECRET`
 <!-- env -->
 
 **Commands**
@@ -242,5 +255,11 @@ supabase db push
 - Home shows profile views and Email now clicks for 30 and 90 days.
 - With a paid job, Profile, Photos, Featured jobs: only paid jobs can be picked, and the title shows job type, month and district.
 - Open a seeded profile: the label reads "Not yet on WorkedWith. No reviews yet." and Email now works for anyone.
+
+**Phase 11**
+- Profile, Getting paid, Accounting software: tap Xero, Allow on the test page, pick the accounts, choose "Also send invoices already issued", Start syncing. The card shows how many were sent; invoices on job pages show Synced.
+- Pay an invoice (simulated transfer): the payment syncs. Mark one paid by cash: it waits until the client confirms, then syncs.
+- Send a quote to a client named "Fail Test" and get an invoice issued: it stays waiting; set its `first_attempt_at` more than 24 hours back and run the cron: it shows as failed with Retry now.
+- Disconnect and connect FreeAgent instead.
 
 <!-- tests -->

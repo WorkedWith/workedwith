@@ -11,6 +11,7 @@ import { onStageDue } from '@/lib/jobs/hooks'
 import { canRequestPaymentAnyway, depositPosition } from '@/lib/jobs/cancel'
 import { recordPayment, refreshCompletion } from '@/lib/payments/apply'
 import { recordRefundCredit } from '@/lib/payments/refunds'
+import { runAccountingSync } from '@/lib/accounting/sync'
 import { openReviewWindow } from '@/lib/reviews/windows'
 import { parsePounds, formatPence } from '@/lib/money'
 import { METHOD_LABEL } from '@/lib/payments/labels'
@@ -349,6 +350,8 @@ export async function clientConfirmPayment(paymentId: string, kind: 'paid_elsewh
     }
   } else {
     await s.admin.from('payments').update(yes ? { client_confirmed_at: now } : { client_disputed_at: now }).eq('id', paymentId)
+    // A confirmed paid elsewhere payment can now go to the accounting software
+    if (yes && job.trade_user_id) await runAccountingSync(s.admin, job.trade_user_id)
   }
   await logJobEvent(s.admin, job.id, 'payment_confirmation', yes ? `Client confirmed the ${kind === 'refund' ? 'refund' : 'payment'} of ${formatPence(kind === 'refund' ? p.refunded_pence : p.amount_pence)}` : `Client says the ${kind === 'refund' ? 'refund has not arrived' : 'payment was not made that way'}`, s.userId)
   if (!yes && job.trade_user_id) {
