@@ -14,11 +14,12 @@ function linksFor(userType: string | null): NavLink[] {
     ]
   }
   // Organisations and business client screens are parked (PRD 23); business clients get the client nav
+  // Client navigation (PRD 18): My jobs, Find a trade, My record
   return [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/find', label: 'Find a tradesperson', shortLabel: 'Find a trade' },
-    { href: '/profile', label: 'Profile' },
-    { href: '/settings', label: 'Settings' },
+    { href: '/my/jobs', label: 'My jobs' },
+    { href: '/find', label: 'Find a trade' },
+    { href: '/my/record', label: 'My record' },
+    { href: '/settings', label: 'Account' },
   ]
 }
 

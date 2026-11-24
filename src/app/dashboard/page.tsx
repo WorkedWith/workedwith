@@ -40,6 +40,8 @@ export default async function DashboardPage() {
   const isTrade = user_type === 'trade' || user_type === 'both'
   const isBoth = user_type === 'both'
   const isClient = isBoth || !isTrade
+  // Clients live in My jobs now (PRD 18). The old client dashboard below is kept until it is deleted.
+  if (!isTrade) redirect('/my/jobs')
   const firstName = full_name.split(' ')[0]
 
   const [
@@ -118,11 +120,7 @@ export default async function DashboardPage() {
     ? (tradeProfile?.total_jobs ?? 0) > 0
     : (clientProfile?.total_jobs ?? 0) > 0
 
-  const accountLabel =
-    user_type === 'trade' ? 'Tradesperson' :
-    user_type === 'client_individual' ? 'Client' :
-    user_type === 'client_business' ? 'Business client' :
-    user_type === 'both' ? 'Tradesperson & Client' : 'Account'
+  const accountLabel = user_type === 'both' ? 'Tradesperson and client' : 'Tradesperson'
 
   const pendingCount = jobRequests.length
 

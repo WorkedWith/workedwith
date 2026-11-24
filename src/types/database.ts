@@ -91,7 +91,7 @@ export interface TradeProfile {
 export interface ClientProfile {
   id: string
   user_id: string
-  postcode: string
+  postcode: string | null
   display_name: string | null
   username: string | null
   client_type: ClientType | null
@@ -108,6 +108,8 @@ export interface ClientProfile {
   confirmation_counted: number
   confirmation_confirmed: number
   ended_early_count: number
+  closed_at: string | null
+  client_type_confirmed_at: string | null
   created_at: string
 }
 
@@ -729,7 +731,7 @@ export interface Database {
       }
       client_profiles: {
         Row: WithIndex<ClientProfile>
-        Insert: Omit<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'ended_early_count' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'> & Partial<Pick<ClientProfile, 'username' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'payment_reliability_score' | 'scope_clarity_score' | 'communication_score' | 'red_flag_count' | 'is_searchable' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'ended_early_count' | 'display_name' | 'client_type' | 'company_name' | 'companies_house_number'>>
+        Insert: Pick<ClientProfile, 'user_id'> & Partial<ClientProfile>
         Update: Partial<ClientProfile>
         Relationships: []
       }

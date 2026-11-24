@@ -11,6 +11,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 0 Cleanup | Done | One plan with a 30 day trial, single "has active plan" check, boosts reworked to the £10 add on with a 3 per trade type cap, waiting list and admin switch, backdated and trade invite flows removed, old screens hidden, test data reset script |
 | 0.5 Landing page | Done | Home, for trades, for clients, pricing and FAQ rewritten for the quote to paid platform, with the plain cost table, accounting names, shared nav and footer, and a slot for the landing video |
 | 1 Getting paid setup | Done (mock provider) | Business details screen, bank details with Confirmation of Payee, account number encrypted, open banking connection through a swappable interface (mock and TrueLayer adapters), 90 day reconfirm prompts and lapse, usage tracking table |
+| 2 Client accounts | Done (mock text codes) | Clients are found by mobile then email, or created with no password. Links in texts and emails open with a text code to the client's own mobile and sign them in. Person or company confirmed on first visit. Sign in later by text code or email link. Client area at /my with My jobs, Find a trade, My record |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -45,6 +46,14 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 1.7 | Reconfirm prompts start 7 days before the 90 day consent ends; after that matching pauses and the trade is told. Reconfirming reuses the bank approval flow (one tap in mock mode). | 9 |
 | 1.8 | Business details (trading address, business and reply email, VAT number, invoice prefix, payment terms, part payments, default deposit, extra terms) are built in phase 1 because quotes and invoices need them. The invoice prefix locks after the first invoice. | 4 step 2, 18 |
 | 1.9 | "Non refundable from payment" can't be a default, only picked on a quote to a company client. | 6 |
+| 2.1 | The existing `client_type` values are kept: `individual` means a person and `business` means a company, so no data migration is needed. | 5, 21 |
+| 2.2 | Links in texts and emails go to `/open/<token>`. Only a hash of the token is stored, links last 180 days, and opening one always needs a text code to the client's own mobile, so every approval comes from their signed in session. | 3, 5, key rule 3 |
+| 2.3 | Sessions are created on the server after the text code is checked, using a one time Supabase magic link token. No password is ever set for clients. | 5 |
+| 2.4 | When a trade quotes a mobile or email that already has an account, the quote attaches to it. The trade's person or company choice only fills in an account the client has not confirmed yet; the client's own answer always wins. | 5, 6 |
+| 2.5 | A trade who is also a client becomes user type `both`. | 2 rule 13 |
+| 2.6 | Text codes use Twilio Verify. With no Verify service set up outside production (or `OTP_PROVIDER=mock`), the code is always 123456 and nothing is sent. Codes are rate limited (5 sends an hour, 8 checks in 10 minutes). | 5 |
+| 2.7 | Client only users go to /my/jobs instead of the old dashboard. Client nav is My jobs, Find a trade, My record, Account. | 18 |
+| 2.8 | The Companies House number for company clients is optional free text and never checked. | 21, 24 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -57,6 +66,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 4. Switch boosts on for WA14 and WA15 in Admin, Boosted Districts, when you are ready to sell them.
 7. Choose the open banking provider (PRD 19 item 1). If it is TrueLayer, add `TRUELAYER_CLIENT_ID`, `TRUELAYER_CLIENT_SECRET`, `TRUELAYER_ENV`, register the redirect URL `https://workedwith.co.uk/api/open-banking/callback`, and test in their sandbox. If it is another provider, a new adapter beside `src/lib/open-banking/truelayer.ts` is needed.
 8. Generate `DATA_ENCRYPTION_KEY` (run `openssl rand -base64 32`) and add it to Vercel before any trade saves bank details. Keep a safe copy: losing it means losing the stored account numbers.
+9. Twilio Verify: confirm `TWILIO_VERIFY_SERVICE_SID` is set in production. Supabase Auth: allow the email magic link redirect `https://workedwith.co.uk/auth/callback`.
 <!-- needs -->
 
 ## 4. To run
@@ -64,6 +74,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 **Migrations, in order**
 1. `20261124000000_single_plan.sql`
 2. `20261124000100_getting_paid_setup.sql`
+3. `20261124000200_client_accounts.sql`
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -73,6 +84,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 - `DATA_ENCRYPTION_KEY` (required in production)
 - `OPEN_BANKING_PROVIDER` (`mock` or `truelayer`)
 - `TRUELAYER_CLIENT_ID`, `TRUELAYER_CLIENT_SECRET`, `TRUELAYER_ENV` (`sandbox` or `live`)
+- `OTP_PROVIDER` (`twilio` or `mock`; leave unset in production)
 <!-- env -->
 
 **Commands**
@@ -102,5 +114,10 @@ supabase db push
 - Profile, Getting paid: save bank details. Try an account name containing "wrong" (red warning) and "close" (amber warning).
 - Connect my bank: pick a bank on the test bank page; you come back to Connected with a reconfirm date 90 days away.
 - Disconnect, then choose "My bank isn't listed": the status shows Not connected and says payments can be marked by hand.
+
+**Phase 2**
+- Phase 3 creates real links. To test now, insert a `client_access_links` row for a client (see `createAccessLink` in `src/lib/clients/accounts.ts`), open `/open/<token>`, tap Text me a code, enter 123456. You land on Who is the work for?, then My jobs.
+- Sign out, go to Sign in, tap Sign in with a text code, enter the client's mobile and 123456.
+- Sign in, Email me a sign in link: the link signs you in (needs Supabase email set up).
 
 <!-- tests -->

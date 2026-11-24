@@ -92,7 +92,24 @@ export interface OpenBankingUsage {
   cost_pence: number
 }
 
+// ── Phase 2: client accounts ──────────────────────────────────
+
+export type AccessPurpose = 'quote' | 'job' | 'variation' | 'stage' | 'invoice' | 'review' | 'general'
+
+export interface ClientAccessLink {
+  id: string
+  token_hash: string
+  client_user_id: string
+  purpose: AccessPurpose
+  target_path: string
+  created_by: string | null
+  expires_at: string
+  last_used_at: string | null
+  created_at: string
+}
+
 export type V42Tables = {
+  client_access_links: TableDef<ClientAccessLink, 'token_hash' | 'client_user_id' | 'target_path'>
   trade_bank_accounts: TableDef<TradeBankAccount, 'trade_id' | 'account_name' | 'sort_code' | 'account_number_encrypted' | 'account_number_last4'>
   open_banking_connect_states: TableDef<OpenBankingConnectState, 'state' | 'trade_id' | 'provider'>
   bank_matches: TableDef<BankMatch, 'trade_id' | 'provider_transaction_id' | 'received_at' | 'amount_pence' | 'match_status'>
