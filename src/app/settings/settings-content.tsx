@@ -174,7 +174,7 @@ export function SettingsContent({ email, userType }: { email: string; userType: 
       <section className="rounded-2xl border border-red-200 bg-white p-6 shadow-sm">
         <h2 className="mb-2 text-base font-semibold text-red-700">Close account</h2>
         <p className="mb-4 text-sm text-gray-500">
-          Close your account and remove your login. Your reviews are anonymised but kept. Quotes, invoices and payments from WorkedWith jobs are kept for 6 years for the trade's tax and legal records, then anonymised. A client keeps access to nothing once closed; a trade's clients keep their own invoices and receipts. This cannot be undone.
+          Close your account and remove your login. Your reviews are anonymised but kept. Quotes, invoices and payments from WorkedWith jobs are kept for 6 years for the trade&apos;s tax and legal records, then anonymised. A client keeps access to nothing once closed; a trade&apos;s clients keep their own invoices and receipts. This cannot be undone.
         </p>
         <p className="mb-4 text-sm font-medium text-gray-700">
           Important: once this account is closed, your phone number cannot be used to create a new WorkedWith account. If you think you may want to come back, do not close it. If you do need to return later, contact support and we can review it.
