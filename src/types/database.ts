@@ -720,6 +720,11 @@ export interface SeededProfile {
   source: 'admin' | 'client_added'
   added_by_client_id: string | null
   public_reference_url: string | null
+  companies_house_number: string | null
+  companies_house_status: string | null
+  company_type: string | null
+  incorporated_on: string | null
+  companies_house_checked_at: string | null
 }
 
 export type ListingSubmissionStatus = 'pending' | 'approved' | 'rejected' | 'merged'

@@ -400,20 +400,21 @@ export function teamInvite(p: {
 
 export function welcomeTrade(): EmailContent {
   return {
-    subject: 'Welcome to WorkedWith',
+    subject: 'Welcome to WorkedWith: your 30 day free trial has started',
     heading: 'Welcome to WorkedWith',
     paragraphs: [
-      'Your account is ready. WorkedWith is the directory for tradespeople who want to stand out from the noise, and you can check a client\'s record before you take a job on.',
-      'A few things to get you going:',
-      '1. Add the areas you cover, so clients can find you.',
-      '2. Log a job, or add a past job to build your record straight away.',
-      '3. Check a client\'s record before you take on your next job.',
-      '4. Verify your phone, then your ID, to earn the Verified badge.',
-      'Neither side sees the other\'s review until both are in, so nobody can review in revenge. Free accounts get unlimited jobs and reviews.',
+      'Your 30 day free trial has started. Everything is included and there is no card to add yet.',
+      'To get paid through WorkedWith:',
+      '1. Finish your profile and add your business email.',
+      '2. Add the bank details clients should pay, and connect your bank so invoices mark themselves paid.',
+      '3. Connect Xero, QuickBooks, FreeAgent or Sage if you use them.',
+      '4. Send your first quote, from your phone or your desktop.',
+      'Every job you run through WorkedWith builds your reputation, and you can check a client\u2019s record before you quote.',
     ],
-    button: { label: 'Go to your dashboard', url: `${APP_URL}/dashboard` },
+    button: { label: 'Set up getting paid', url: `${APP_URL}/profile/getting-paid` },
   }
 }
+
 
 export function welcomeClient(p: { username: string }): EmailContent {
   return {

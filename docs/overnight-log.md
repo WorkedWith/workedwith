@@ -21,6 +21,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 9 Reviews and client records | Done | Review windows open on full payment, 30 days overdue, or cancellation after work started; 14 days for both sides with reminders at day 3 and 10; hidden until both submit or the window ends, then published together (a single review publishes alone at the close); edit until then, then locked; up to 5 photos; labels Paid job, Unpaid (updates to Paid job if later paid) and Ended early; responses and disputes reuse the existing routes. Client record with a good payer summary, payment figures, reviews from trades with photos, labels and red flags, shown to quoting trades (open, or within 12 months) and on lookup by exact email or mobile (20 a day, logged), and to the client on My record. Username lookup and /c pages removed |
 | 10 Directory and profiles | Done | Email now on member and seeded profiles (address put together in the browser on tap, then shown as text; rate limited per visitor; clicks counted), phone for signed in members only, paid jobs on WorkedWith and member since on cards and profiles, featured jobs only from paid WorkedWith jobs with an automatic title (job type, month, district), Log a job removed, profile activity (views and Email now clicks, 30 and 90 days) for every trade, seeded profiles labelled "Not yet on WorkedWith. No reviews yet." with view tracking |
 | 11 Accounting integrations | Done (mock); real adapters need keys | One internal interface (connect, refresh, contact, invoice, payment, credit note, refund, disconnect) with a working mock and adapters for Xero, QuickBooks, FreeAgent and Sage written to their public APIs. Connect from Getting paid, confirm sales account, bank account, VAT and whether to send existing invoices. Invoices, payments (paid elsewhere once the client confirms), credit notes and refunds queue automatically, retry for 24 hours, then show as failed with a retry button. Expired connections pause sync and catch up on reconnect; lapsed plans pause sync. Sync status shows on each invoice |
+| 12 Seeded changes | Done | Listings live 90 days (existing ones extended), reminder emails at day 30, 60 and 80 that include the month's profile views and Email now clicks, then removal onto the do not reseed list; outreach only to active limited companies checked at Companies House (number added on the admin form), email only, opt out in every email; seeded profiles show Companies House status and trading since; claiming starts the 30 day trial, carries the listed email over as the business email, and lands on the set up steps |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -117,6 +118,11 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 11.3 | Xero contacts are matched by name before creating; QuickBooks customers by display name; FreeAgent and Sage create a contact the first time a client is synced, then reuse it. | 12 |
 | 11.4 | Sync happens straight after the event (with any failure caught) and again in the daily cron. Retries back off 5, 15, 60, 180, 360 minutes over 24 hours, then the item is marked failed and the trade is told. A sync failure never blocks the job or the payment. | 12 |
 | 11.5 | Card fee bank charges, QuickBooks items and tax codes, and refunds for QuickBooks, FreeAgent and Sage are marked TODO in the adapters: they need sandbox testing to get right. | 12 |
+| 12.1 | The day 0 email still goes when a listing is added (if allowed); the reminders count from the day the listing was created, so removal is always at day 90. | 16 |
+| 12.2 | Seeded outreach is email only. Texts are never sent to seeded listings, because phone numbers are never seeded for outreach. The old text code stays but is no longer called. | 16 |
+| 12.3 | Outreach needs: an email, a Companies House number, status active and a limited company type (ltd, plc, LLP and similar). Anything else is listed but never contacted. | 16, PECR |
+| 12.4 | With no `COMPANIES_HOUSE_API_KEY` the status can't be checked, so nothing is emailed. `COMPANIES_HOUSE_MODE=mock` treats any number as an active limited company, for testing. | 16 |
+| 12.5 | Client added listings (parked) are never emailed by us. | 16, 23 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -152,6 +158,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 10. `20261124000900_reviews_client_record.sql`
 11. `20261124001000_directory_profiles.sql`
 12. `20261124001100_accounting.sql`
+13. `20261124001200_seeded_v42.sql`
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -168,6 +175,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 - `QUICKBOOKS_CLIENT_ID`, `QUICKBOOKS_CLIENT_SECRET`, `QUICKBOOKS_ENV` (`sandbox` or `live`)
 - `FREEAGENT_CLIENT_ID`, `FREEAGENT_CLIENT_SECRET`, `FREEAGENT_ENV` (`sandbox` or `live`)
 - `SAGE_CLIENT_ID`, `SAGE_CLIENT_SECRET`
+- `COMPANIES_HOUSE_MODE` (`mock` only for testing; leave unset in production)
 <!-- env -->
 
 **Commands**
@@ -261,5 +269,11 @@ supabase db push
 - Pay an invoice (simulated transfer): the payment syncs. Mark one paid by cash: it waits until the client confirms, then syncs.
 - Send a quote to a client named "Fail Test" and get an invoice issued: it stays waiting; set its `first_attempt_at` more than 24 hours back and run the cron: it shows as failed with Retry now.
 - Disconnect and connect FreeAgent instead.
+
+**Phase 12**
+- Admin, Seeded profiles: add a listing with an email and a Companies House number (with `COMPANIES_HOUSE_MODE=mock` and `SEEDED_OUTREACH_ENABLED=true`): the day 0 email is logged. Add one without a number: it says it won't be emailed.
+- View the seeded page a few times and tap Email now, then set its `created_at` 31 days back and run the 03:00 cron (`/api/cron/expire-pending-invites`): the day 30 email includes the views and clicks.
+- Set `created_at` 91 days back and run it again: the listing is removed.
+- Claim a listing: after sign up you land on the trial welcome with the set up steps, and your business email is the listed email.
 
 <!-- tests -->

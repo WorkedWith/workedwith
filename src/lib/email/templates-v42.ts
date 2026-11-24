@@ -299,3 +299,28 @@ export function reviewWindowEmail(p: { other: string; title: string; link: strin
   }[p.kind]
   return { subject: map.s, heading: map.s, paragraphs: [map.b], button: { label: p.kind === 'published' ? 'See the reviews' : 'Write my review', url: url(p.link) } }
 }
+
+// ── Seeded outreach (phase 12). Limited companies only, with a clear opt out every time. ──
+
+export type SeededStep = 'day0' | 'day30' | 'day60' | 'day80'
+
+export function seededEmailV42(p: { step: SeededStep; name: string; claimUrl: string; removeUrl: string; removesOn: string; views: number; emails: number }): EmailContent {
+  const activity = p.views || p.emails
+    ? `${p.views} ${p.views === 1 ? 'person' : 'people'} near you viewed your profile this month${p.emails ? ` and ${p.emails} clicked to email you` : ''}.`
+    : null
+  const pitch = 'WorkedWith is where trades quote, get approval and get paid in one place: clients accept in their own account, pay by bank transfer with no transaction fees, late payments are chased for you, and every paid job builds your reputation. It is free for 30 days, then £19.99 a month.'
+  const map: Record<SeededStep, { s: string; h: string; b: string[] }> = {
+    day0: { s: `We listed ${p.name} on WorkedWith`, h: `${p.name} is listed on WorkedWith`, b: [`We added **${p.name}** to WorkedWith from public business information, so local clients can find you. It says you are not on WorkedWith yet and have no reviews.`, pitch] },
+    day30: { s: `Your WorkedWith listing for ${p.name}`, h: 'Your listing is getting seen', b: [activity ?? `Your listing for **${p.name}** is live for clients near you.`, pitch] },
+    day60: { s: `${p.name}: your free listing ends on ${p.removesOn}`, h: `Your listing ends on ${p.removesOn}`, b: [activity ?? `Your listing for **${p.name}** is still unclaimed.`, `Claim it before ${p.removesOn} to keep it and start your free trial.`] },
+    day80: { s: `Last reminder: ${p.name} is removed on ${p.removesOn}`, h: 'This is our last email', b: [activity ?? `The listing for **${p.name}** is removed on ${p.removesOn} unless you claim it.`, 'If WorkedWith is not for you, do nothing and it goes.'] },
+  }
+  const m = map[p.step]
+  return {
+    subject: m.s,
+    heading: m.h,
+    paragraphs: m.b,
+    button: { label: 'Claim my listing', url: p.claimUrl },
+    stranger: { why: `${p.name} is a limited company listed publicly at Companies House.`, removeUrl: p.removeUrl },
+  }
+}

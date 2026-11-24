@@ -34,6 +34,12 @@ function SeededProfilePage({ profile }: { profile: SeededProfile; slug: string; 
           </div>
 
           <h1 className="text-3xl font-bold text-white sm:text-4xl">{profile.business_name}</h1>
+          {profile.companies_house_number && profile.companies_house_status && (
+            <p className="mt-2 text-sm text-white/70">
+              Companies House: {profile.companies_house_status === 'active' ? 'active' : profile.companies_house_status}
+              {profile.incorporated_on ? `. Trading since ${new Date(profile.incorporated_on).getFullYear()}` : ''}
+            </p>
+          )}
 
           <div className="mt-3 flex flex-wrap gap-2">
             {(profile.trade_categories?.length ? profile.trade_categories : [profile.trade_category]).map(t => (

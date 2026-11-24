@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ALL_TRADE_TERMS, parentTrade } from '@/lib/trade-types'
 import { normaliseBusinessName, normalisePhone, normaliseEmail, sha256 } from '@/lib/seeded-hash'
-import { sendSeededOutreach, SEEDED_LIFETIME_DAYS } from '@/lib/seeded-outreach'
+import { outreachAllowed, sendSeededStep, SEEDED_LIFETIME_DAYS_V42 } from '@/lib/seeded/v42'
+import { cleanCompanyNumber, fetchCompany } from '@/lib/seeded/companies-house'
 import type { SeededProfile } from '@/types/database'
 
 export type CreateSeededProfileInput = {
@@ -16,6 +17,7 @@ export type CreateSeededProfileInput = {
   contact_email: string | null
   source_note: string | null
   bio?: string | null
+  companies_house_number?: string | null
 }
 
 export type CreateSeededProfileResult =
@@ -143,7 +145,10 @@ export async function createSeededProfile(
 
   const claimToken = randomBytes(32).toString('hex')
   const now = new Date()
-  const expiresAt = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString()
+  const expiresAt = new Date(now.getTime() + SEEDED_LIFETIME_DAYS_V42 * 86_400_000).toISOString()
+  // Companies House status decides whether outreach is allowed (PECR: limited companies only)
+  const chNumber = input.companies_house_number ? cleanCompanyNumber(input.companies_house_number) : null
+  const ch = chNumber ? await fetchCompany(chNumber) : null
 
   const { data: inserted, error: insertError } = await admin
     .from('seeded_profiles')
@@ -159,6 +164,11 @@ export async function createSeededProfile(
       bio: bio || null,
       claim_token: claimToken,
       expires_at: expiresAt,
+      companies_house_number: chNumber,
+      companies_house_status: ch?.status ?? null,
+      company_type: ch?.type ?? null,
+      incorporated_on: ch?.createdOn ?? null,
+      companies_house_checked_at: ch ? now.toISOString() : null,
     })
     .select()
     .single()
@@ -173,22 +183,17 @@ export async function createSeededProfile(
   const profile = inserted as unknown as SeededProfile
   let outreach: 'sent' | 'queued' | 'switched_off' | 'no_contact' = 'no_contact'
 
-  if (profile.contact_email || profile.contact_phone) {
+  if (profile.contact_email) {
     if (process.env.SEEDED_OUTREACH_ENABLED !== 'true') {
       outreach = 'switched_off'
+    } else if (!outreachAllowed(profile)) {
+      // Not an active limited company: listed, but never emailed
+      outreach = 'no_contact'
+    } else if (await sendSeededStep(admin, profile, 'day0')) {
+      await admin.from('seeded_profiles').update({ initial_invite_sent_at: new Date().toISOString() }).eq('id', profile.id)
+      outreach = 'sent'
     } else {
-      const sentAt = new Date()
-      const removesAt = new Date(sentAt.getTime() + SEEDED_LIFETIME_DAYS * 86_400_000).toISOString()
-      const result = await sendSeededOutreach({ ...profile, expires_at: removesAt }, 'day0')
-      if (result.sent) {
-        await admin
-          .from('seeded_profiles')
-          .update({ initial_invite_sent_at: sentAt.toISOString(), expires_at: removesAt })
-          .eq('id', profile.id)
-        outreach = 'sent'
-      } else {
-        outreach = 'queued'
-      }
+      outreach = 'queued'
     }
   }
 
