@@ -10,6 +10,7 @@ import { PhotoStrip } from './photo-strip'
 import { IssueThread } from './issue-thread'
 import { MarkDoneForm, MarkPaidForm, RequestAnywayForm } from './stage-forms'
 import { RefundButton } from './refund-button'
+import { CardRefundButton } from './card-refund-button'
 import type { JobBundle } from '@/lib/jobs/load'
 
 type AdminClient = ReturnType<typeof createAdminClient>
@@ -60,7 +61,9 @@ export async function TradeStagesPanel({ admin, bundle, userId }: { admin: Admin
                         {isPaidElsewhere(p.method) && (p.client_confirmed_at ? ', confirmed by the client' : p.client_disputed_at ? ', the client says they did not pay this way' : ', waiting for the client to confirm')}
                         {p.refunded_pence > 0 && `, ${formatPence(p.refunded_pence)} refunded${p.refund_client_confirmed_at ? ' (client confirmed)' : ''}`}
                       </span>
-                      {p.method !== 'card' && p.refunded_pence < p.amount_pence && <RefundButton paymentId={p.id} max={penceToInput(p.amount_pence - p.refunded_pence)} />}
+                      {p.status !== 'failed' && p.refunded_pence < p.amount_pence && (p.method === 'card'
+                        ? <CardRefundButton paymentId={p.id} max={penceToInput(p.amount_pence - p.refunded_pence)} />
+                        : <RefundButton paymentId={p.id} max={penceToInput(p.amount_pence - p.refunded_pence)} />)}
                     </li>
                   ))}
                 </ul>

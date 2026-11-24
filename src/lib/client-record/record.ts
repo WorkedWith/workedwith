@@ -102,9 +102,8 @@ export async function computeClientRecord(admin: AdminClient, clientId: string):
   }
 }
 
-/** Phase 13 records chargebacks; until then there are none. */
 async function countLostChargebacks(admin: AdminClient, jobIds: string[]): Promise<number> {
-  void admin
-  void jobIds
-  return 0
+  if (jobIds.length === 0) return 0
+  const { count } = await admin.from('chargebacks').select('id', { count: 'exact', head: true }).in('job_id', jobIds).eq('outcome', 'lost')
+  return count ?? 0
 }

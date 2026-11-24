@@ -22,6 +22,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 10 Directory and profiles | Done | Email now on member and seeded profiles (address put together in the browser on tap, then shown as text; rate limited per visitor; clicks counted), phone for signed in members only, paid jobs on WorkedWith and member since on cards and profiles, featured jobs only from paid WorkedWith jobs with an automatic title (job type, month, district), Log a job removed, profile activity (views and Email now clicks, 30 and 90 days) for every trade, seeded profiles labelled "Not yet on WorkedWith. No reviews yet." with view tracking |
 | 11 Accounting integrations | Done (mock); real adapters need keys | One internal interface (connect, refresh, contact, invoice, payment, credit note, refund, disconnect) with a working mock and adapters for Xero, QuickBooks, FreeAgent and Sage written to their public APIs. Connect from Getting paid, confirm sales account, bank account, VAT and whether to send existing invoices. Invoices, payments (paid elsewhere once the client confirms), credit notes and refunds queue automatically, retry for 24 hours, then show as failed with a retry button. Expired connections pause sync and catch up on reconnect; lapsed plans pause sync. Sync status shows on each invoice |
 | 12 Seeded changes | Done | Listings live 90 days (existing ones extended), reminder emails at day 30, 60 and 80 that include the month's profile views and Email now clicks, then removal onto the do not reseed list; outreach only to active limited companies checked at Companies House (number added on the admin form), email only, opt out in every email; seeded profiles show Companies House status and trading since; claiming starts the 30 day trial, carries the listed email over as the business email, and lands on the set up steps |
+| 13 Optional cards | Done (mock); live needs Stripe Connect | Trades connect their own Stripe account (Stripe handles pricing, no application fee), switch cards on or off and set a card limit per payment; clients pay a due stage by card, Apple Pay or Google Pay (in full, or in parts of £10 or more) above which they see bank only; payments arrive by Connect webhook with Stripe's fee recorded for exports and sync; card refunds through Stripe with a credit note; chargebacks open automatically with a text and email to the trade, evidence is built from the job record and submitted with one tap, a reminder goes 3 days before the deadline, and a lost chargeback makes the stage due again and counts on the client's record |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -123,6 +124,11 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 12.3 | Outreach needs: an email, a Companies House number, status active and a limited company type (ltd, plc, LLP and similar). Anything else is listed but never contacted. | 16, PECR |
 | 12.4 | With no `COMPANIES_HOUSE_API_KEY` the status can't be checked, so nothing is emailed. `COMPANIES_HOUSE_MODE=mock` treats any number as an active limited company, for testing. | 16 |
 | 12.5 | Client added listings (parked) are never emailed by us. | 16, 23 |
+| 13.1 | Connected accounts are created with Stripe's controller settings (fees paid by the account, losses owned by Stripe, full Stripe dashboard), which is the "Stripe handles pricing" set up. WorkedWith never sets an application fee. | 3, 9, 24 |
+| 13.2 | Card payments are direct charges on the trade's account through Stripe Checkout, so no client card is saved and there is no surcharge. | 9, 24 |
+| 13.3 | `CARDS_MODE=mock` (default) simulates onboarding and a test checkout page that records a card payment with a pretend Stripe fee. | your instructions |
+| 13.4 | The chargeback evidence is sent to Stripe as text (the acceptance record and full job timeline). Attaching the job report PDF as a file is a TODO for Stripe test mode. | 9 |
+| 13.5 | Connect events arrive at the existing Stripe webhook; events with an `account` field are routed to the Connect handler. | 9 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -141,6 +147,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 12. Solicitor review of both letters, the information sheet and reply form, and every chasing message (`src/lib/email/templates-v42.ts`, `src/lib/sms/copy-v42.ts`, `src/lib/pdf/lba-pdf.ts`).
 13. Legal check on showing the full client record without consent (PRD 19 item 4), and the privacy notice wording clients see when they open their account (currently a short line on the open link page linking to /privacy).
 14. Register developer apps with Xero, Intuit (QuickBooks), FreeAgent and Sage (PRD 19 item 2), add the redirect URL `https://workedwith.co.uk/api/accounting/callback`, add the client ids and secrets, and test each adapter against its sandbox before setting `ACCOUNTING_MODE=live`. Check Xero's app partner tier.
+15. Stripe: enable Connect on the platform account, add the Connect webhook events (`checkout.session.completed`, `account.updated`, `charge.dispute.created`, `charge.dispute.closed`) for connected accounts to the existing webhook endpoint, test in Stripe test mode, then set `CARDS_MODE=live`. Confirm the 1.5% + 20p figure before quoting it.
 <!-- needs -->
 
 ## 4. To run
@@ -159,6 +166,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 11. `20261124001000_directory_profiles.sql`
 12. `20261124001100_accounting.sql`
 13. `20261124001200_seeded_v42.sql`
+14. `20261124001300_cards.sql`
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -176,6 +184,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 - `FREEAGENT_CLIENT_ID`, `FREEAGENT_CLIENT_SECRET`, `FREEAGENT_ENV` (`sandbox` or `live`)
 - `SAGE_CLIENT_ID`, `SAGE_CLIENT_SECRET`
 - `COMPANIES_HOUSE_MODE` (`mock` only for testing; leave unset in production)
+- `CARDS_MODE` (`mock` or `live`)
 <!-- env -->
 
 **Commands**
@@ -275,5 +284,11 @@ supabase db push
 - View the seeded page a few times and tap Email now, then set its `created_at` 31 days back and run the 03:00 cron (`/api/cron/expire-pending-invites`): the day 30 email includes the views and clicks.
 - Set `created_at` 91 days back and run it again: the listing is removed.
 - Claim a listing: after sign up you land on the trial welcome with the set up steps, and your business email is the listed email.
+
+**Phase 13**
+- Getting paid, Accept cards: Set up card payments (test mode returns straight away), Switch cards on, set the limit to £500.
+- As the client on a due stage over £500: the card button offers up to £500 and says to pay the rest by bank. Pay with the test card: the stage shows part paid, the payment shows a Stripe fee in the payments export.
+- As the trade, Refund by card on that payment: a credit note appears.
+- To test a chargeback in mock mode, call `openChargeback` with the mock payment intent id (or insert a `chargebacks` row): the job shows the disputed panel; submit evidence. Set `outcome` to lost through `closeChargeback`: the stage is due again and the client's record shows a lost chargeback.
 
 <!-- tests -->

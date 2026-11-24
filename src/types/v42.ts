@@ -402,7 +402,30 @@ export interface AccountingSyncItem {
   created_at: string
 }
 
+// ── Phase 13: cards ──────────────────────────────────────────
+
+export interface TradeCardAccount { id: string; trade_id: string; stripe_account_id: string; charges_enabled: boolean; payouts_enabled: boolean; card_limit_pence: number; cards_enabled: boolean; created_at: string; updated_at: string }
+
+export interface Chargeback {
+  id: string
+  payment_id: string
+  job_id: string
+  trade_id: string
+  stripe_dispute_id: string
+  amount_pence: number
+  reason: string | null
+  opened_at: string
+  evidence_due_at: string | null
+  evidence_note: string | null
+  evidence_submitted_at: string | null
+  deadline_reminder_sent_at: string | null
+  outcome: 'won' | 'lost' | 'warning_closed' | null
+  closed_at: string | null
+}
+
 export type V42Tables = {
+  trade_card_accounts: TableDef<TradeCardAccount, 'trade_id' | 'stripe_account_id'>
+  chargebacks: TableDef<Chargeback, 'payment_id' | 'job_id' | 'trade_id' | 'stripe_dispute_id' | 'amount_pence'>
   accounting_connections: TableDef<AccountingConnection, 'trade_id' | 'platform'>
   accounting_connect_states: TableDef<AccountingConnectState, 'state' | 'trade_id' | 'platform'>
   accounting_sync_items: TableDef<AccountingSyncItem, 'connection_id' | 'trade_id' | 'entity_type' | 'entity_id'>

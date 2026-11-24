@@ -324,3 +324,19 @@ export function seededEmailV42(p: { step: SeededStep; name: string; claimUrl: st
     stranger: { why: `${p.name} is a limited company listed publicly at Companies House.`, removeUrl: p.removeUrl },
   }
 }
+
+// ── Cards and chargebacks (phase 13) ──────────────────────────
+
+export function chargebackTradeEmail(p: { amountPence: number; jobId: string; dueOn: string | null; reminder: boolean }): EmailContent {
+  return {
+    subject: p.reminder ? 'Chargeback evidence is due in 3 days' : 'A client has disputed a card payment',
+    heading: p.reminder ? 'Evidence due in 3 days' : 'Card payment disputed',
+    paragraphs: [
+      p.reminder
+        ? `The evidence for the disputed ${formatPence(p.amountPence)} card payment is due by ${p.dueOn}.`
+        : `A client has disputed a ${formatPence(p.amountPence)} card payment with their bank. Stripe has opened a dispute on your Stripe account.`,
+      'We have built the evidence from the job record: the accepted quote and terms, approvals, variations, photos, invoices and reminders. Review it, add anything you want, and submit it with one tap.',
+    ],
+    button: { label: 'Review the evidence', url: url(`/jobs/${p.jobId}`) },
+  }
+}

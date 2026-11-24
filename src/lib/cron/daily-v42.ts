@@ -7,6 +7,7 @@ import { runBankSync } from '@/lib/payments/bank-sync'
 import { runChasing } from '@/lib/chasing/engine'
 import { runReviewWindows } from '@/lib/reviews/windows'
 import { runAccountingSync } from '@/lib/accounting/sync'
+import { runChargebackReminders } from '@/lib/cards/connect-webhook'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -25,6 +26,7 @@ export async function runDailyV42(admin: AdminClient): Promise<Record<string, un
     ['chasing', () => runChasing(admin)],
     ['reviewWindows', () => runReviewWindows(admin)],
     ['accountingSync', () => runAccountingSync(admin)],
+    ['chargebackReminders', () => runChargebackReminders(admin)],
   ]
   for (const [name, fn] of steps) {
     try {

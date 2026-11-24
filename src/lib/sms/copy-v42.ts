@@ -26,3 +26,5 @@ export const smsChase = (business: string, step: string, number: string, link: s
   late_2: `${business}: second notice, invoice ${number} is overdue. ${link}`,
   final: `${business}: final notice for invoice ${number}. Please pay within 7 days: ${link}`,
 }[step] ?? `${business}: invoice ${number}. ${link}`)
+
+export const smsChargeback = (link: string) => `WorkedWith: a client has disputed a card payment. Review and submit the evidence: ${link}`

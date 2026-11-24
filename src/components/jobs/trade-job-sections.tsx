@@ -4,6 +4,7 @@ import { TradeStartPanel } from './trade-start-panel'
 import { TradeStagesPanel } from './trade-stages-panel'
 import { SuggestedMatches } from './suggested-matches'
 import { CancelPanel } from './cancel-panel'
+import { ChargebacksPanel } from './chargebacks-panel'
 import { JobReviewPanel } from '@/components/reviews/job-review-panel'
 import { ChasingPanel } from './chasing-panel'
 import { VariationsPanel } from './variations-panel'
@@ -16,6 +17,7 @@ export async function TradeJobSections({ admin, bundle, userId }: { admin: Admin
   return (
     <>
       <JobReviewPanel admin={admin} bundle={bundle} userId={userId} role="trade" />
+      <ChargebacksPanel admin={admin} jobId={bundle.job.id} />
       <SuggestedMatches admin={admin} tradeId={userId} jobId={bundle.job.id} />
       <TradeStartPanel admin={admin} bundle={bundle} userId={userId} />
       <TradeStagesPanel admin={admin} bundle={bundle} userId={userId} />
