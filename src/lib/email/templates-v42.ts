@@ -116,3 +116,98 @@ export function jobEventTradeEmail(p: { client: string; title: string; jobId: st
   }[p.event]
   return { subject: map.s, heading: map.s, paragraphs: [map.b], button: { label: 'Open the job', url: url(`/jobs/${p.jobId}`) } }
 }
+
+// ── Stages, invoices and payments (phase 5) ───────────────────
+
+type Payee = { accountName: string; sortCode: string; accountNumber: string } | null
+
+function payLines(payee: Payee, reference: string): string[] {
+  if (!payee) return [`Use **${reference}** as the payment reference.`]
+  return [
+    'Pay by bank transfer to:',
+    `Account name: **${payee.accountName}**`,
+    `Sort code: **${payee.sortCode.replace(/^(\d{2})(\d{2})(\d{2})$/, '$1 $2 $3')}**`,
+    `Account number: **${payee.accountNumber}**`,
+    `Reference: **${reference}**`,
+  ]
+}
+
+export function invoiceIssuedEmail(p: { business: string; invoiceNumber: string; description: string; totalPence: number; dueAt: string; link: string; payee: Payee; requestedByTrade: boolean }): EmailContent {
+  return {
+    subject: `Invoice ${p.invoiceNumber} from ${p.business}`,
+    heading: `Invoice ${p.invoiceNumber}`,
+    paragraphs: [
+      `${p.description}: **${formatPence(p.totalPence)}**, due by ${new Date(p.dueAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`,
+      ...(p.requestedByTrade ? ['Payment requested by the trade. Not approved by the client. You can still approve the stage or keep your issue open in your account.'] : []),
+      ...payLines(p.payee, p.invoiceNumber),
+    ],
+    button: { label: 'See the invoice', url: url(p.link) },
+  }
+}
+
+export function stageEventClientEmail(p: { business: string; title: string; stage: string; link: string; event: 'done' | 'reminder' | 'requested' | 'issue_reply'; day?: number }): EmailContent {
+  const map = {
+    done: { s: `Please check: ${p.stage}`, b: `${p.business} has marked **${p.stage}** on ${p.title} as done, with photos. Approve it, or raise an issue, in your account.` },
+    reminder: { s: `Waiting for your approval: ${p.stage}`, b: `${p.business} is waiting for you to approve **${p.stage}** on ${p.title}${p.day ? ` (${p.day} days so far)` : ''}. Nothing is ever approved for you. Approve it, or raise an issue if something isn't right.` },
+    requested: { s: `Payment requested: ${p.stage}`, b: `${p.business} has requested payment for **${p.stage}** on ${p.title}. This is labelled "Payment requested by the trade. Not approved by the client". You can still approve it, or keep your issue open.` },
+    issue_reply: { s: `${p.business} replied about ${p.stage}`, b: `${p.business} has replied to the issue you raised on **${p.stage}**.` },
+  }[p.event]
+  return { subject: map.s, heading: map.s, paragraphs: [map.b], button: { label: 'Open the job', url: url(p.link) } }
+}
+
+export function stageEventTradeEmail(p: { client: string; title: string; stage: string; jobId: string; event: 'approved' | 'issue' | 'issue_reply' | 'stalled' | 'client_says_paid'; note?: string | null }): EmailContent {
+  const map = {
+    approved: { s: `Approved: ${p.stage}`, b: `${p.client} approved **${p.stage}** on ${p.title}. The invoice has been issued.` },
+    issue: { s: `Issue raised: ${p.stage}`, b: `${p.client} raised an issue on **${p.stage}** on ${p.title}. Chasing on this stage is paused until you resubmit it or request payment.` },
+    issue_reply: { s: `${p.client} replied about ${p.stage}`, b: `${p.client} added a note to the issue on **${p.stage}**.` },
+    stalled: { s: `You can now request payment: ${p.stage}`, b: `**${p.stage}** on ${p.title} has waited 14 days. You can now request payment anyway. It will always show as not approved by the client.` },
+    client_says_paid: { s: `${p.client} says they have paid`, b: `${p.client} says they have paid for **${p.stage}**. Chasing is paused for up to 3 working days while the money arrives.` },
+  }[p.event]
+  return { subject: map.s, heading: map.s, paragraphs: [map.b], ...(p.note ? { quote: { label: 'Their note', text: p.note } } : {}), button: { label: 'Open the job', url: url(`/jobs/${p.jobId}`) } }
+}
+
+export function receiptEmail(p: { business: string; invoiceNumber: string; amountPence: number; balancePence: number; method: string; link: string; depositNote?: string | null }): EmailContent {
+  return {
+    subject: `Receipt: ${formatPence(p.amountPence)} to ${p.business}`,
+    heading: 'Payment received',
+    paragraphs: [
+      `${p.business} has received **${formatPence(p.amountPence)}** for invoice ${p.invoiceNumber}, paid by ${p.method}.`,
+      p.balancePence > 0 ? `${formatPence(p.balancePence)} is still to pay on this invoice.` : 'This invoice is now paid in full.',
+      ...(p.depositNote ? [p.depositNote] : []),
+    ],
+    button: { label: 'See your job', url: url(p.link) },
+  }
+}
+
+export function paymentTradeEmail(p: { client: string; amountPence: number; invoiceNumber: string; jobId: string; event: 'received' | 'part' | 'suggested' | 'overpaid'; payer?: string | null }): EmailContent {
+  const map = {
+    received: { s: `Paid: ${p.invoiceNumber}`, b: `${formatPence(p.amountPence)} from ${p.client} has arrived and invoice ${p.invoiceNumber} is marked paid.` },
+    part: { s: `Part payment: ${p.invoiceNumber}`, b: `${formatPence(p.amountPence)} from ${p.client} has arrived for invoice ${p.invoiceNumber}. The balance is still being chased.` },
+    suggested: { s: 'Is this payment for one of your invoices?', b: `${formatPence(p.amountPence)} from ${p.payer ?? 'someone'} has arrived without a matching reference. Is this invoice ${p.invoiceNumber}? Nothing is marked paid until you confirm.` },
+    overpaid: { s: `Overpayment: ${p.invoiceNumber}`, b: `${p.client} paid ${formatPence(p.amountPence)} against invoice ${p.invoiceNumber}, which is more than the balance. Check it and refund any extra.` },
+  }[p.event]
+  return { subject: map.s, heading: map.s, paragraphs: [map.b], button: { label: 'Open the job', url: url(`/jobs/${p.jobId}`) } }
+}
+
+export function confirmPaymentClientEmail(p: { business: string; amountPence: number; method: string; link: string; kind: 'paid_elsewhere' | 'refund' }): EmailContent {
+  return {
+    subject: p.kind === 'refund' ? `Please confirm your refund from ${p.business}` : `Please confirm a payment to ${p.business}`,
+    heading: p.kind === 'refund' ? 'Did you get your refund?' : 'Please confirm this payment',
+    paragraphs: [
+      p.kind === 'refund'
+        ? `${p.business} says they have refunded you **${formatPence(p.amountPence)}**. Please confirm once it has arrived.`
+        : `${p.business} has marked **${formatPence(p.amountPence)}** as paid by ${p.method}. Please confirm it, or tell them if you didn't pay that way.`,
+    ],
+    button: { label: 'Confirm in your account', url: url(p.link) },
+  }
+}
+
+export function jobCancelledEmail(p: { who: string; title: string; reason: string; link: string; depositNote: string | null }): EmailContent {
+  return {
+    subject: `Job cancelled: ${p.title}`,
+    heading: 'This job has been cancelled',
+    paragraphs: [`${p.who} cancelled **${p.title}**.`, 'Any amounts already due stay due. Stages not started are cancelled.', ...(p.depositNote ? [p.depositNote] : [])],
+    quote: { label: 'Reason', text: p.reason },
+    button: { label: 'See the job', url: url(p.link) },
+  }
+}

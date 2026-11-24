@@ -8,6 +8,7 @@ import { Card, Notice, PageShell, PageTitle, Row } from '@/components/ui'
 import { BankDetailsForm } from './bank-details-form'
 import { ConnectionCard } from './connection-card'
 import { GettingPaidExtras } from './getting-paid-extras'
+import { SimulateTransfer } from './simulate-transfer'
 
 export const metadata = { title: 'Getting paid | WorkedWith' }
 
@@ -65,6 +66,7 @@ export default async function GettingPaidPage({ searchParams }: { searchParams: 
       </Card>
 
       <GettingPaidExtras userId={user.id} />
+      {isMockOpenBanking() && bank && <SimulateTransfer />}
     </PageShell>
   )
 }

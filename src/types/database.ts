@@ -1028,6 +1028,7 @@ export interface Database {
       rollup_old_search_events: { Args: Record<string, never>; Returns: number }
       refresh_hired_again: { Args: { p_trade: string }; Returns: undefined }
       refresh_all_confirmation_stats: { Args: Record<string, never>; Returns: undefined }
+      allocate_invoice_number: { Args: { p_trade: string }; Returns: { seq: number; prefix: string }[] }
     }
   }
 }

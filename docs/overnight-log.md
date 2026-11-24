@@ -14,6 +14,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 2 Client accounts | Done (mock text codes) | Clients are found by mobile then email, or created with no password. Links in texts and emails open with a text code to the client's own mobile and sign them in. Person or company confirmed on first visit. Sign in later by text code or email link. Client area at /my with My jobs, Find a trade, My record |
 | 3 Quotes | Done | Phone first quote builder (client, job, lines, saved items, copy a past quote, VAT, deposit with refund settings, on completion or stages by amount or percentage, planned start, photos, preview), drafts and versions, send by text and email, follow ups and expiry, unpaid deposit reminders at day 1, 3 and 6 with expiry at day 7 and extend, client quote page with accept (terms, cancellation notice, early start consent), ask for changes and decline, trade Jobs list with filters, trade job page, client My jobs and job page |
 | 4 Start dates and job events | Done | Propose, confirm, counter and change planned starts from either side, materials ordered with an optional receipt photo, mark started (blocked inside a person client's 14 days without consent, with a request button), early start consent from the client's account, and a job history timeline on both job pages |
+| 5 Stages and payments | Done (mock bank) | Mark done with photos, approve or raise an issue with photos, issue notes thread, resubmit, reminders at day 5, 10 and 14 plus a once a day manual reminder, request payment anyway after 14 days (always labelled not approved by the client), invoices with sequential numbers issued when a stage becomes due, bank details with copy buttons, "I've paid", automatic matching (exact, part payment, overpayment, probable match to confirm), daily bank sync, mark received, paid elsewhere with client confirmation, refunds with client confirmation, receipts, cancellation by either side with the deposit position, made to measure question, and a test mode "simulate a bank transfer" |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -71,6 +72,14 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 4.3 | A `job_events` table records every event with who did it and when. It feeds the history on both job pages and later the claim pack and chargeback evidence. | 10, 21 |
 | 4.4 | The early start request can be sent again at most once a day. | 7 |
 | 4.5 | "Needs a start date" after 14 days booked is shown on the trade home (phase 15); nothing is sent to the client automatically. | 7 |
+| 5.1 | Invoices and sequential numbering are built in phase 5, not 6, because the invoice number is the payment reference matching needs. Numbers come from a database function that increments the trade's counter in one statement, so they never skip or repeat. Phase 6 adds PDFs, credit notes and exports. | 11, 20, key rule 22 |
+| 5.2 | Matching: a reference that contains the invoice number (ignoring spaces, case and leading zeros) is a match. Same amount as the balance marks it paid; less is a part payment; more records the balance and flags an overpayment to the trade. With no usable reference, a payment only becomes a suggestion if exactly one open invoice has that balance and the payer name contains a word of the client's name. Anything else is ignored and not stored. A rejected suggestion keeps only the transaction id, so it isn't suggested again. | 9, key rule 10 |
+| 5.3 | Bank sync runs once a day in the shared cron, and is skipped for trades whose trial or plan has ended. Provider notifications (webhooks) are left as a TODO until the provider is chosen. | 9 |
+| 5.4 | Raising an issue on a stage already requested by the trade keeps it due (the issue stays visible on the record); on a stage awaiting approval it pauses the stage. | 9, 10 |
+| 5.5 | A client approving a requested stage changes its label to approved, and the invoice's approval basis changes too; the original request stays in the history. | 9 |
+| 5.6 | Cancelling: stages not started are cancelled; anything due stays due. An unpaid deposit on a job that never started is cancelled. If the deposit position depends on made to measure materials, the trade is asked and the answer is recorded. Deposit disputes go through WorkedWith support for now (the existing dispute route is for reviews). | 9 |
+| 5.7 | Part payments of £10 or more are by the client's own bank transfer; the pay panel says so when the trade allows part payments. Card part payments come with phase 13. | 9 |
+| 5.8 | Paid elsewhere payments mark the stage paid straight away so chasing stops, but they only count on the client's record once the client confirms (phase 9 uses `client_confirmed_at`). | 9, 14 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -94,6 +103,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 3. `20261124000200_client_accounts.sql`
 4. `20261124000300_quotes.sql` (also creates the private `job-photos` storage bucket)
 5. `20261124000400_job_events.sql`
+6. `20261124000500_stages_payments.sql` (includes `allocate_invoice_number`)
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -150,5 +160,14 @@ supabase db push
 - After a quote is accepted (and deposit paid, or no deposit), on the trade job page propose a start date. The client confirms it, or suggests another, from their job page. Try a date inside 14 days as a person client: the consent box appears.
 - Mark job started inside the 14 days without consent: you see the explanation and can send the request. The client answers yes; you can then mark started.
 - With a deposit for materials, tap Materials ordered and add a photo; the client gets a message and the history shows it.
+
+**Phase 5**
+- With a booked job (deposit paid or none): mark the job started, then Mark done on a stage with a photo from your phone. The client approves from their job page; an invoice number appears on the stage.
+- As the client, the due stage shows the bank details with Copy buttons and the reference. Tap I've paid: the trade sees the pause.
+- In Profile, Getting paid (test mode), Simulate a bank transfer with the exact amount and the invoice number as the reference: the stage shows paid and a receipt is logged. Try a smaller amount (part payment), no reference with the client's surname (probable match to confirm on the job), and a random one (ignored).
+- Raise an issue as the client with a photo, reply as the trade, then Fixed: resubmit.
+- Mark payment received as cash: the client is asked to confirm. Mark a refund: the client is asked to confirm receipt.
+- Cancel a job with a non refundable materials deposit after materials ordered (kept), and as a person client inside 14 days (trade asked about made to measure).
+- To check day 5, 10 and 14 reminders and request payment anyway, set `marked_done_at` back 15 days on a stage in the database and run the cron (`/api/cron/publish-reviews` with the cron secret).
 
 <!-- tests -->

@@ -6,7 +6,9 @@ import { APP_URL } from '@/lib/app-url'
 import { getTradeSession } from '@/lib/auth/require-trade'
 import { encryptSecret, decryptSecret } from '@/lib/crypto/secret-box'
 import { cleanAccountNumber, cleanSortCode } from '@/lib/getting-paid/bank-format'
-import { openBanking } from '@/lib/open-banking'
+import { openBanking, isMockOpenBanking } from '@/lib/open-banking'
+import { processIncomingPayment, type MatchOutcome } from '@/lib/payments/matching'
+import { parsePounds } from '@/lib/money'
 import type { CopResult } from '@/types/v42'
 
 export type ActionResult<T = undefined> = { ok: true; data?: T } | { ok: false; error: string }
@@ -145,4 +147,22 @@ export async function disconnectBank(): Promise<ActionResult> {
     .eq('trade_id', userId)
   revalidatePath(PATH)
   return { ok: true }
+}
+
+/** Test mode only: pretend a bank transfer has arrived on the connected account, and run matching. */
+export async function simulateBankTransfer(input: { amount: string; reference: string; payerName: string }): Promise<ActionResult<{ outcome: MatchOutcome }>> {
+  if (!isMockOpenBanking()) return { ok: false, error: 'Only available in test mode.' }
+  const session = await getTradeSession()
+  if (!session) return { ok: false, error: 'Please sign in as a trade.' }
+  const pence = parsePounds(input.amount)
+  if (!pence) return { ok: false, error: 'Enter an amount.' }
+  const outcome = await processIncomingPayment(session.admin, session.userId, {
+    providerTransactionId: `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    receivedAt: new Date(),
+    amountPence: pence,
+    payerName: input.payerName.trim() || null,
+    reference: input.reference.trim() || null,
+  })
+  revalidatePath(PATH)
+  return { ok: true, data: { outcome } }
 }

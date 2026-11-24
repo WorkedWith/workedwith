@@ -200,6 +200,14 @@ export interface PaymentStage {
   due_at: string | null
   amount_paid_pence: number
   paid_at: string | null
+  client_says_paid_at: string | null
+  approval_reminder_5_at: string | null
+  approval_reminder_10_at: string | null
+  approval_reminder_14_at: string | null
+  last_manual_reminder_at: string | null
+  last_trade_response_at: string | null
+  stalled_notified_at: string | null
+  cancelled_at: string | null
   created_at: string
 }
 
@@ -229,7 +237,65 @@ export interface JobEvent {
   created_at: string
 }
 
+// ── Phase 5: stages and payments ─────────────────────────────
+
+export interface StageEvidence { id: string; stage_id: string; photo_paths: string[]; note: string | null; created_by: string | null; created_at: string }
+export interface StageIssue { id: string; stage_id: string; raised_by_user_id: string | null; reason: string; photo_paths: string[]; status: 'open' | 'resubmitted' | 'resolved' | 'closed_by_request'; resolved_at: string | null; created_at: string }
+export interface IssueNote { id: string; issue_id: string; author_user_id: string | null; note: string; photo_paths: string[]; created_at: string }
+
+export type InvoiceStatus = 'issued' | 'part_paid' | 'paid' | 'credited'
+export type ApprovalBasis = 'client_approved' | 'requested_by_trade' | 'deposit'
+
+export interface Invoice {
+  id: string
+  trade_id: string
+  job_id: string
+  stage_id: string | null
+  invoice_number: string
+  sequence: number
+  issued_at: string
+  due_at: string
+  net_pence: number
+  vat_pence: number
+  total_pence: number
+  amount_paid_pence: number
+  status: InvoiceStatus
+  approval_basis: ApprovalBasis
+  description: string
+  pdf_path: string | null
+  paid_at: string | null
+  created_at: string
+}
+
+export type PaymentMethod = 'bank_transfer_matched' | 'bank_transfer_marked_by_trade' | 'paid_elsewhere_cash' | 'paid_elsewhere_cheque' | 'paid_elsewhere_other_account' | 'card' | 'wallet'
+
+export interface Payment {
+  id: string
+  stage_id: string
+  invoice_id: string | null
+  job_id: string
+  amount_pence: number
+  method: PaymentMethod
+  bank_match_id: string | null
+  stripe_payment_intent_id: string | null
+  stripe_fee_pence: number | null
+  status: 'client_says_paid' | 'paid' | 'failed' | 'refunded'
+  paid_at: string
+  recorded_by: string | null
+  client_confirmed_at: string | null
+  client_disputed_at: string | null
+  refunded_pence: number
+  refund_marked_at: string | null
+  refund_client_confirmed_at: string | null
+  created_at: string
+}
+
 export type V42Tables = {
+  stage_evidence: TableDef<StageEvidence, 'stage_id'>
+  stage_issues: TableDef<StageIssue, 'stage_id' | 'reason'>
+  issue_notes: TableDef<IssueNote, 'issue_id' | 'note'>
+  invoices: TableDef<Invoice, 'trade_id' | 'job_id' | 'invoice_number' | 'sequence' | 'due_at' | 'net_pence' | 'total_pence' | 'approval_basis' | 'description'>
+  payments: TableDef<Payment, 'stage_id' | 'job_id' | 'amount_pence' | 'method'>
   start_date_proposals: TableDef<StartDateProposal, 'job_id' | 'proposed_date'>
   job_events: TableDef<JobEvent, 'job_id' | 'kind' | 'summary'>
   quotes: TableDef<Quote, 'job_id' | 'trade_user_id' | 'client_name' | 'client_mobile' | 'client_email' | 'title' | 'valid_until'>
