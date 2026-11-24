@@ -15,6 +15,7 @@ import { smsDepositDue, smsQuoteSent } from '@/lib/sms/copy-v42'
 import { onStageDue } from '@/lib/jobs/hooks'
 import { storeJobPhoto } from '@/lib/photos'
 import { recordClientRecordView } from '@/lib/client-record/views'
+import { logJobEvent } from '@/lib/jobs/events'
 
 type R<T = undefined> = { ok: true; data?: T } | { ok: false; error: string }
 
@@ -88,6 +89,7 @@ export async function sendQuote(input: QuoteDraftInput): Promise<R<{ quoteId: st
   // The quoting trade sees the client's record next to the quote (PRD 14): logged for the audit trail
   await recordClientRecordView(admin, { tradeId: userId, clientId: client.userId, reason: 'quoting', jobId: saved.jobId })
 
+  await logJobEvent(admin, saved.jobId, 'quote_sent', `Quote version ${bundle.quote.version} sent to the client`, userId)
   const sender = await getTradeSender(admin, userId)
   const link = await createAccessLink(admin, { clientUserId: client.userId, purpose: 'quote', targetPath: `/my/quotes/${saved.quoteId}`, createdBy: userId })
   await messageClient(admin, {
@@ -227,6 +229,7 @@ export async function acceptQuote(input: { quoteId: string; termsAgreed: boolean
     early_start_consent_by_user_id: consentAt ? userId : null,
   }).eq('id', job.id)
 
+  await logJobEvent(admin, job.id, 'quote_accepted', `Client accepted quote version ${q.version} in their account${consentAt ? ', and asked for an early start' : ''}`, userId, { quoteId: q.id, clientType: kind })
   const depositStageId = await createStagesFromQuote(admin, bundle, nowIso, userId)
   if (depositStageId) await onStageDue(admin, depositStageId)
 

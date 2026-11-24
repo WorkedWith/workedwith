@@ -8,3 +8,6 @@ export const smsQuoteSent = (business: string, link: string, updated: boolean) =
 export const smsQuoteNudge = (business: string, link: string) => `Reminder: your quote from ${business} is waiting. ${link}`
 
 export const smsDepositDue = (business: string, link: string) => `${business}: your deposit is due to book the job in. Details: ${link}`
+
+export const smsStartProposed = (business: string, date: string, link: string) => `${business} suggests a planned start of ${date}. Confirm or suggest another: ${link}`
+export const smsConsentRequested = (business: string, link: string) => `${business} would like to start within your 14 day cancellation period. Answer here: ${link}`

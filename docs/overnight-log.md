@@ -13,6 +13,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 1 Getting paid setup | Done (mock provider) | Business details screen, bank details with Confirmation of Payee, account number encrypted, open banking connection through a swappable interface (mock and TrueLayer adapters), 90 day reconfirm prompts and lapse, usage tracking table |
 | 2 Client accounts | Done (mock text codes) | Clients are found by mobile then email, or created with no password. Links in texts and emails open with a text code to the client's own mobile and sign them in. Person or company confirmed on first visit. Sign in later by text code or email link. Client area at /my with My jobs, Find a trade, My record |
 | 3 Quotes | Done | Phone first quote builder (client, job, lines, saved items, copy a past quote, VAT, deposit with refund settings, on completion or stages by amount or percentage, planned start, photos, preview), drafts and versions, send by text and email, follow ups and expiry, unpaid deposit reminders at day 1, 3 and 6 with expiry at day 7 and extend, client quote page with accept (terms, cancellation notice, early start consent), ask for changes and decline, trade Jobs list with filters, trade job page, client My jobs and job page |
+| 4 Start dates and job events | Done | Propose, confirm, counter and change planned starts from either side, materials ordered with an optional receipt photo, mark started (blocked inside a person client's 14 days without consent, with a request button), early start consent from the client's account, and a job history timeline on both job pages |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -65,6 +66,11 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 3.8 | Photos on quotes, stages and variations go to a private storage bucket `job-photos` and are shown through signed links. The existing Rekognition moderation runs when AWS keys are set. | 6, 13 |
 | 3.9 | Sending a quote needs bank details and an active trial or plan. Drafts can always be saved. | 3, 4 |
 | 3.10 | Trade navigation is Home, Jobs, Client lookup, Profile. The PRD lists Home, Jobs, Profile; I kept Client lookup in the bar because it is a core daily tool. | 18 |
+| 4.1 | A client confirming, or suggesting, a date inside their 14 day cancellation period must tick the early start consent to do so; otherwise they pick a later date. | 7 |
+| 4.2 | The Materials ordered button shows when the deposit covers materials. | 7 |
+| 4.3 | A `job_events` table records every event with who did it and when. It feeds the history on both job pages and later the claim pack and chargeback evidence. | 10, 21 |
+| 4.4 | The early start request can be sent again at most once a day. | 7 |
+| 4.5 | "Needs a start date" after 14 days booked is shown on the trade home (phase 15); nothing is sent to the client automatically. | 7 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -87,6 +93,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 2. `20261124000100_getting_paid_setup.sql`
 3. `20261124000200_client_accounts.sql`
 4. `20261124000300_quotes.sql` (also creates the private `job-photos` storage bucket)
+5. `20261124000400_job_events.sql`
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -138,5 +145,10 @@ supabase db push
 - Try a quote with a deposit: the client sees the deposit wording and the job waits for the deposit. On the trade job page, Give 7 more days works.
 - Try Ask for changes: the trade sees the note, Edit and resend makes version 2, and the client must accept again.
 - At phone width (390px), check the builder: add lines, use a saved item, switch to stages and use the percentage box, Preview, Send.
+
+**Phase 4**
+- After a quote is accepted (and deposit paid, or no deposit), on the trade job page propose a start date. The client confirms it, or suggests another, from their job page. Try a date inside 14 days as a person client: the consent box appears.
+- Mark job started inside the 14 days without consent: you see the explanation and can send the request. The client answers yes; you can then mark started.
+- With a deposit for materials, tap Materials ordered and add a photo; the client gets a message and the history shows it.
 
 <!-- tests -->

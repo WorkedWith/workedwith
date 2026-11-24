@@ -205,7 +205,33 @@ export interface PaymentStage {
 
 export interface SavedItem { id: string; trade_id: string; description: string; price_pence: number; vat_applies: boolean; created_at: string }
 
+// ── Phase 4: start dates and job events ──────────────────────
+
+export interface StartDateProposal {
+  id: string
+  job_id: string
+  proposed_date: string
+  proposed_by_user_id: string | null
+  status: 'proposed' | 'confirmed' | 'countered' | 'withdrawn'
+  decided_at: string | null
+  decided_by_user_id: string | null
+  early_start_consent_given: boolean
+  created_at: string
+}
+
+export interface JobEvent {
+  id: string
+  job_id: string
+  kind: string
+  actor_user_id: string | null
+  summary: string
+  data: Record<string, unknown> | null
+  created_at: string
+}
+
 export type V42Tables = {
+  start_date_proposals: TableDef<StartDateProposal, 'job_id' | 'proposed_date'>
+  job_events: TableDef<JobEvent, 'job_id' | 'kind' | 'summary'>
   quotes: TableDef<Quote, 'job_id' | 'trade_user_id' | 'client_name' | 'client_mobile' | 'client_email' | 'title' | 'valid_until'>
   quote_lines: TableDef<QuoteLine, 'quote_id' | 'position' | 'description' | 'price_pence'>
   quote_stages: TableDef<QuoteStage, 'quote_id' | 'position' | 'name' | 'amount_pence'>

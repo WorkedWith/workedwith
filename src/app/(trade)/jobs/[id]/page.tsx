@@ -10,6 +10,7 @@ import { TradeQuotePanel } from '@/components/jobs/trade-quote-panel'
 import { ClientRecordPanel } from '@/components/jobs/client-record-panel'
 import { TradeJobSections } from '@/components/jobs/trade-job-sections'
 import { LegacyJobView } from './legacy-job-view'
+import { JobTimeline } from '@/components/jobs/job-timeline'
 
 export const metadata = { title: 'Job | WorkedWith' }
 
@@ -45,11 +46,12 @@ export default async function JobPage({ params, searchParams }: { params: { id: 
       </header>
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
-          <TradeJobSections admin={admin} bundle={bundle} />
+          <TradeJobSections admin={admin} bundle={bundle} userId={user.id} />
           <TradeQuotePanel admin={admin} bundle={bundle} businessName={sender.businessName} />
         </div>
         <div className="space-y-5">
           <ClientRecordPanel admin={admin} clientUserId={job.client_user_id} />
+          <JobTimeline admin={admin} jobId={job.id} />
         </div>
       </div>
     </PageShell>

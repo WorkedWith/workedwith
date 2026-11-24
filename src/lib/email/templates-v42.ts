@@ -94,3 +94,25 @@ export function tradeQuoteEventEmail(p: { title: string; client: string; event: 
     button: { label: 'Open the job', url: url(`/jobs/${p.jobId}`) },
   }
 }
+
+// ── Job events (phase 4) ──────────────────────────────────────
+
+export function jobEventClientEmail(p: { business: string; title: string; link: string; event: 'start_proposed' | 'start_confirmed' | 'materials_ordered' | 'consent_requested' | 'started'; date?: string }): EmailContent {
+  const map = {
+    start_proposed: { s: `${p.business} has suggested a planned start`, b: `${p.business} has suggested a planned start of **${p.date}** for ${p.title}. Confirm it, or suggest another date, in your account.`, btn: 'Confirm or suggest a date' },
+    start_confirmed: { s: `Planned start agreed: ${p.date}`, b: `The planned start for ${p.title} is ${p.date}.`, btn: 'See your job' },
+    materials_ordered: { s: 'Your materials have been ordered', b: `${p.business} has ordered the materials for ${p.title}.`, btn: 'See your job' },
+    consent_requested: { s: 'Can the work start within your 14 days?', b: `${p.business} would like to start ${p.title} within your 14 day cancellation period. If you are happy for it to, say so in your account. If you then cancel you may have to pay for work already done.`, btn: 'Answer in your account' },
+    started: { s: `Work has started: ${p.title}`, b: `${p.business} has marked ${p.title} as started.`, btn: 'See your job' },
+  }[p.event]
+  return { subject: map.s, heading: map.s, paragraphs: [map.b], button: { label: map.btn, url: url(p.link) } }
+}
+
+export function jobEventTradeEmail(p: { client: string; title: string; jobId: string; event: 'start_confirmed' | 'start_countered' | 'consent_given'; date?: string }): EmailContent {
+  const map = {
+    start_confirmed: { s: `Start date confirmed: ${p.date}`, b: `${p.client} confirmed the planned start of ${p.date} for ${p.title}.` },
+    start_countered: { s: `${p.client} suggested another date`, b: `${p.client} suggested a planned start of ${p.date} for ${p.title}. Accept it or suggest another from the job.` },
+    consent_given: { s: 'Early start agreed', b: `${p.client} has asked for ${p.title} to start within their 14 day cancellation period. You can now mark the job started.` },
+  }[p.event]
+  return { subject: map.s, heading: map.s, paragraphs: [map.b], button: { label: 'Open the job', url: url(`/jobs/${p.jobId}`) } }
+}

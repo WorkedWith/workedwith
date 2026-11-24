@@ -8,6 +8,7 @@ import { getTradeSender } from '@/lib/messages/send'
 import { formatPence } from '@/lib/money'
 import { Notice } from '@/components/ui'
 import { ClientJobSections } from '@/components/jobs/client-job-sections'
+import { JobTimeline } from '@/components/jobs/job-timeline'
 
 export const metadata = { title: 'Your job | WorkedWith', robots: { index: false } }
 
@@ -37,7 +38,8 @@ export default async function ClientJobPage({ params, searchParams }: { params: 
           <span className="text-sm font-semibold text-brand-amber">{nextStepForClient(job.status, current, stages)}</span>
         </div>
       </header>
-      <ClientJobSections admin={admin} bundle={bundle} />
+      <ClientJobSections admin={admin} bundle={bundle} userId={user.id} />
+      <JobTimeline admin={admin} jobId={job.id} />
       {current && <a href={`/my/quotes/${current.id}`} className="block min-h-[48px] rounded-2xl border border-gray-200 bg-white p-4 text-sm font-semibold text-brand-navy">See the accepted quote and terms ›</a>}
     </main>
   )
