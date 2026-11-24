@@ -22,6 +22,8 @@ const HIDDEN: RegExp[] = [
   /^\/invite\/claim(\/|$)/,
   /^\/admin\/client-listings(\/|$)/,
   /^\/admin\/pending-invites(\/|$)/,
+  // Client profiles by username: lookup by username is removed (PRD 14, 23)
+  /^\/c\/[^/]+(\/|$)/,
   // "Log a job" on profiles is removed; the profile link points to the public profile
   /^\/t\/[^/]+\/job(\/|$)/,
 ]

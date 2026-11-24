@@ -349,7 +349,14 @@ export interface LegalDocument {
   created_by: string | null
 }
 
+// ── Phase 9: reviews and client record ───────────────────────
+
+export interface ReviewPhoto { id: string; review_id: string; path: string; moderation_status: 'pending' | 'approved' | 'rejected'; created_at: string }
+export interface ClientRecordView { id: string; trade_id: string; client_id: string; reason: 'quoting' | 'lookup'; job_id: string | null; viewed_at: string }
+
 export type V42Tables = {
+  review_photos: TableDef<ReviewPhoto, 'review_id' | 'path'>
+  client_record_views: TableDef<ClientRecordView, 'trade_id' | 'client_id' | 'reason'>
   chase_events: TableDef<ChaseEvent, 'stage_id' | 'job_id' | 'step'>
   legal_documents: TableDef<LegalDocument, 'job_id' | 'type'>
   variations: TableDef<Variation, 'job_id' | 'description' | 'amount_pence'>

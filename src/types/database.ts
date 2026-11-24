@@ -356,6 +356,11 @@ export interface ReviewWindow {
   reminder_7_sent_at: string | null
   reminder_14_sent_at: string | null
   both_submitted_at: string | null
+  flow: 'legacy' | 'quote'
+  opened_reason: 'paid' | 'overdue_30_days' | 'cancelled_after_start' | null
+  closed_at: string | null
+  reminder_3_sent_at: string | null
+  reminder_10_sent_at: string | null
 }
 
 export type ReviewerType = 'trade' | 'client'
@@ -394,6 +399,9 @@ export interface Review {
   dispute_status: DisputeStatus
   response_text: string | null
   response_submitted_at: string | null
+  label: 'paid_job' | 'unpaid' | 'ended_early' | null
+  published_at: string | null
+  updated_at: string | null
   created_at: string
 }
 

@@ -18,6 +18,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 6 Invoices and exports | Done | Invoice pages for both sides (client page with copy buttons), invoice and credit note PDFs (HMRC VAT fields when VAT registered, PAID stamp, "requested by the trade" label), credit notes with their own sequential numbers issued for refunds, invoices and credit notes list on both job pages, and exports for any date range: invoices, payments (with Stripe fees) and credit notes as CSV, plus all invoices as one PDF |
 | 7 Variations | Done | The trade adds a variation (addition or reduction, photos, note, the stage it goes on or a new stage) from the job page on a phone; it goes to the client by text and email; the client approves or declines with a note in their account; approved changes update the stage and job total for both sides and show on the invoice; withdraw while waiting |
 | 8 Chasing, letters and claim pack | Done | Daily chasing on every due stage (2 days before, due date, 3, 7 and 14 days late) by text and email in the trade's name with the bank details and reference, a 21 day prompt to the trade, the review window at 30 days, overdue status, "I've paid" pause of 3 working days, pause, resume and stop per job, letter before action (person: 30 days with information sheet and reply form; company: 14 days with optional statutory interest and fixed compensation) previewed and sent with one tap, readable by the client, and a claim pack PDF with the Money Claim Online figures, terms, acceptance record, events, variations, stages with photos, issues, payments, reminders and all invoices |
+| 9 Reviews and client records | Done | Review windows open on full payment, 30 days overdue, or cancellation after work started; 14 days for both sides with reminders at day 3 and 10; hidden until both submit or the window ends, then published together (a single review publishes alone at the close); edit until then, then locked; up to 5 photos; labels Paid job, Unpaid (updates to Paid job if later paid) and Ended early; responses and disputes reuse the existing routes. Client record with a good payer summary, payment figures, reviews from trades with photos, labels and red flags, shown to quoting trades (open, or within 12 months) and on lookup by exact email or mobile (20 a day, logged), and to the client on My record. Username lookup and /c pages removed |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -98,6 +99,12 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 8.5 | The person letter, information sheet and reply form follow the shape of the Pre Action Protocol but are my wording, not the official annexes. Both letters and all chasing copy need the solicitor review. | 10, 19 |
 | 8.6 | Statutory interest uses `LATE_PAYMENT_REFERENCE_RATE` plus 8%, simple, from each due date to the letter date. The default reference rate is a placeholder of 4%. Fixed compensation is £40, £70 or £100 per invoice by size. | 10 |
 | 8.7 | The claim pack embeds up to 4 JPG or PNG photos per stage; other formats are listed by file name. The court fee is not calculated; the pack tells the trade to add it from the current fee table. | 10 |
+| 9.1 | v4.2 review windows live in the existing `review_windows` table with `flow = 'quote'`; the old cron logic now only touches `legacy` windows. The existing reviews table, dimensions and score calculation are reused. | 13, 23 |
+| 9.2 | Reviews on v4.2 jobs are written on the job page (both sides), not the old review page. The written review limit stays at 500 characters as in the existing flow. | 13 |
+| 9.3 | Payment figures: "paid on time" counts stages paid by their due date, excluding stages paid only after a trade request (shown separately). Average days to pay runs from approval (or the due date) to payment. Unconfirmed paid elsewhere payments don't count. "Disputes" counts payments the client disputed; lost chargebacks arrive with phase 13. | 14 |
+| 9.4 | A quoting trade sees the record while any quote or job with the client is open, and for 12 months after it was last updated. | 14 |
+| 9.5 | Every time a record is shown to a quoting trade on sending a quote, and on every lookup, it is logged in `client_record_views`. | 14 |
+| 9.6 | Review photos go through the same upload and moderation as job photos and are stored privately; they show through signed links. | 13 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -114,6 +121,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 10. Accountant check of the invoice layout and the export columns (PRD 19 item 9).
 11. Set `LATE_PAYMENT_REFERENCE_RATE` to the current Bank of England reference rate, and update it each January and July.
 12. Solicitor review of both letters, the information sheet and reply form, and every chasing message (`src/lib/email/templates-v42.ts`, `src/lib/sms/copy-v42.ts`, `src/lib/pdf/lba-pdf.ts`).
+13. Legal check on showing the full client record without consent (PRD 19 item 4), and the privacy notice wording clients see when they open their account (currently a short line on the open link page linking to /privacy).
 <!-- needs -->
 
 ## 4. To run
@@ -128,6 +136,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 7. `20261124000600_credit_notes.sql`
 8. `20261124000700_variations.sql`
 9. `20261124000800_chasing.sql`
+10. `20261124000900_reviews_client_record.sql`
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -211,5 +220,13 @@ supabase db push
 - Pause and resume chasing on the job.
 - Set `due_at` 22 days back: the trade is prompted, and Letter before action opens. Preview the PDF as a person client and as a company client (tick interest). Send it: the client sees the red notice and can read it.
 - Set the letter's `response_due_at` in the past: Download the claim pack and check every section.
+
+**Phase 9**
+- Pay every stage on a job (simulated transfers): both sides get "You can now review". Write a review with a photo as the trade: the client sees nothing yet. Edit it. Write the client's: both publish together, labelled Paid job.
+- On another job, set a stage `due_at` 31 days back and run the cron: the window opens and the review is labelled Unpaid. Pay it: the label changes to Paid job.
+- Cancel a started job: the window opens, labelled Ended early. Cancel an unstarted one: no window.
+- Set a window's `window_closes_at` in the past with one review in and run the cron: it publishes alone.
+- Client lookup: enter a client's exact email, then mobile. Try a partial email (refused). Do 21 lookups (the 21st is refused).
+- As the client, open My record.
 
 <!-- tests -->

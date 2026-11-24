@@ -50,7 +50,7 @@ export default async function JobPage({ params, searchParams }: { params: { id: 
           <TradeQuotePanel admin={admin} bundle={bundle} businessName={sender.businessName} />
         </div>
         <div className="space-y-5">
-          <ClientRecordPanel admin={admin} clientUserId={job.client_user_id} />
+          <ClientRecordPanel admin={admin} clientUserId={job.client_user_id} tradeId={user.id} />
           <JobTimeline admin={admin} jobId={job.id} />
         </div>
       </div>

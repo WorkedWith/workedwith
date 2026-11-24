@@ -288,3 +288,14 @@ export function lbaClientEmail(p: { business: string; balancePence: number; resp
     button: { label: 'Read the letter', url: url(p.link) },
   }
 }
+
+// ── Reviews (phase 9) ─────────────────────────────────────────
+
+export function reviewWindowEmail(p: { other: string; title: string; link: string; kind: 'open' | 'reminder' | 'published'; closesOn: string }): EmailContent {
+  const map = {
+    open: { s: `You can now review ${p.other}`, b: `The job **${p.title}** is ready for reviews. You both have until ${p.closesOn}. Neither review shows until both are in or the 14 days end, then they publish together.` },
+    reminder: { s: `Reminder: review ${p.other}`, b: `You have until ${p.closesOn} to review ${p.other} for **${p.title}**. If only one review is in when the window closes, it publishes on its own.` },
+    published: { s: 'Reviews published', b: `The reviews for **${p.title}** are now published.` },
+  }[p.kind]
+  return { subject: map.s, heading: map.s, paragraphs: [map.b], button: { label: p.kind === 'published' ? 'See the reviews' : 'Write my review', url: url(p.link) } }
+}

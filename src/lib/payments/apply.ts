@@ -4,7 +4,7 @@ import { getTradeSender, messageClient, messageTrade } from '@/lib/messages/send
 import { paymentTradeEmail, receiptEmail } from '@/lib/email/templates-v42'
 import { issueInvoiceForStage } from '@/lib/invoices/issue'
 import { logJobEvent } from '@/lib/jobs/events'
-import { openReviewWindow } from '@/lib/reviews/windows'
+import { openReviewWindow, refreshLabels } from '@/lib/reviews/windows'
 import { formatPence } from '@/lib/money'
 import { depositWording } from '@/lib/quotes/wording'
 import { METHOD_LABEL } from './labels'
@@ -90,6 +90,7 @@ export async function recordPayment(admin: AdminClient, input: RecordPaymentInpu
     await admin.from('jobs').update({ status: 'paid' }).eq('id', stage.job_id)
     await logJobEvent(admin, stage.job_id, 'paid', 'Job paid in full', null)
     await openReviewWindow(admin, stage.job_id, 'paid')
+    await refreshLabels(admin, stage.job_id)
   }
 
   // Receipt to the client, notification to the trade (PRD 9 receipts)
