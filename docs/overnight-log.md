@@ -10,6 +10,8 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 |---|---|---|
 | 0 Cleanup | Done | One plan with a 30 day trial, single "has active plan" check, boosts reworked to the £10 add on with a 3 per trade type cap, waiting list and admin switch, backdated and trade invite flows removed, old screens hidden, test data reset script |
 | 0.5 Landing page | Done | Home, for trades, for clients, pricing and FAQ rewritten for the quote to paid platform, with the plain cost table, accounting names, shared nav and footer, and a slot for the landing video |
+| 1 Getting paid setup | Done (mock provider) | Business details screen, bank details with Confirmation of Payee, account number encrypted, open banking connection through a swappable interface (mock and TrueLayer adapters), 90 day reconfirm prompts and lapse, usage tracking table |
+<!-- progress -->
 
 ## 2. Decisions I made
 
@@ -34,6 +36,16 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 0.5.1 | No landing video exists in the repo. The pages show a video section only when `NEXT_PUBLIC_LANDING_VIDEO_URL` is set. | 19 item 11, 20 phase 0.5 |
 | 0.5.2 | Accounting platforms are shown as plain wordmarks, not their logos, until we have permission to use each brand. | 18 |
 | 0.5.3 | The Stripe card fee (1.5% + 20p) is quoted on the pricing page as the PRD says; check it before launch. | 3 |
+| 1.1 | Bank account numbers are encrypted in the app with AES 256 GCM (`DATA_ENCRYPTION_KEY`), and only the last 4 digits are kept in clear for display. Clients see the full number only on invoices. | 11, key rule 10 |
+| 1.2 | Provider tokens are stored encrypted in `provider_connection_id`. | 21 |
+| 1.3 | The default open banking adapter is the mock (`OPEN_BANKING_PROVIDER=mock`). It shows a pretend bank picker; a name containing "wrong" fails Confirmation of Payee and "close" gives a close match. Incoming payments in mock mode are created with a Simulate button added in phase 5. | 19 item 1 |
+| 1.4 | I wrote the real adapter for TrueLayer because it is first on the PRD shortlist. It asks for read only scopes (no payments). Confirmation of Payee returns "unavailable" until a verification product is contracted. | 19 item 1 |
+| 1.5 | Changing bank details to a different account revokes the bank connection, because it would read the wrong account. | 4 |
+| 1.6 | If the connected bank reports a different sort code and account number to the one on invoices, the connection is refused. | 4 |
+| 1.7 | Reconfirm prompts start 7 days before the 90 day consent ends; after that matching pauses and the trade is told. Reconfirming reuses the bank approval flow (one tap in mock mode). | 9 |
+| 1.8 | Business details (trading address, business and reply email, VAT number, invoice prefix, payment terms, part payments, default deposit, extra terms) are built in phase 1 because quotes and invoices need them. The invoice prefix locks after the first invoice. | 4 step 2, 18 |
+| 1.9 | "Non refundable from payment" can't be a default, only picked on a quote to a company client. | 6 |
+<!-- decisions -->
 
 ## 3. Needs Adam
 
@@ -43,16 +55,25 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 5. Supply the landing video and set `NEXT_PUBLIC_LANDING_VIDEO_URL` (and optionally `NEXT_PUBLIC_LANDING_VIDEO_POSTER`).
 6. Logos for Xero, QuickBooks, FreeAgent and Sage, once each partner programme allows it.
 4. Switch boosts on for WA14 and WA15 in Admin, Boosted Districts, when you are ready to sell them.
+7. Choose the open banking provider (PRD 19 item 1). If it is TrueLayer, add `TRUELAYER_CLIENT_ID`, `TRUELAYER_CLIENT_SECRET`, `TRUELAYER_ENV`, register the redirect URL `https://workedwith.co.uk/api/open-banking/callback`, and test in their sandbox. If it is another provider, a new adapter beside `src/lib/open-banking/truelayer.ts` is needed.
+8. Generate `DATA_ENCRYPTION_KEY` (run `openssl rand -base64 32`) and add it to Vercel before any trade saves bank details. Keep a safe copy: losing it means losing the stored account numbers.
+<!-- needs -->
 
 ## 4. To run
 
 **Migrations, in order**
 1. `20261124000000_single_plan.sql`
+2. `20261124000100_getting_paid_setup.sql`
+<!-- migrations -->
 
 **Env vars to add in Vercel**
 - `STRIPE_PLAN_PRICE_ID`, `STRIPE_BOOST_PRICE_ID`
 - `MESSAGE_DELIVERY` (`live` in production; leave unset or `log` in preview)
 - `NEXT_PUBLIC_LANDING_VIDEO_URL`, `NEXT_PUBLIC_LANDING_VIDEO_POSTER` (optional)
+- `DATA_ENCRYPTION_KEY` (required in production)
+- `OPEN_BANKING_PROVIDER` (`mock` or `truelayer`)
+- `TRUELAYER_CLIENT_ID`, `TRUELAYER_CLIENT_SECRET`, `TRUELAYER_ENV` (`sandbox` or `live`)
+<!-- env -->
 
 **Commands**
 ```bash
@@ -76,3 +97,10 @@ supabase db push
 **Phase 0.5**
 - Open /, /for-trades, /for-clients, /pricing and /faq at phone width and desktop width. No sideways scrolling; the menu button opens the links on a phone.
 - Pricing shows £19.99 a month, the plain cost table and what every trade gets. No Standard or Pro anywhere.
+**Phase 1**
+- Profile, Business details: save name, address, emails, VAT number and invoice prefix.
+- Profile, Getting paid: save bank details. Try an account name containing "wrong" (red warning) and "close" (amber warning).
+- Connect my bank: pick a bank on the test bank page; you come back to Connected with a reconfirm date 90 days away.
+- Disconnect, then choose "My bank isn't listed": the status shows Not connected and says payments can be marked by hand.
+
+<!-- tests -->

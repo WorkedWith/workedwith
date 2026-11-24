@@ -70,6 +70,21 @@ export interface TradeProfile {
   trial_reminder_23_sent_at: string | null
   trial_reminder_28_sent_at: string | null
   trial_reminder_30_sent_at: string | null
+  // v4.2 business details (phase 1)
+  trading_address: string | null
+  business_email: string | null
+  business_phone: string | null
+  reply_email: string | null
+  vat_number: string | null
+  logo_path: string | null
+  extra_terms: string | null
+  invoice_prefix: string | null
+  next_invoice_number: number
+  default_deposit_for: 'materials' | 'labour' | 'materials_and_labour' | null
+  default_deposit_refundable: boolean
+  default_non_refundable_from: 'materials_ordered' | 'work_started' | 'payment' | null
+  payment_terms_days: number
+  part_payments_enabled: boolean
   created_at: string
 }
 
@@ -708,7 +723,7 @@ export interface Database {
       }
       trade_profiles: {
         Row: WithIndex<TradeProfile>
-        Insert: Omit<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'job_link_paused' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id' | 'trial_started_at' | 'trial_ends_at' | 'subscription_status' | 'trial_reminder_23_sent_at' | 'trial_reminder_28_sent_at' | 'trial_reminder_30_sent_at'> & Partial<Pick<TradeProfile, 'trial_started_at' | 'trial_ends_at' | 'subscription_status' | 'trial_reminder_23_sent_at' | 'trial_reminder_28_sent_at' | 'trial_reminder_30_sent_at' | 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'job_link_paused' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
+        Insert: Pick<TradeProfile, 'user_id' | 'public_slug'> & Partial<TradeProfile>
         Update: Partial<TradeProfile>
         Relationships: []
       }

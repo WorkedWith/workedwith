@@ -647,6 +647,32 @@ export function boostSlotFree(p: { district: string; tradeType: string }): Email
   }
 }
 
+// ── Bank connection (PRD 9) ────────────────────────────────────
+
+export function bankConnectionReconfirm(): EmailContent {
+  return {
+    subject: 'Reconfirm your bank connection',
+    heading: 'Reconfirm your bank connection',
+    paragraphs: [
+      'Banks ask you to reconfirm read access every 90 days. Yours is due in the next week.',
+      'It takes one tap. Until then, invoices keep marking themselves paid as normal.',
+    ],
+    button: { label: 'Reconfirm', url: `${APP_URL}/profile/getting-paid` },
+  }
+}
+
+export function bankConnectionLapsed(): EmailContent {
+  return {
+    subject: 'Your bank connection has lapsed',
+    heading: 'Automatic matching is paused',
+    paragraphs: [
+      'Your bank connection was not reconfirmed, so WorkedWith can no longer see incoming payments.',
+      'Everything else still works and you can mark payments as received yourself. Reconnect any time to switch matching back on.',
+    ],
+    button: { label: 'Reconnect', url: `${APP_URL}/profile/getting-paid` },
+  }
+}
+
 // ── Trial reminders (PRD 3: day 23, 28 and 30) ─────────────────
 
 export function trialReminder(p: { day: 23 | 28 | 30; endsOn: string }): EmailContent {
