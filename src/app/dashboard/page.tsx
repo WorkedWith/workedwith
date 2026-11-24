@@ -14,6 +14,7 @@ import { JobHistory } from '@/components/job-history'
 import { TradeSearchForm } from './trade-search-form'
 import { ClientLookupForm } from '@/components/client-lookup-form'
 import { getProfileAnalytics } from '@/actions/get-profile-analytics'
+import { getProfileActivity } from '@/lib/profile-activity'
 import type { ProfileAnalytics } from '@/actions/get-profile-analytics'
 import type { User, Notification } from '@/types/database'
 import { TradeChip } from '@/components/trade-chip'
@@ -122,6 +123,8 @@ export default async function DashboardPage() {
 
   const accountLabel = user_type === 'both' ? 'Tradesperson and client' : 'Tradesperson'
 
+  const activity = tpId ? await getProfileActivity(admin, tpId) : null
+  void analyticsData
   const pendingCount = jobRequests.length
 
   return (
@@ -312,21 +315,19 @@ export default async function DashboardPage() {
                 </section>
 
                 {/* Analytics — Pro stats or upgrade prompt */}
-                {analyticsData ? (
+                {activity && (
                   <section>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics: {analyticsData.periodLabel}</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Profile activity</p>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
-                        <p className="text-3xl font-bold text-brand-navy">{analyticsData.profileViews}</p>
-                        <p className="mt-1 text-xs text-gray-500">Profile views this month</p>
-                      </div>
-                      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm text-center">
-                        <p className="text-3xl font-bold text-brand-navy">{analyticsData.searchAppearances}</p>
-                        <p className="mt-1 text-xs text-gray-500">Search appearances this month</p>
-                      </div>
+                      {[['Profile views, 30 days', activity.views30], ['Profile views, 90 days', activity.views90], ['Email now clicks, 30 days', activity.emails30], ['Email now clicks, 90 days', activity.emails90]].map(([l, v]) => (
+                        <div key={l as string} className="rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
+                          <p className="text-2xl font-bold text-brand-navy">{v}</p>
+                          <p className="mt-1 text-xs text-gray-500">{l}</p>
+                        </div>
+                      ))}
                     </div>
                   </section>
-                ) : null}
+                )}
               </div>
             </div>
 

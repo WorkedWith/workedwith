@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { FEATURED_IMAGES_PER_JOB } from '@/lib/gallery-limits'
 import { FeaturedJobsClient } from './featured-jobs-client'
 import type { ModerationStatus } from '@/types/database'
+import { districtFrom } from '@/lib/featured'
 import { BackLink } from '@/components/back-link'
 
 export const metadata = { title: 'Featured jobs | WorkedWith' }
@@ -57,10 +58,11 @@ export default async function FeaturedJobsPage() {
       .order('created_at', { ascending: false }),
     admin
       .from('jobs')
-      .select('id, job_type, postcode, completed_at')
-      .eq('trade_profile_id', tradeProfileId)
-      .eq('status', 'completed')
-      .order('completed_at', { ascending: false })
+      .select('id, job_type, postcode, completed_at, job_address, updated_at')
+      .eq('trade_user_id', user.id)
+      .eq('flow', 'quote')
+      .eq('status', 'paid')
+      .order('updated_at', { ascending: false })
       .limit(50),
   ])
 
@@ -99,8 +101,8 @@ export default async function FeaturedJobsPage() {
   const completedJobs: CompletedJobOption[] = (rawCompletedJobs ?? []).map(j => ({
     id: j.id as string,
     job_type: j.job_type as string,
-    postcode: j.postcode as string,
-    completed_at: j.completed_at as string | null,
+    postcode: districtFrom(j.job_address as string | null) ?? '',
+    completed_at: (j.updated_at as string | null) ?? null,
   }))
 
   const imageLimit = FEATURED_IMAGES_PER_JOB

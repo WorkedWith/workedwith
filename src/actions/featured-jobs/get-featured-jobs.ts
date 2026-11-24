@@ -20,13 +20,20 @@ export type FeaturedJobPublic = {
 export async function getFeaturedJobs(tradeProfileId: string): Promise<FeaturedJobPublic[]> {
   const admin = createAdminClient()
 
-  const { data: jobs } = await admin
+  const { data: rawJobs } = await admin
     .from('featured_jobs')
     .select('id, title, job_id, created_at')
     .eq('trade_profile_id', tradeProfileId)
     .order('created_at', { ascending: false })
 
-  if (!jobs || jobs.length === 0) return []
+  if (!rawJobs || rawJobs.length === 0) return []
+
+  // Only featured jobs linked to a paid WorkedWith job are shown (PRD 15). Older ones are kept, hidden.
+  const linked = rawJobs.map(j => j.job_id).filter((x): x is string => !!x)
+  const { data: paid } = linked.length ? await admin.from('jobs').select('id').in('id', linked).eq('flow', 'quote').eq('status', 'paid') : { data: [] }
+  const paidIds = new Set((paid ?? []).map(p => p.id as string))
+  const jobs = rawJobs.filter(j => j.job_id && paidIds.has(j.job_id as string))
+  if (jobs.length === 0) return []
 
   const jobIds = jobs.map(j => j.id as string)
 

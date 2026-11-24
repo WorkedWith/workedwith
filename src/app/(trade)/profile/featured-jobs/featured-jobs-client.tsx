@@ -49,7 +49,7 @@ export function FeaturedJobsClient({
   const [showForm, setShowForm] = useState(false)
 
   // Form state
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState('Featured job')
   const [linkedJobId, setLinkedJobId] = useState('')
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
   const [fileError, setFileError] = useState<string | null>(null)
@@ -101,7 +101,7 @@ export function FeaturedJobsClient({
   }
 
   function resetForm() {
-    setTitle('')
+    setTitle('Featured job')
     setLinkedJobId('')
     pendingFiles.forEach(f => URL.revokeObjectURL(f.preview))
     setPendingFiles([])
@@ -225,29 +225,15 @@ export function FeaturedJobsClient({
           onSubmit={handleSubmit}
           className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-5"
         >
-          <h2 className="text-lg font-semibold text-brand-navy">Photos for a confirmed job</h2>
+          <h2 className="text-lg font-semibold text-brand-navy">Feature a paid job</h2>
 
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="e.g. Full bathroom renovation, Fitzrovia"
-              maxLength={120}
-              disabled={isPending}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:border-brand-amber focus:outline-none focus:ring-1 focus:ring-brand-amber disabled:opacity-50"
-            />
-          </div>
+          <p className="text-sm text-gray-600">Clients see the job type, the month and at most the postcode district. Never the client’s name or address.</p>
 
           {/* Linked job */}
           {completedJobs.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Confirmed job <span className="text-red-500">*</span>
+                Paid job <span className="text-red-500">*</span>
               </label>
               <select
                 value={linkedJobId}
@@ -258,7 +244,7 @@ export function FeaturedJobsClient({
                 <option value="">Choose a job</option>
                 {completedJobs.map(j => (
                   <option key={j.id} value={j.id}>
-                    {workTitle(j.job_type)}, {j.postcode}
+                    {workTitle(j.job_type)}{j.postcode ? `, ${j.postcode}` : ''}
                     {j.completed_at ? ` (${new Date(j.completed_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })})` : ''}
                   </option>
                 ))}

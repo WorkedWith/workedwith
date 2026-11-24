@@ -236,12 +236,15 @@ function ResultCard({ result, searchId }: { result: TradesearchResult; searchId:
           ✓ Insured
         </p>
       )}
+      <p className="mt-3 text-sm text-gray-600">
+        {result.paid_jobs > 0 ? `${result.paid_jobs} paid ${result.paid_jobs === 1 ? 'job' : 'jobs'} on WorkedWith · ` : ''}Member since {new Date(result.member_since).getFullYear()}
+      </p>
       {result.hired_again_count > 0 && (
         <p className="mt-2 text-xs font-medium text-brand-navy">
           Hired again by {result.hired_again_count} client{result.hired_again_count === 1 ? '' : 's'}
         </p>
       )}
-      {result.confirmation_label && (
+      {false && result.confirmation_label && (
         <p className="mt-2 text-xs text-gray-500" title="How often this trade confirms jobs other people log with them, over the last 2 years.">
           {result.confirmation_label}
         </p>

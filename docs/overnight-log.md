@@ -19,6 +19,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 7 Variations | Done | The trade adds a variation (addition or reduction, photos, note, the stage it goes on or a new stage) from the job page on a phone; it goes to the client by text and email; the client approves or declines with a note in their account; approved changes update the stage and job total for both sides and show on the invoice; withdraw while waiting |
 | 8 Chasing, letters and claim pack | Done | Daily chasing on every due stage (2 days before, due date, 3, 7 and 14 days late) by text and email in the trade's name with the bank details and reference, a 21 day prompt to the trade, the review window at 30 days, overdue status, "I've paid" pause of 3 working days, pause, resume and stop per job, letter before action (person: 30 days with information sheet and reply form; company: 14 days with optional statutory interest and fixed compensation) previewed and sent with one tap, readable by the client, and a claim pack PDF with the Money Claim Online figures, terms, acceptance record, events, variations, stages with photos, issues, payments, reminders and all invoices |
 | 9 Reviews and client records | Done | Review windows open on full payment, 30 days overdue, or cancellation after work started; 14 days for both sides with reminders at day 3 and 10; hidden until both submit or the window ends, then published together (a single review publishes alone at the close); edit until then, then locked; up to 5 photos; labels Paid job, Unpaid (updates to Paid job if later paid) and Ended early; responses and disputes reuse the existing routes. Client record with a good payer summary, payment figures, reviews from trades with photos, labels and red flags, shown to quoting trades (open, or within 12 months) and on lookup by exact email or mobile (20 a day, logged), and to the client on My record. Username lookup and /c pages removed |
+| 10 Directory and profiles | Done | Email now on member and seeded profiles (address put together in the browser on tap, then shown as text; rate limited per visitor; clicks counted), phone for signed in members only, paid jobs on WorkedWith and member since on cards and profiles, featured jobs only from paid WorkedWith jobs with an automatic title (job type, month, district), Log a job removed, profile activity (views and Email now clicks, 30 and 90 days) for every trade, seeded profiles labelled "Not yet on WorkedWith. No reviews yet." with view tracking |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -105,6 +106,11 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 9.4 | A quoting trade sees the record while any quote or job with the client is open, and for 12 months after it was last updated. | 14 |
 | 9.5 | Every time a record is shown to a quoting trade on sending a quote, and on every lookup, it is logged in `client_record_views`. | 14 |
 | 9.6 | Review photos go through the same upload and moderation as job photos and are stored privately; they show through signed links. | 13 |
+| 10.1 | Email now uses the business email set in Business details. If a trade hasn't set one, no Email now button shows (the account login email is never published). | 15 |
+| 10.2 | Email now is limited to 15 taps per visitor (by IP address) per day. The address is returned by a server action only on tap, never in the page source. | 15 |
+| 10.3 | The phone shown to signed in members is the business phone from Business details, falling back to the verified mobile. | 15 |
+| 10.4 | Featured job titles are generated from the job (type, month paid, postcode district taken from the job address), so a client's name or address can't appear. Older featured jobs not linked to a paid WorkedWith job are kept but hidden. | 15 |
+| 10.5 | The v3.7 confirmation rate and v3.9 ended early labels are hidden on profiles and cards (the code stays). Hired again and Insured stay. | 23 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -137,6 +143,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 8. `20261124000700_variations.sql`
 9. `20261124000800_chasing.sql`
 10. `20261124000900_reviews_client_record.sql`
+11. `20261124001000_directory_profiles.sql`
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -228,5 +235,12 @@ supabase db push
 - Set a window's `window_closes_at` in the past with one review in and run the cron: it publishes alone.
 - Client lookup: enter a client's exact email, then mobile. Try a partial email (refused). Do 21 lookups (the 21st is refused).
 - As the client, open My record.
+
+**Phase 10**
+- Set a business email, then open your public profile signed out: the bar shows Email now and "Sign in to see their phone". Tap Email now: your email app opens with the subject "Quote request via WorkedWith" and the address shows as text. View source: the address is not there.
+- Signed in as another user: Call appears.
+- Home shows profile views and Email now clicks for 30 and 90 days.
+- With a paid job, Profile, Photos, Featured jobs: only paid jobs can be picked, and the title shows job type, month and district.
+- Open a seeded profile: the label reads "Not yet on WorkedWith. No reviews yet." and Email now works for anyone.
 
 <!-- tests -->

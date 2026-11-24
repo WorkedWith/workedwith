@@ -3,6 +3,7 @@
 import { confirmationLabel } from '@/lib/request-outcomes'
 import { getActiveInsurance } from '@/lib/insurance'
 import { getActivePlans, isOnPaidPlan } from '@/lib/plan'
+import { paidJobCounts } from '@/lib/profile-activity'
 import { categoryMean, weightedScore, type CategoryAverages } from '@/lib/ranking/weighted'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
@@ -44,6 +45,8 @@ export type TradesearchResult = {
   confirmation_label: string | null
   hired_again_count: number
   insured: boolean
+  paid_jobs: number
+  member_since: string
   is_seeded?: false
 }
 
@@ -138,13 +141,14 @@ export async function searchTradespeople(
     const userIds = rawProfiles.map(p => p.user_id as string)
     const { data: rawUsers } = await admin
       .from('users')
-      .select('id, full_name, verification_tier, profile_photo_url')
+      .select('id, full_name, verification_tier, profile_photo_url, created_at')
       .in('id', userIds)
 
     const userMap = new Map(
       (rawUsers ?? []).map(u => [u.id as string, u])
     )
 
+    const paidJobs = await paidJobCounts(admin, rawProfiles.map(p => p.user_id as string))
     const insuredIds = new Set((await getActiveInsurance(admin, rawProfiles.map(p => p.id as string))).keys())
 
     for (const profile of rawProfiles) {
@@ -170,6 +174,8 @@ export async function searchTradespeople(
         verification_tier: user.verification_tier as VerificationTier,
         hired_again_count: (profile.hired_again_count as number | null) ?? 0,
         insured: insuredIds.has(profile.id as string),
+        paid_jobs: paidJobs.get(profile.user_id as string) ?? 0,
+        member_since: user.created_at as string,
         confirmation_label: confirmationLabel(profile.confirmation_counted as number | null, profile.confirmation_confirmed as number | null),
       })
     }
