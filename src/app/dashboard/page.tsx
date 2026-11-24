@@ -138,6 +138,9 @@ export default async function DashboardPage() {
         ══════════════════════════════════════════════ */}
         {isTrade && (
           <div className="space-y-6">
+            <a href="/quotes/new" className="flex min-h-[56px] items-center justify-center rounded-2xl bg-brand-amber text-lg font-bold text-brand-navy shadow-sm hover:bg-amber-400">
+              + New quote
+            </a>
             {/* Requests waiting on this trade — full width */}
             {(tradeRequests.length > 0 || jobRequests.length > 0) && (
               <RequestsBox tradeRequests={tradeRequests} jobRequests={jobRequests} />

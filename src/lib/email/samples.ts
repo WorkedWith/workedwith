@@ -15,7 +15,7 @@ const seed = {
   removeUrl: `${APP_URL}/claim/sample/remove`,
 }
 
-export const EMAIL_SAMPLES: EmailSample[] = [
+export const EMAIL_SAMPLES_V3: EmailSample[] = [
   { id: 'E1', group: 'Jobs', label: 'Job to confirm (existing client)', to: 'Client with an account', content: t.jobToConfirmExisting({ tradeName: 'RG Tiling Services', jobType: 'Tiling', postcode: 'M20 3HD', token: 'sample' }) },
   { id: 'E2', group: 'Jobs', label: 'Job logged (client not on WorkedWith)', to: 'Stranger', content: t.jobInviteNewClient({ tradeName: 'RG Tiling Services', jobType: 'Tiling', district: 'M20', token: 'sample' }) },
   { id: 'E3', group: 'Jobs', label: 'Past job to confirm (existing user)', to: 'User with an account', content: t.pastJobExisting({ callerName: 'Raul Garcia', jobType: 'Tiling', period: 'March 2026', token: 'sample' }) },
@@ -77,10 +77,15 @@ export const EMAIL_SAMPLES: EmailSample[] = [
   { id: 'E32', group: 'Seeded outreach', label: 'Day 14', to: 'Stranger', content: t.seededOutreach({ day: 'day14', ...seed }) },
 ]
 
-export const SMS_SAMPLES: SmsSample[] = [
+export const SMS_SAMPLES_V3: SmsSample[] = [
   { id: 'S1', label: 'Client invites a tradesperson', to: 'Stranger', text: tradeInviteSms({ callerName: 'Sam Patel', jobType: 'Tiling', token: 'sample', days: 60 }) },
   { id: 'S2', label: 'Seeded, day 0', to: 'Stranger', text: seededSms({ day: 'day0', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
   { id: 'S3', label: 'Seeded, day 3', to: 'Stranger', text: seededSms({ day: 'day3', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
   { id: 'S4', label: 'Seeded, day 7', to: 'Stranger', text: seededSms({ day: 'day7', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
   { id: 'S5', label: 'Seeded, day 14', to: 'Stranger', text: seededSms({ day: 'day14', name: seed.name, removesOn: seed.removesOn, claimUrl: seed.claimUrl, removeUrl: seed.removeUrl }) },
 ]
+
+import { EMAIL_SAMPLES_V42, SMS_SAMPLES_V42 } from './samples-v42'
+
+export const EMAIL_SAMPLES: EmailSample[] = [...EMAIL_SAMPLES_V42, ...EMAIL_SAMPLES_V3]
+export const SMS_SAMPLES: SmsSample[] = [...SMS_SAMPLES_V42, ...SMS_SAMPLES_V3]

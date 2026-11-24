@@ -6,11 +6,12 @@ import { AppNav, type NavLink } from '@/components/app-nav'
 
 function linksFor(userType: string | null): NavLink[] {
   if (userType === 'trade' || userType === 'both') {
+    // Trade navigation (PRD 18): Home, Jobs, Profile
     return [
-      { href: '/dashboard', label: 'Dashboard' },
-      { href: '/search', label: 'Client lookup' },
+      { href: '/dashboard', label: 'Home' },
+      { href: '/jobs', label: 'Jobs' },
+      { href: '/search', label: 'Client lookup', shortLabel: 'Lookup' },
       { href: '/profile', label: 'Profile' },
-      { href: '/settings', label: 'Settings' },
     ]
   }
   // Organisations and business client screens are parked (PRD 23); business clients get the client nav

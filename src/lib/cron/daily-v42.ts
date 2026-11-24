@@ -1,6 +1,7 @@
 import type { createAdminClient } from '@/lib/supabase/admin'
 import { runTrialMaintenance } from '@/lib/plan-maintenance'
 import { runConnectionMaintenance } from '@/lib/getting-paid/connection-maintenance'
+import { runQuoteFollowUps } from '@/lib/quotes/follow-ups'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -13,6 +14,7 @@ export async function runDailyV42(admin: AdminClient): Promise<Record<string, un
   const steps: [string, () => Promise<unknown>][] = [
     ['trials', () => runTrialMaintenance(admin)],
     ['bankConnections', () => runConnectionMaintenance(admin)],
+    ['quoteFollowUps', () => runQuoteFollowUps(admin)],
   ]
   for (const [name, fn] of steps) {
     try {

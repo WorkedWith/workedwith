@@ -12,6 +12,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 0.5 Landing page | Done | Home, for trades, for clients, pricing and FAQ rewritten for the quote to paid platform, with the plain cost table, accounting names, shared nav and footer, and a slot for the landing video |
 | 1 Getting paid setup | Done (mock provider) | Business details screen, bank details with Confirmation of Payee, account number encrypted, open banking connection through a swappable interface (mock and TrueLayer adapters), 90 day reconfirm prompts and lapse, usage tracking table |
 | 2 Client accounts | Done (mock text codes) | Clients are found by mobile then email, or created with no password. Links in texts and emails open with a text code to the client's own mobile and sign them in. Person or company confirmed on first visit. Sign in later by text code or email link. Client area at /my with My jobs, Find a trade, My record |
+| 3 Quotes | Done | Phone first quote builder (client, job, lines, saved items, copy a past quote, VAT, deposit with refund settings, on completion or stages by amount or percentage, planned start, photos, preview), drafts and versions, send by text and email, follow ups and expiry, unpaid deposit reminders at day 1, 3 and 6 with expiry at day 7 and extend, client quote page with accept (terms, cancellation notice, early start consent), ask for changes and decline, trade Jobs list with filters, trade job page, client My jobs and job page |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -54,6 +55,16 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 2.6 | Text codes use Twilio Verify. With no Verify service set up outside production (or `OTP_PROVIDER=mock`), the code is always 123456 and nothing is sent. Codes are rate limited (5 sends an hour, 8 checks in 10 minutes). | 5 |
 | 2.7 | Client only users go to /my/jobs instead of the old dashboard. Client nav is My jobs, Find a trade, My record, Account. | 18 |
 | 2.8 | The Companies House number for company clients is optional free text and never checked. | 21, 24 |
+| 3.1 | New jobs live in the existing `jobs` table with `flow = 'quote'`; old v3 jobs keep `flow = 'legacy'` and still open in the old job view. The status check allows both sets of statuses until the old flow is deleted. | 20, 21 |
+| 3.2 | A quote can be edited and resent (a new version) until it is accepted. After acceptance, changes go through variations (phase 7). Older versions are kept and shown as "Replaced by a newer version" (an extra internal status, `superseded`). | 6, 8 |
+| 3.3 | Stage amounts and the deposit are VAT inclusive (they add up to the quote total). Invoices split each amount into net and VAT in the same proportion as the quote. | 6, 11 |
+| 3.4 | The client type used for the job is the client's own confirmed type at the moment they accept, saved on the quote and job. "Non refundable from payment" can only be picked for company clients, and a quote using it can't be accepted by a person. | 5, 6 |
+| 3.5 | Early start consent at acceptance is optional for the client. If they don't give it, the trade can't mark the job started inside the 14 days and can ask for it later (phase 4). | 7 |
+| 3.6 | Accepting creates the payment stages straight away. The deposit stage is due at once (accepting is the approval). The job stays `quoted` until the deposit is paid, then becomes `booked`; with no deposit it is booked on acceptance. | 6, 9 |
+| 3.7 | Quote follow ups run once a day from the shared cron. Each follow up is recorded so it is only ever sent once. Deposit reminders can't be switched off because they are part of the payment flow. | 6, 17 |
+| 3.8 | Photos on quotes, stages and variations go to a private storage bucket `job-photos` and are shown through signed links. The existing Rekognition moderation runs when AWS keys are set. | 6, 13 |
+| 3.9 | Sending a quote needs bank details and an active trial or plan. Drafts can always be saved. | 3, 4 |
+| 3.10 | Trade navigation is Home, Jobs, Client lookup, Profile. The PRD lists Home, Jobs, Profile; I kept Client lookup in the bar because it is a core daily tool. | 18 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -75,6 +86,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 1. `20261124000000_single_plan.sql`
 2. `20261124000100_getting_paid_setup.sql`
 3. `20261124000200_client_accounts.sql`
+4. `20261124000300_quotes.sql` (also creates the private `job-photos` storage bucket)
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -119,5 +131,12 @@ supabase db push
 - Phase 3 creates real links. To test now, insert a `client_access_links` row for a client (see `createAccessLink` in `src/lib/clients/accounts.ts`), open `/open/<token>`, tap Text me a code, enter 123456. You land on Who is the work for?, then My jobs.
 - Sign out, go to Sign in, tap Sign in with a text code, enter the client's mobile and 123456.
 - Sign in, Email me a sign in link: the link signs you in (needs Supabase email set up).
+
+**Phase 3**
+- As a trade with bank details: Home, New quote. Fill client (use your own second mobile and email), job title and one line, Send. You land on the job page with "Quote sent". In development the text and email are printed in the server log.
+- Open the `/open/...` link from the log, enter 123456, confirm person or company, read the quote, tick the boxes and accept. The trade gets an "accepted" notification.
+- Try a quote with a deposit: the client sees the deposit wording and the job waits for the deposit. On the trade job page, Give 7 more days works.
+- Try Ask for changes: the trade sees the note, Edit and resend makes version 2, and the client must accept again.
+- At phone width (390px), check the builder: add lines, use a saved item, switch to stages and use the percentage box, Preview, Send.
 
 <!-- tests -->

@@ -178,6 +178,11 @@ export type JobStatus =
   | 'disputed'
   | 'cancelled'
   | 'ended_early'
+  // v4.2
+  | 'quoted'
+  | 'booked'
+  | 'in_progress'
+  | 'paid'
 
 export type JobInitiatedBy = 'trade' | 'client'
 
@@ -208,6 +213,29 @@ export interface Job {
   outcome_disputed: boolean
   outcome_disputed_at: string | null
   last_stale_prompt_at: string | null
+  // v4.2 (flow = 'quote')
+  flow: 'legacy' | 'quote'
+  trade_user_id: string | null
+  client_user_id: string | null
+  title: string | null
+  job_address: string | null
+  source: 'own_customer' | 'directory'
+  current_quote_id: string | null
+  client_type_at_acceptance: 'person' | 'company' | null
+  agreed_start_date: string | null
+  materials_ordered_at: string | null
+  materials_order_evidence_path: string | null
+  cancellation_period_ends_at: string | null
+  early_start_consent_at: string | null
+  early_start_consent_by_user_id: string | null
+  cancelled_at: string | null
+  cancelled_by_user_id: string | null
+  cancellation_reason: string | null
+  deposit_outcome: 'refund_due' | 'refunded' | 'retained' | null
+  made_to_measure_confirmed: boolean | null
+  total_pence: number | null
+  booked_at: string | null
+  retain_until: string | null
   created_at: string
   updated_at: string
 }
