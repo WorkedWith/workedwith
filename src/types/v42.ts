@@ -309,7 +309,29 @@ export interface CreditNote {
   pdf_path: string | null
 }
 
+// ── Phase 7: variations ──────────────────────────────────────
+
+export interface Variation {
+  id: string
+  job_id: string
+  created_by: string | null
+  description: string
+  note: string | null
+  amount_pence: number
+  photo_paths: string[]
+  status: 'sent' | 'approved' | 'declined' | 'withdrawn'
+  target_stage_id: string | null
+  new_stage_name: string | null
+  sent_at: string
+  decided_at: string | null
+  decided_by_user_id: string | null
+  decline_note: string | null
+  applied_to_stage_id: string | null
+  created_at: string
+}
+
 export type V42Tables = {
+  variations: TableDef<Variation, 'job_id' | 'description' | 'amount_pence'>
   credit_notes: TableDef<CreditNote, 'invoice_id' | 'trade_id' | 'job_id' | 'credit_note_number' | 'sequence' | 'amount_pence' | 'net_pence' | 'reason'>
   stage_evidence: TableDef<StageEvidence, 'stage_id'>
   stage_issues: TableDef<StageIssue, 'stage_id' | 'reason'>

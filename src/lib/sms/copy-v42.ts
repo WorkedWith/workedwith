@@ -16,3 +16,5 @@ export const smsInvoiceIssued = (business: string, number: string, link: string)
 export const smsStageDone = (business: string, stage: string, link: string) => `${business} has marked ${stage} done. Please approve it or raise an issue: ${link}`
 export const smsApprovalReminder = (business: string, stage: string, link: string) => `${business} is waiting for your approval of ${stage}: ${link}`
 export const smsPaymentRequested = (business: string, stage: string, link: string) => `${business} has requested payment for ${stage}. Not approved by you. Details: ${link}`
+
+export const smsVariation = (business: string, link: string) => `${business} has sent a change to your job for you to approve before the work: ${link}`

@@ -211,3 +211,29 @@ export function jobCancelledEmail(p: { who: string; title: string; reason: strin
     button: { label: 'See the job', url: url(p.link) },
   }
 }
+
+// ── Variations (phase 7) ──────────────────────────────────────
+
+export function variationClientEmail(p: { business: string; title: string; description: string; amountPence: number; link: string }): EmailContent {
+  const add = p.amountPence > 0
+  return {
+    subject: `Please approve a change: ${p.description}`,
+    heading: 'A change to your job',
+    paragraphs: [
+      `${p.business} has sent a change to **${p.title}** for you to approve before the work is done.`,
+      `**${p.description}**: ${add ? 'adds' : 'takes off'} ${formatPence(Math.abs(p.amountPence))}.`,
+      'Approve or decline it in your account.',
+    ],
+    button: { label: 'See the change', url: url(p.link) },
+  }
+}
+
+export function variationTradeEmail(p: { client: string; description: string; jobId: string; approved: boolean; note?: string | null }): EmailContent {
+  return {
+    subject: `${p.approved ? 'Approved' : 'Declined'}: ${p.description}`,
+    heading: `Variation ${p.approved ? 'approved' : 'declined'}`,
+    paragraphs: [`${p.client} ${p.approved ? 'approved' : 'declined'} the variation **${p.description}**.`],
+    ...(p.note ? { quote: { label: 'Their note', text: p.note } } : {}),
+    button: { label: 'Open the job', url: url(`/jobs/${p.jobId}`) },
+  }
+}

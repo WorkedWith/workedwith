@@ -16,6 +16,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 4 Start dates and job events | Done | Propose, confirm, counter and change planned starts from either side, materials ordered with an optional receipt photo, mark started (blocked inside a person client's 14 days without consent, with a request button), early start consent from the client's account, and a job history timeline on both job pages |
 | 5 Stages and payments | Done (mock bank) | Mark done with photos, approve or raise an issue with photos, issue notes thread, resubmit, reminders at day 5, 10 and 14 plus a once a day manual reminder, request payment anyway after 14 days (always labelled not approved by the client), invoices with sequential numbers issued when a stage becomes due, bank details with copy buttons, "I've paid", automatic matching (exact, part payment, overpayment, probable match to confirm), daily bank sync, mark received, paid elsewhere with client confirmation, refunds with client confirmation, receipts, cancellation by either side with the deposit position, made to measure question, and a test mode "simulate a bank transfer" |
 | 6 Invoices and exports | Done | Invoice pages for both sides (client page with copy buttons), invoice and credit note PDFs (HMRC VAT fields when VAT registered, PAID stamp, "requested by the trade" label), credit notes with their own sequential numbers issued for refunds, invoices and credit notes list on both job pages, and exports for any date range: invoices, payments (with Stripe fees) and credit notes as CSV, plus all invoices as one PDF |
+| 7 Variations | Done | The trade adds a variation (addition or reduction, photos, note, the stage it goes on or a new stage) from the job page on a phone; it goes to the client by text and email; the client approves or declines with a note in their account; approved changes update the stage and job total for both sides and show on the invoice; withdraw while waiting |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -86,6 +87,9 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 6.3 | Credit notes are numbered `<prefix> CN 0001` with their own counter, allocated the same safe way as invoice numbers. An invoice fully covered by credit notes shows as credited. | 11 |
 | 6.4 | CSV money columns are pounds with two decimals; cells starting with = + minus or @ are escaped to stop spreadsheet formula injection. The default export range is the current UK tax year. | 11 |
 | 6.5 | Exports have no plan check, so they stay available after a trial lapses or the plan is cancelled. | 3, 11 |
+| 7.1 | A variation goes on a stage that is not yet due (upcoming, awaiting approval or issue raised), or on a new stage of its own for additions. Reductions must come off an existing stage and can't take it below zero. Money already invoiced is corrected with a refund and credit note instead. | 8, 11 |
+| 7.2 | Variations can be added while the job is booked or in progress, and need an active trial or plan to send. | 3, 8 |
+| 7.3 | Approved variations are listed as their own lines on the stage's invoice. | 11 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -112,6 +116,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 5. `20261124000400_job_events.sql`
 6. `20261124000500_stages_payments.sql` (includes `allocate_invoice_number`)
 7. `20261124000600_credit_notes.sql`
+8. `20261124000700_variations.sql`
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -183,5 +188,10 @@ supabase db push
 - Mark a refund on a payment: a credit note appears on both job pages and as a PDF.
 - Profile, Exports: download each CSV and the PDF bundle for a range that includes your test invoices; open the CSVs in a spreadsheet.
 - Check the client invoice page at 390px: every bank detail has a Copy button.
+
+**Phase 7**
+- On a booked or in progress job, at phone width: + Add a variation, take a photo, price it, pick the final stage, Send. The client sees Changes to approve at the top of their job page and approves it: the stage amount and job total go up, and the history records it.
+- Send a reduction and decline it as the client with a note: the trade sees the note.
+- Mark that stage done and approve it: the invoice shows the variation as its own line.
 
 <!-- tests -->
