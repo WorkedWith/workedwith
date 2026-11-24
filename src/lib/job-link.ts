@@ -5,11 +5,12 @@ export const LINK_MAX_PER_CLIENT_PER_TRADE = 3      // in 30 days
 export const LINK_MAX_PER_TRADE_PER_DAY = 30
 export const LINK_MIN_FORM_MS = 3000                // quicker than this is not a person
 
-export const jobLinkUrl = (slug: string) => `${APP_URL}/t/${slug}/job`
-export const jobLinkDisplay = (slug: string) => `${APP_HOST}/t/${slug}/job`
+// The profile link and QR code now point to the public profile (PRD 15)
+export const jobLinkUrl = (slug: string) => `${APP_URL}/t/${slug}`
+export const jobLinkDisplay = (slug: string) => `${APP_HOST}/t/${slug}`
 
 export const shareMessage = (businessName: string, url: string) =>
-  `Had a job done by ${businessName}? Log it on WorkedWith and we can both leave a review. ${url}`
+  `See ${businessName} on WorkedWith, where every review is tied to a paid job: ${url}`
 
 /** Job types a client can pick on a trade's link: the trade's own trades and specialisms. */
 export function jobTypeOptions(tradeTypes: string[]): string[] {

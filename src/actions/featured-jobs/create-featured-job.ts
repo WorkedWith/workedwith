@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getUserTier, isProTier } from '@/lib/stripe/get-tier'
+import { FEATURED_JOBS_LIMIT } from '@/lib/gallery-limits'
 
 export type CreateFeaturedJobInput = {
   title: string
@@ -17,11 +17,6 @@ export async function createFeaturedJob(input: CreateFeaturedJobInput): Promise<
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'You must be signed in.' }
-
-  const tier = await getUserTier(user.id)
-  if (!isProTier(tier)) {
-    return { success: false, error: 'Photos linked to a job need a Pro plan.' }
-  }
 
   const title = input.title.trim()
   if (!title) return { success: false, error: 'Please enter a title for this featured job.' }
@@ -53,6 +48,14 @@ export async function createFeaturedJob(input: CreateFeaturedJobInput): Promise<
     .eq('job_id', input.job_id)
     .maybeSingle()
   if (already) return { success: false, error: 'This job already has photos. Delete the photos on that job first to start again.' }
+
+  const { count: featuredCount } = await admin
+    .from('featured_jobs')
+    .select('id', { count: 'exact', head: true })
+    .eq('trade_profile_id', tradeProfile.id as string)
+  if ((featuredCount ?? 0) >= FEATURED_JOBS_LIMIT) {
+    return { success: false, error: `You can feature up to ${FEATURED_JOBS_LIMIT} jobs. Remove one to add another.` }
+  }
 
   const { data: featuredJob, error: insertErr } = await admin
     .from('featured_jobs')

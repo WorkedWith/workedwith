@@ -3,12 +3,17 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { updateSession } from '@/lib/supabase/middleware'
 import { type Database } from '@/types/database'
+import { isHiddenRoute } from '@/lib/hidden-routes'
 
 const AUTH_PROTECTED = ['/profile', '/settings']
 
 export async function middleware(request: NextRequest) {
   const sessionResponse = await updateSession(request)
   const { pathname } = request.nextUrl
+
+  if (isHiddenRoute(pathname)) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
 
   // Authenticated users visiting / skip the selector and go straight to dashboard
   if (pathname === '/') {

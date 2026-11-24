@@ -60,7 +60,7 @@ export function SettingsContent({ email, userType }: { email: string; userType: 
                 : 'Update your name, username and photo.'}
           </p>
           <a
-            href={userType === 'client_business' ? '/org/profile' : '/profile/edit'}
+            href="/profile/edit"
             className="inline-flex min-h-[44px] items-center rounded-xl bg-brand-navy px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
           >
             Edit profile

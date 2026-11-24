@@ -7,7 +7,6 @@ import { createHash } from 'crypto'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getUserTier, isStandardOrAbove } from '@/lib/stripe/get-tier'
 import type { VerificationTier } from '@/types/database'
 
 // ── Types ─────────────────────────────────────────────────────
@@ -82,8 +81,8 @@ export async function getClientProfile(identifier: string): Promise<ClientProfil
     return { status: 'unauthorized' }
   }
 
-  const tier = await getUserTier(user.id)
-  const isPro = isStandardOrAbove(tier)
+  // Client records are the same for every trade (PRD 14)
+  const isPro = true
 
   // IP address for audit log (synchronous in Next.js 14)
   const h = headers()

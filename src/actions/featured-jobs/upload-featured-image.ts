@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getUserTier, isProTier } from '@/lib/stripe/get-tier'
 import { FEATURED_IMAGES_PER_JOB } from '@/lib/gallery-limits'
 import { moderateImage } from '@/lib/moderation/rekognition'
 import type { ModerationStatus } from '@/types/database'
@@ -18,11 +17,6 @@ export async function uploadFeaturedImage(formData: FormData): Promise<UploadFea
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'You must be signed in.' }
-
-  const tier = await getUserTier(user.id)
-  if (!isProTier(tier)) {
-    return { success: false, error: 'Photos linked to a job need a Pro plan.' }
-  }
 
   const featuredJobId = formData.get('featuredJobId')
   const file = formData.get('file')

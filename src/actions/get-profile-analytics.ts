@@ -1,6 +1,5 @@
 'use server'
 
-import { getEffectiveTier } from '@/lib/tier'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -23,13 +22,12 @@ export async function getProfileAnalytics(tradeProfileId: string): Promise<Profi
 
   const { data: profile } = await admin
     .from('trade_profiles')
-    .select('user_id, subscription_tier')
+    .select('user_id')
     .eq('id', tradeProfileId)
     .single()
 
   if (!profile) return { success: false, error: 'Profile not found' }
   if ((profile.user_id as string) !== user.id) return { success: false, error: 'Unauthorised' }
-  if ((await getEffectiveTier(profile.user_id as string)) !== 'pro') return { success: false, error: 'Pro subscription required' }
 
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()

@@ -4,7 +4,6 @@ import { TrackedContactLink } from '@/components/tracked-contact-link'
 import { logProfileViewFromSearch } from '@/actions/log-search-outcome'
 import { getOutcomeLabels, endedEarlyLabel } from '@/lib/job-outcome'
 import { confirmationLabel, CONFIRMATION_TOOLTIP_TRADE } from '@/lib/request-outcomes'
-import { getEffectiveTier } from '@/lib/tier'
 import { SiteHeader } from '@/components/site-header'
 import { Avatar } from '@/components/avatar'
 import { ALL_SPECIALISMS } from '@/lib/trade-types'
@@ -181,9 +180,6 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
   const hiredAgain = (tradeProfile.hired_again_count as number | null) ?? 0
   const confLabel = confirmationLabel(tradeProfile.confirmation_counted as number | null, tradeProfile.confirmation_confirmed as number | null)
 
-  // Plan used for features: paid subscription or an active admin grant, whichever is higher
-  const effTier = await getEffectiveTier(userId)
-
   // 2. Parallel: user row + visible reviews + reviewer activity + featured jobs + current viewer
   const supabase = await createClient()
   const [
@@ -211,7 +207,7 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
       .eq('is_visible', true)
       .limit(1),
     getFeaturedJobs(tradeProfileId),
-    getGalleryImages(tradeProfileId, effTier),
+    getGalleryImages(tradeProfileId),
     admin
       .from('profile_gallery_images')
       .select('id', { count: 'exact', head: true })
@@ -220,8 +216,7 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
     supabase.auth.getUser(),
   ])
 
-  // Photos linked to confirmed jobs are a Pro feature; hidden, not deleted, if the plan lapses
-  const featuredJobs = effTier === 'pro' ? featuredJobsAll : []
+  const featuredJobs = featuredJobsAll
   const isOwner = currentUser?.id === userId
 
   // Fire-and-forget view log
@@ -387,19 +382,17 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
                 </p>
               </div>
             )}
-            {((verTier === 'phone_verified' || verTier === 'fully_verified') || effTier === 'pro' || effTier === 'standard' || confLabel || hiredAgain > 0 || endedLabel || insurance) && (
+            {((verTier === 'phone_verified' || verTier === 'fully_verified') || confLabel || hiredAgain > 0 || endedLabel || insurance) && (
               <ul className="mt-4 space-y-2.5 border-t border-gray-100 pt-4">
                 {(verTier === 'phone_verified' || verTier === 'fully_verified') && (
                   <TrustTick>Phone number checked</TrustTick>
                 )}
-                {verTier === 'fully_verified' && <TrustTick title="WorkedWith has checked their photo ID and a live selfie.">ID verified</TrustTick>}
+                {verTier === 'fully_verified' && <TrustTick title="WorkedWith has checked their photo ID and a live selfie.">ID checked</TrustTick>}
                 {insurance && (
                   <TrustTick title={INSURANCE_TOOLTIP}>
                     Insured to {coverLabel(insurance.cover_amount_gbp)} until {monthYear(insurance.expires_on)}
                   </TrustTick>
                 )}
-                {effTier === 'pro' && <TrustTick amber title="On a WorkedWith Pro plan.">Pro member</TrustTick>}
-                {effTier === 'standard' && <TrustTick amber title="On a WorkedWith Standard plan.">Member</TrustTick>}
                 {hiredAgain > 0 && (
                   <TrustTick title="Clients who have hired this trade for more than one job, at least two weeks apart.">
                     Hired again by {hiredAgain} client{hiredAgain === 1 ? '' : 's'}
@@ -611,7 +604,7 @@ export async function TradeProfileView({ slug, preview = false, searchId = null 
           )}
 
           {/* ── Photos ───────────────────────────────────────── */}
-          {isOwner && <OwnerPhotosPanel tier={effTier} galleryCount={ownGalleryCount ?? 0} />}
+          {isOwner && <OwnerPhotosPanel galleryCount={ownGalleryCount ?? 0} />}
           <GallerySection images={galleryImages} supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''} />
 
           {/* ── Featured work ────────────────────────────────── */}

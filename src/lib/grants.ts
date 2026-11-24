@@ -2,9 +2,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email/send'
 import { formatDateLong } from '@/lib/email/format'
 import { grantStarted, grantEnding, grantEnded } from '@/lib/email/templates'
-import { higherTier, getActiveGrants } from '@/lib/tier'
+import { refreshPlanState } from '@/lib/plan'
 import type {
-  SubscriptionTier,
   TierGrant,
   TierGrantAction,
   TierGrantEndReason,
@@ -12,7 +11,7 @@ import type {
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
-export const PLAN_NAME: Record<'standard' | 'pro', string> = { standard: 'Standard', pro: 'Pro' }
+export const GRANT_PLAN_NAME = 'the WorkedWith plan'
 
 export const GRANT_REASON_LABEL: Record<string, string> = {
   founding: 'Founding member',
@@ -22,10 +21,11 @@ export const GRANT_REASON_LABEL: Record<string, string> = {
 }
 
 /** Benefits quoted in the "ending soon" emails. */
-const BENEFITS: Record<'standard' | 'pro', string[]> = {
-  standard: ['full client lookups with payment reliability and red flags', 'your Member badge', 'a gallery of up to 5 photos'],
-  pro: ['your 3 Boosted Districts', 'photos on every confirmed job', 'profile analytics and priority disputes'],
-}
+const BENEFITS: string[] = [
+  'quotes, invoices and automatic chasing',
+  'bank transfers that mark themselves paid',
+  'your directory listing and client records',
+]
 
 export function addMonths(from: Date, months: number): Date {
   const d = new Date(from)
@@ -66,28 +66,11 @@ async function emailUser(admin: AdminClient, userId: string, content: Parameters
 }
 
 /**
- * Boosted Districts only exist on a Pro plan. If a user no longer has Pro from either a
- * paid subscription or a grant, clear them (same rule as a cancelled subscription).
+ * Boosts are billed on the Stripe subscription, so a grant never carries boosts.
+ * When a grant ends, recompute whether the trade is still listed.
  */
-export async function clearBoostsIfNotPro(admin: AdminClient, userId: string): Promise<void> {
-  const { data: profile } = await admin
-    .from('trade_profiles')
-    .select('subscription_tier')
-    .eq('user_id', userId)
-    .maybeSingle()
-  const paid = (profile?.subscription_tier as SubscriptionTier | null | undefined) ?? 'free'
-  const grants = await getActiveGrants(admin, [userId])
-  const grantTier = grants.get(userId)?.tier ?? 'free'
-  if (higherTier(paid, grantTier as SubscriptionTier) === 'pro') return
-  await admin
-    .from('trade_profiles')
-    .update({ boosted_districts: [], boosted_districts_updated_at: null })
-    .eq('user_id', userId)
-}
-
-export async function hasActiveProGrant(admin: AdminClient, userId: string): Promise<boolean> {
-  const grants = await getActiveGrants(admin, [userId])
-  return grants.get(userId)?.tier === 'pro'
+export async function afterGrantChange(admin: AdminClient, userId: string): Promise<void> {
+  await refreshPlanState(admin, userId)
 }
 
 /** Ends a grant and records why. Safe to call twice. */
@@ -110,15 +93,11 @@ export async function endGrant(
   }
   const action: TierGrantAction = reason === 'expired' ? 'expired' : reason === 'superseded' ? 'superseded' : 'ended_early'
   await logGrantEvent(admin, grant.id, action, actor, { ends_at: grant.ends_at, tier: grant.tier }, { ended_reason: reason })
-  if (grant.tier === 'pro') await clearBoostsIfNotPro(admin, grant.user_id)
+  await afterGrantChange(admin, grant.user_id)
 }
 
-/**
- * Called when a paid subscription starts or changes. If the new paid plan covers the grant
- * (same or higher tier) the grant ends as superseded. A lower paid plan lets the grant run on.
- */
-export async function supersedeGrantIfCovered(admin: AdminClient, userId: string, paidTier: SubscriptionTier): Promise<void> {
-  if (paidTier === 'free') return
+/** Called when a paid subscription starts. A paid plan covers any grant, so the grant ends as superseded. */
+export async function supersedeGrantIfCovered(admin: AdminClient, userId: string): Promise<void> {
   const { data } = await admin
     .from('tier_grants')
     .select('*')
@@ -127,17 +106,15 @@ export async function supersedeGrantIfCovered(admin: AdminClient, userId: string
     .maybeSingle()
   const grant = data as unknown as TierGrant | null
   if (!grant) return
-  if (higherTier(paidTier, grant.tier) === paidTier) {
-    await endGrant(admin, grant, 'superseded', null)
-  }
+  await endGrant(admin, grant, 'superseded', null)
 }
 
 export async function sendGrantStartedEmail(admin: AdminClient, grant: TierGrant): Promise<void> {
   const ok = await emailUser(admin, grant.user_id, grantStarted({
-    plan: PLAN_NAME[grant.tier],
+    plan: GRANT_PLAN_NAME,
     endsOn: formatDateLong(grant.ends_at) ?? '',
-    isPro: grant.tier === 'pro',
   }))
+  await afterGrantChange(admin, grant.user_id)
   if (ok) {
     await admin.from('tier_grants').update({ started_email_sent_at: new Date().toISOString() }).eq('id', grant.id)
   }
@@ -162,7 +139,7 @@ export async function runGrantMaintenance(admin: AdminClient): Promise<{ started
     // Expired: end it (the effective tier helper already ignores it at read time)
     if (ends <= now) {
       await endGrant(admin, g, 'expired', null)
-      const ok = await emailUser(admin, g.user_id, grantEnded({ plan: PLAN_NAME[g.tier] }))
+      const ok = await emailUser(admin, g.user_id, grantEnded({ plan: GRANT_PLAN_NAME }))
       if (ok) await admin.from('tier_grants').update({ ended_email_sent_at: nowIso }).eq('id', g.id)
       out.expired++
       continue
@@ -176,11 +153,11 @@ export async function runGrantMaintenance(admin: AdminClient): Promise<{ started
     }
 
     const daysLeft = Math.ceil((ends.getTime() - now.getTime()) / 86_400_000)
-    const benefits = BENEFITS[g.tier]
+    const benefits = BENEFITS
 
     if (daysLeft <= 3 && !g.reminder_3_sent_at) {
       const ok = await emailUser(admin, g.user_id, grantEnding({
-        plan: PLAN_NAME[g.tier], endsOn: formatDateLong(g.ends_at) ?? '', daysLeft: 3, benefits,
+        plan: GRANT_PLAN_NAME, endsOn: formatDateLong(g.ends_at) ?? '', daysLeft: 3, benefits,
       }))
       if (ok) {
         // A grant created with under 14 days left should not also get the 14 day email
@@ -192,7 +169,7 @@ export async function runGrantMaintenance(admin: AdminClient): Promise<{ started
       }
     } else if (daysLeft <= 14 && daysLeft > 3 && !g.reminder_14_sent_at) {
       const ok = await emailUser(admin, g.user_id, grantEnding({
-        plan: PLAN_NAME[g.tier], endsOn: formatDateLong(g.ends_at) ?? '', daysLeft: 14, benefits,
+        plan: GRANT_PLAN_NAME, endsOn: formatDateLong(g.ends_at) ?? '', daysLeft: 14, benefits,
       }))
       if (ok) {
         await admin.from('tier_grants').update({ reminder_14_sent_at: nowIso }).eq('id', g.id)

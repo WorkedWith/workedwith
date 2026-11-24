@@ -46,7 +46,7 @@ export function PhoneMockup({ variant, className = '' }: { variant: 'trade' | 'c
                 <div className="mt-2 flex flex-wrap gap-1">
                   <Pill tone="green">ID verified</Pill>
                   <Pill tone="amber">Insured to £2m</Pill>
-                  <Pill tone="navy">Pro member</Pill>
+                  <Pill tone="navy">Paid job</Pill>
                 </div>
               </div>
               <div className="rounded-xl bg-white p-3 shadow-sm">

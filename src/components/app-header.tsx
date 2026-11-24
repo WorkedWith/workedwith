@@ -13,16 +13,7 @@ function linksFor(userType: string | null): NavLink[] {
       { href: '/settings', label: 'Settings' },
     ]
   }
-  if (userType === 'client_business') {
-    return [
-      { href: '/dashboard', label: 'Dashboard' },
-      { href: '/org/dashboard', label: 'Business' },
-      { href: '/org/members', label: 'Members' },
-      { href: '/find', label: 'Find a tradesperson', shortLabel: 'Find a trade' },
-      { href: '/profile', label: 'Profile' },
-      { href: '/settings', label: 'Settings' },
-    ]
-  }
+  // Organisations and business client screens are parked (PRD 23); business clients get the client nav
   return [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/find', label: 'Find a tradesperson', shortLabel: 'Find a trade' },

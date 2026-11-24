@@ -1,24 +1,24 @@
-import { getEffectiveTier } from '@/lib/tier'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripeClient } from '@/lib/stripe/client'
+import { boostPriceId } from '@/lib/stripe/prices'
+import { isOnPaidPlan } from '@/lib/plan'
+import { fullTradeTypes, notifyWaitlist } from '@/lib/boosts/slots'
 import {
-  ADDON_MAX,
   ADDON_PRICE_TEXT,
-  INCLUDED_BOOSTS,
+  MAX_BOOSTS,
   type BoostChangeResult,
   type BoostSummary,
 } from '@/lib/boost-types'
 
 // Server only. Single place where boosted districts, add-on slots and Stripe billing are kept in step.
 //
-// Model (PRD v3.5):
-//   needed slots  = max(0, boosted districts - 3)
+// Model (PRD v4.2 section 15): no boosts are included in the plan. Every boost is £10 a month.
+//   needed slots  = boosted districts
 //   billedSlots   = what Stripe will bill from the next invoice (boosted_district_addon_quantity)
 //   paidSlots     = slots already paid for in this billing period (boosted_district_addon_paid_quantity)
 // Turning a paid boost off lowers Stripe straight away with no proration (no refund, no charge), but the
 // slot stays usable until renewal, so switching a boost back on before then is free.
 
-const MONTHLY_ADDON_PRICE = process.env.STRIPE_PRO_ADDON_PRICE_ID
 
 export type BoostEvent =
   | { type: 'on' | 'off'; district: string }
@@ -40,7 +40,7 @@ async function setAddonQuantity(
   const stripe = getStripeClient()
   const subscription = await stripe.subscriptions.retrieve(subscriptionId)
   const existing = subscription.items.data.find(
-    item => item.price.id === MONTHLY_ADDON_PRICE,
+    item => item.price.id === priceId,
   )
 
   if (qty === 0) {
@@ -77,15 +77,18 @@ export async function applyBoostChange(
   const { data: profile } = await admin
     .from('trade_profiles')
     .select(
-      'subscription_tier, stripe_subscription_id, operating_areas, boosted_districts, boosted_district_addon_quantity, boosted_district_addon_paid_quantity, subscription_expires_at',
+      'subscription_status, trial_ends_at, trade_types, stripe_subscription_id, operating_areas, boosted_districts, boosted_district_addon_quantity, boosted_district_addon_paid_quantity, subscription_expires_at',
     )
     .eq('user_id', userId)
     .maybeSingle()
 
   if (!profile) return { status: 'error', error: 'Trade profile not found.' }
-  if ((await getEffectiveTier(userId)) !== 'pro') {
-    return { status: 'error', error: 'Boosted Districts need a Pro plan.' }
+  if (!isOnPaidPlan({ subscription_status: profile.subscription_status as string, trial_ends_at: profile.trial_ends_at as string | null })) {
+    return { status: 'error', error: 'Boosted Districts are available once you are on the paid plan, after your free trial.' }
   }
+  const previous = (profile.boosted_districts as string[] | null) ?? []
+  const added = next.filter(d => !previous.includes(d))
+  const removed = previous.filter(d => !next.includes(d))
 
   const operatingAreas = (profile.operating_areas as string[] | null) ?? []
   const outside = next.filter(d => !operatingAreas.includes(d))
@@ -93,8 +96,26 @@ export async function applyBoostChange(
     return { status: 'error', error: `${outside.join(', ')} ${outside.length === 1 ? 'is' : 'are'} not in your Operating Areas.` }
   }
 
-  const needed = Math.max(0, next.length - INCLUDED_BOOSTS)
-  if (needed > ADDON_MAX) {
+  if (added.length > 0) {
+    const { data: enabledRows } = await admin
+      .from('boost_district_settings')
+      .select('district')
+      .in('district', added)
+      .eq('boosts_enabled', true)
+    const enabled = new Set((enabledRows ?? []).map(r => r.district as string))
+    const notYet = added.filter(d => !enabled.has(d))
+    if (notYet.length > 0) {
+      return { status: 'error', error: `Boosts are not available in ${notYet.join(', ')} yet. We switch them on once clients are searching there.` }
+    }
+    const tradeTypes = (profile.trade_types as string[] | null) ?? []
+    for (const d of added) {
+      const full = await fullTradeTypes(admin, d, tradeTypes, userId)
+      if (full.length > 0) return { status: 'full', district: d, tradeTypes: full }
+    }
+  }
+
+  const needed = next.length
+  if (needed > MAX_BOOSTS) {
     return { status: 'error', error: 'You have reached the maximum number of boosted districts.' }
   }
 
@@ -102,7 +123,7 @@ export async function applyBoostChange(
   const paid = Math.max((profile.boosted_district_addon_paid_quantity as number | null) ?? 0, billed)
   const renewsOn = (profile.subscription_expires_at as string | null) ?? null
   const subscriptionId = profile.stripe_subscription_id as string | null
-  const addonPriceId = MONTHLY_ADDON_PRICE
+  const addonPriceId = boostPriceId()
 
   let newBilled = billed
   let newPaid = paid
@@ -183,6 +204,9 @@ export async function applyBoostChange(
         : [{ user_id: userId, event_type: ev.type, district: ev.district }]
   const { error: logErr } = await admin.from('boost_events').insert(rows)
   if (logErr) console.error('boost_events insert failed (non-fatal):', logErr)
+
+  // A slot freed up: tell the waiting list
+  for (const d of removed) await notifyWaitlist(admin, d)
 
   const summary: BoostSummary = { boosted: next, billedSlots: newBilled, paidSlots: newPaid, renewsOn }
   return { status: 'ok', summary }

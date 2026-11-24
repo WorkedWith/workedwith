@@ -42,7 +42,7 @@ export default async function TermsPage() {
           </Section>
 
           <Section n={6} title="Subscriptions">
-            <p>Tradesperson accounts may subscribe to Standard (£9.99/month) or Pro (£39.99/month) tiers. Pro includes 3 Boosted Districts, with extra Boosted Districts available at £10/month each. Client accounts are always free. Subscriptions are billed via Stripe. You may cancel at any time. Your subscription remains active until the end of the current billing period, then reverts to Free. No data is lost on downgrade. No refunds are issued for part months. We reserve the right to change prices with reasonable notice to subscribers.</p>
+            <p>Tradesperson accounts pay one plan at £19.99 a month after a 30 day free trial, with no card needed to start. Boosted Districts are an optional extra at £10 a month per district, available on the paid plan. Client accounts are always free. Subscriptions are billed via Stripe. You may cancel at any time. Your plan remains active until the end of the current billing period. After that you can no longer send new quotes, your listing is hidden and chasing stops, but clients can still pay invoices already sent and you keep every record. No refunds are issued for part months. We reserve the right to change prices with reasonable notice to subscribers.</p>
           </Section>
 
           <Section n={7} title="Prohibited conduct">

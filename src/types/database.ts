@@ -1,3 +1,5 @@
+import type { V42Tables } from './v42'
+
 // ── Scalar types ──────────────────────────────────────────────
 
 export type UserType = 'trade' | 'client_individual' | 'client_business' | 'both'
@@ -6,6 +8,7 @@ export type VerificationTier = 'unverified' | 'phone_verified' | 'fully_verified
 export type IdVerificationStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected'
 export type SubscriptionTier = 'free' | 'standard' | 'pro'
 export type BillingPeriod = 'monthly' | 'annual'
+export type SubscriptionStatus = 'trialing' | 'active' | 'lapsed' | 'cancelled'
 
 // ── Row interfaces ────────────────────────────────────────────
 
@@ -61,6 +64,12 @@ export interface TradeProfile {
   hired_again_count: number
   ended_early_count: number
   job_link_paused: boolean
+  trial_started_at: string | null
+  trial_ends_at: string | null
+  subscription_status: SubscriptionStatus
+  trial_reminder_23_sent_at: string | null
+  trial_reminder_28_sent_at: string | null
+  trial_reminder_30_sent_at: string | null
   created_at: string
 }
 
@@ -421,6 +430,16 @@ export type NotificationType =
   | 'subscription_updated'
   | 'red_flag_received'
   | 'job_invite'
+  // v4.2
+  | 'boost_slot_free'
+  | 'quote'
+  | 'job'
+  | 'stage'
+  | 'payment'
+  | 'variation'
+  | 'connection'
+  | 'account'
+  | 'review'
 
 export interface Notification {
   id: string
@@ -564,7 +583,7 @@ export interface PhotoReport {
 }
 
 // ── Admin plan grants (PRD v3.8 item 6) ──────────────────────
-export type TierGrantTier = 'standard' | 'pro'
+export type TierGrantTier = 'plan'
 export type TierGrantReason = 'founding' | 'goodwill' | 'partnership' | 'other'
 export type TierGrantEndReason = 'expired' | 'ended_early' | 'superseded'
 export type TierGrantAction = 'created' | 'extended' | 'tier_changed' | 'ended_early' | 'expired' | 'superseded'
@@ -680,7 +699,7 @@ type WithIndex<T> = T & Record<string, unknown>
 
 export interface Database {
   public: {
-    Tables: {
+    Tables: V42Tables & {
       users: {
         Row: WithIndex<User>
         Insert: Omit<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated' | 'is_admin'> & Partial<Pick<User, 'created_at' | 'phone_verified' | 'verification_tier' | 'id_verification_status' | 'previously_deactivated' | 'is_admin'>>
@@ -689,7 +708,7 @@ export interface Database {
       }
       trade_profiles: {
         Row: WithIndex<TradeProfile>
-        Insert: Omit<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'job_link_paused' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'> & Partial<Pick<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'job_link_paused' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
+        Insert: Omit<TradeProfile, 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'job_link_paused' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id' | 'trial_started_at' | 'trial_ends_at' | 'subscription_status' | 'trial_reminder_23_sent_at' | 'trial_reminder_28_sent_at' | 'trial_reminder_30_sent_at'> & Partial<Pick<TradeProfile, 'trial_started_at' | 'trial_ends_at' | 'subscription_status' | 'trial_reminder_23_sent_at' | 'trial_reminder_28_sent_at' | 'trial_reminder_30_sent_at' | 'postcode' | 'id' | 'created_at' | 'average_rating' | 'total_reviews' | 'trade_types' | 'is_searchable' | 'operating_areas' | 'boosted_districts' | 'boosted_district_addon_quantity' | 'boosted_district_addon_paid_quantity' | 'boosted_districts_updated_at' | 'subscription_period_start_at' | 'total_jobs' | 'confirmation_counted' | 'confirmation_confirmed' | 'hired_again_count' | 'ended_early_count' | 'job_link_paused' | 'subscription_tier' | 'billing_period' | 'subscription_expires_at' | 'years_experience' | 'stripe_customer_id' | 'stripe_subscription_id'>>
         Update: Partial<TradeProfile>
         Relationships: []
       }

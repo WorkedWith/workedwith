@@ -4,27 +4,15 @@ import { APP_URL } from '@/lib/app-url'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripeClient } from '@/lib/stripe/client'
-
-export type CheckoutTier = 'standard' | 'pro'
-export type CheckoutPeriod = 'monthly' | 'annual'
+import { planPriceId } from '@/lib/stripe/prices'
 
 export type CheckoutResult = { url: string } | { error: string }
 
-const BASE_URL = APP_URL
-
-type PriceKey = `${CheckoutTier}_${CheckoutPeriod}`
-
-const PRICE_IDS: Record<PriceKey, string | undefined> = {
-  standard_monthly: process.env.STRIPE_STANDARD_MONTHLY_PRICE_ID,
-  standard_annual:  process.env.STRIPE_STANDARD_ANNUAL_PRICE_ID,
-  pro_monthly:      process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
-  pro_annual:       process.env.STRIPE_PRO_ANNUAL_PRICE_ID,
-}
-
-export async function createCheckoutSession(
-  tier: CheckoutTier,
-  period: CheckoutPeriod,
-): Promise<CheckoutResult> {
+/**
+ * Card for the one plan (PRD 3). If the trade is still inside their 30 day trial, Stripe's trial runs
+ * to the same end date so nothing is charged until the WorkedWith trial is over.
+ */
+export async function createCheckoutSession(): Promise<CheckoutResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'You must be signed in.' }
@@ -36,16 +24,11 @@ export async function createCheckoutSession(
     return { error: 'Phone verification is required before subscribing.' }
   }
   if (userData.user_type !== 'trade' && userData.user_type !== 'both') {
-    return { error: 'Subscriptions are available for trade accounts only.' }
+    return { error: 'The plan is for trade accounts only.' }
   }
 
-  // Annual billing is deferred (PRD v3.5). Existing price IDs are kept so it can be switched back on.
-  if (period !== 'monthly') {
-    return { error: 'Annual billing is not available yet. Please choose monthly.' }
-  }
-
-  const priceId = PRICE_IDS[`${tier}_${period}`]
-  if (!priceId) return { error: `Price ID for ${tier} ${period} is not configured.` }
+  const priceId = planPriceId()
+  if (!priceId) return { error: 'Billing is not set up yet. Please try again later.' }
 
   const { data: tradeProfile } = await admin
     .from('trade_profiles')
@@ -54,6 +37,9 @@ export async function createCheckoutSession(
     .maybeSingle()
 
   if (!tradeProfile) return { error: 'Trade profile not found.' }
+  if (tradeProfile.subscription_status === 'active' && tradeProfile.stripe_subscription_id) {
+    return { error: 'You already have the plan.' }
+  }
 
   const stripe = getStripeClient()
 
@@ -74,6 +60,11 @@ export async function createCheckoutSession(
         .eq('user_id', user.id)
     }
 
+    // Stripe needs a trial end at least 48 hours away
+    const trialEnds = tradeProfile.trial_ends_at ? new Date(tradeProfile.trial_ends_at as string) : null
+    const trialEndUnix =
+      trialEnds && trialEnds.getTime() > Date.now() + 48 * 3_600_000 ? Math.floor(trialEnds.getTime() / 1000) : undefined
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       client_reference_id: user.id,
@@ -81,9 +72,10 @@ export async function createCheckoutSession(
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
         metadata: { user_id: user.id },
+        ...(trialEndUnix ? { trial_end: trialEndUnix } : {}),
       },
-      success_url: `${BASE_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${BASE_URL}/subscription`,
+      success_url: `${APP_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${APP_URL}/subscription`,
       allow_promotion_codes: true,
     })
 

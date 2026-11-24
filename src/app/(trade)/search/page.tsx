@@ -1,4 +1,3 @@
-import { getEffectiveTier } from '@/lib/tier'
 import { APP_URL } from '@/lib/app-url'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -25,8 +24,6 @@ export default async function SearchPage({ searchParams }: PageProps) {
   if (!userData || !userData.phone_verified) redirect('/verify/phone')
   if (userData.user_type !== 'trade' && userData.user_type !== 'both') redirect('/dashboard')
 
-  const subscriptionTier: string = await getEffectiveTier(user.id)
-
   const rawUsername = Array.isArray(searchParams.username)
     ? searchParams.username[0]
     : searchParams.username
@@ -43,9 +40,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
         <div>
           <h1 className="text-2xl font-bold text-brand-navy">Client lookup</h1>
           <p className="mt-1 text-sm text-gray-500">
-            {subscriptionTier === 'free'
-              ? 'Find a client by their WorkedWith username, email address, mobile number or Companies House number to see their overall rating and member since date. Upgrade to Standard for full scores and written reviews.'
-              : 'Find a client by their WorkedWith username, email address, mobile number or Companies House number to view their full reputation profile.'}
+            Find a client by their email address or mobile number to see their full record.
           </p>
         </div>
 
@@ -171,24 +166,6 @@ function SearchResult({ result }: { result: ClientProfileResult }) {
           </p>
         )}
       </div>
-
-      {/* Free tier — upgrade prompt */}
-      {result.status === 'free' && (
-        <div className="px-6 py-5">
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
-            <p className="text-sm font-semibold text-amber-900">Upgrade to Standard to see more</p>
-            <p className="mt-1 text-xs text-amber-700 leading-relaxed">
-              Upgrade to Standard to see payment reliability, red flag history, and written review excerpts from other tradespeople.
-            </p>
-            <a
-              href="/subscription"
-              className="mt-3 inline-flex rounded-lg bg-brand-amber px-4 py-2 text-xs font-bold text-brand-navy hover:bg-amber-400 transition-colors"
-            >
-              Upgrade to Standard
-            </a>
-          </div>
-        </div>
-      )}
 
       {/* Standard / Pro — full profile */}
       {result.status === 'pro' && (

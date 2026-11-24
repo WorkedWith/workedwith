@@ -4,11 +4,10 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { addMonths, endGrant, endOfDay, logGrantEvent, sendGrantStartedEmail, clearBoostsIfNotPro, PLAN_NAME } from '@/lib/grants'
+import { addMonths, endGrant, endOfDay, logGrantEvent, sendGrantStartedEmail, GRANT_PLAN_NAME } from '@/lib/grants'
 import { sendEmail } from '@/lib/email/send'
 import { grantEnded } from '@/lib/email/templates'
-import { higherTier } from '@/lib/tier'
-import type { SubscriptionTier, TierGrant, TierGrantReason, TierGrantTier } from '@/types/database'
+import type { TierGrant, TierGrantReason, TierGrantTier } from '@/types/database'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -29,9 +28,6 @@ async function requireAdmin(): Promise<{ admin: AdminClient; adminId: string }> 
   return { admin, adminId: user.id }
 }
 
-function isTier(v: unknown): v is TierGrantTier {
-  return v === 'standard' || v === 'pro'
-}
 function isReason(v: unknown): v is TierGrantReason {
   return v === 'founding' || v === 'goodwill' || v === 'partnership' || v === 'other'
 }
@@ -53,14 +49,13 @@ type CreateInput = {
 async function createGrant(admin: AdminClient, adminId: string, input: CreateInput): Promise<string | null> {
   const { data: profile } = await admin
     .from('trade_profiles')
-    .select('subscription_tier')
+    .select('subscription_status, trial_ends_at')
     .eq('user_id', input.userId)
     .maybeSingle()
   if (!profile) return 'That user does not have a trade profile.'
 
-  const paid = ((profile.subscription_tier as SubscriptionTier | null) ?? 'free')
-  if (higherTier(paid, input.tier) === paid && paid !== 'free') {
-    return `They already pay for ${PLAN_NAME[paid as TierGrantTier]}, which covers this grant.`
+  if (profile.subscription_status === 'active') {
+    return 'They already pay for the plan, which covers this grant.'
   }
   if (await openGrantFor(admin, input.userId)) {
     return 'They already have an active or scheduled grant. Extend or end that one first.'
@@ -95,7 +90,7 @@ export async function createGrantAction(formData: FormData): Promise<void> {
   const { admin, adminId } = await requireAdmin()
 
   const email = String(formData.get('email') ?? '').trim().toLowerCase()
-  const tier = formData.get('tier')
+  const tier: TierGrantTier = 'plan'
   const reason = formData.get('reason')
   const startMode = String(formData.get('startMode') ?? 'now')
   const startDate = String(formData.get('startDate') ?? '')
@@ -105,7 +100,6 @@ export async function createGrantAction(formData: FormData): Promise<void> {
   const note = String(formData.get('note') ?? '').trim().slice(0, 500) || null
 
   if (!email) done('error', 'Enter the trade’s email address.')
-  if (!isTier(tier)) done('error', 'Choose Standard or Pro.')
   if (!isReason(reason)) done('error', 'Choose a reason.')
 
   const { data: user } = await admin.from('users').select('id').ilike('email', email).maybeSingle()
@@ -129,20 +123,20 @@ export async function createGrantAction(formData: FormData): Promise<void> {
     userId: user.id as string, tier, startsAt, endsAt, reason, note,
   })
   if (err) done('error', err)
-  done('notice', `Granted ${PLAN_NAME[tier]} to ${email}.`)
+  done('notice', `Granted ${GRANT_PLAN_NAME} to ${email}.`)
 }
 
-/** One click founding offer: 6 months of Standard, reason Founding member. */
+/** One click founding offer (PRD 20 milestones): 3 months free, reason Founding member. */
 export async function giveFoundingOfferAction(formData: FormData): Promise<void> {
   const { admin, adminId } = await requireAdmin()
   const userId = String(formData.get('userId') ?? '')
   if (!userId) done('error', 'Missing user.')
   const now = new Date()
   const err = await createGrant(admin, adminId, {
-    userId, tier: 'standard', startsAt: now, endsAt: addMonths(now, 6), reason: 'founding', note: null,
+    userId, tier: 'plan', startsAt: now, endsAt: addMonths(now, 3), reason: 'founding', note: null,
   })
   if (err) done('error', err)
-  done('notice', 'Founding offer given: 6 months of Standard.')
+  done('notice', 'Founding offer given: 3 months free.')
 }
 
 export async function extendGrantAction(formData: FormData): Promise<void> {
@@ -171,23 +165,6 @@ export async function extendGrantAction(formData: FormData): Promise<void> {
   done('notice', 'End date updated.')
 }
 
-export async function changeGrantTierAction(formData: FormData): Promise<void> {
-  const { admin, adminId } = await requireAdmin()
-  const grantId = String(formData.get('grantId') ?? '')
-  const tier = formData.get('tier')
-  if (!grantId || !isTier(tier)) done('error', 'Choose a plan.')
-
-  const { data } = await admin.from('tier_grants').select('*').eq('id', grantId).is('ended_at', null).maybeSingle()
-  const grant = data as unknown as TierGrant | null
-  if (!grant) done('error', 'That grant is not open any more.')
-  if (grant.tier === tier) done('notice', 'No change.')
-
-  await admin.from('tier_grants').update({ tier, updated_at: new Date().toISOString() }).eq('id', grant.id)
-  await logGrantEvent(admin, grant.id, 'tier_changed', adminId, { tier: grant.tier }, { tier })
-  if (grant.tier === 'pro' && tier !== 'pro') await clearBoostsIfNotPro(admin, grant.user_id)
-  done('notice', `Plan changed to ${PLAN_NAME[tier]}.`)
-}
-
 export async function endGrantEarlyAction(formData: FormData): Promise<void> {
   const { admin, adminId } = await requireAdmin()
   const grantId = String(formData.get('grantId') ?? '')
@@ -204,7 +181,7 @@ export async function endGrantEarlyAction(formData: FormData): Promise<void> {
     const { data: u } = await admin.from('users').select('email').eq('id', grant.user_id).maybeSingle()
     const to = u?.email as string | undefined
     if (to) {
-      const r = await sendEmail(to, grantEnded({ plan: PLAN_NAME[grant.tier] }))
+      const r = await sendEmail(to, grantEnded({ plan: GRANT_PLAN_NAME }))
       if (!r.ok) console.error('Grant ended email failed (non-fatal):', r.error)
     }
   }

@@ -428,38 +428,29 @@ export function welcomeClient(p: { username: string }): EmailContent {
   }
 }
 
-export function planStarted(p: { plan: string; trialEnds?: string | null }): EmailContent {
+export function planStarted(p: { trialEnds?: string | null }): EmailContent {
   return {
-    subject: `Your ${p.plan} plan has started`,
-    heading: `Welcome to ${p.plan}`,
+    subject: 'Your WorkedWith plan is set up',
+    heading: 'Thanks, your plan is set up',
     paragraphs: [
       p.trialEnds
-        ? `Your ${p.plan} plan is active. Your free trial runs until ${p.trialEnds}, and your card is charged after that unless you cancel first.`
-        : `Your ${p.plan} plan is active and your first payment has been taken.`,
-      'You can change or cancel your plan at any time from your subscription page.',
+        ? `Your card is saved. Your free trial runs until ${p.trialEnds} and the first £19.99 is taken after that.`
+        : 'Your plan is active and your first payment of £19.99 has been taken.',
+      'You can cancel at any time from your plan page.',
     ],
     button: { label: 'Manage your plan', url: `${APP_URL}/subscription` },
   }
 }
 
-export function planCancelled(p: { plan: string; endsOn: string }): EmailContent {
+export function planCancelled(p: { endsOn: string }): EmailContent {
   return {
-    subject: `Your ${p.plan} plan has been cancelled`,
+    subject: 'Your WorkedWith plan has been cancelled',
     heading: 'Your plan is cancelled',
     paragraphs: [
-      `Your ${p.plan} plan stays active until ${p.endsOn}. After that your account moves to Free.`,
-      'You keep every job and review. You can restart any time.',
+      `Your plan stays active until ${p.endsOn}. After that you can't send new quotes, your listing is hidden and chasing stops.`,
+      'Clients can still pay invoices you have already sent, and you keep every job, invoice and review. You can restart any time.',
     ],
     button: { label: 'Manage your plan', url: `${APP_URL}/subscription` },
-  }
-}
-
-export function planChanged(p: { plan: string }): EmailContent {
-  return {
-    subject: `Your plan is now ${p.plan}`,
-    heading: 'Your plan has changed',
-    paragraphs: ['Your plan is now ' + p.plan + '. Your next bill will show the change.'],
-    button: { label: 'View your plan', url: `${APP_URL}/subscription` },
   }
 }
 
@@ -469,7 +460,7 @@ export function paymentFailed(): EmailContent {
     heading: 'Your payment did not go through',
     paragraphs: [
       'We will try again automatically, so you may not need to do anything. Updating your card now is the quickest fix.',
-      'Your plan stays active while we retry. If it keeps failing, your account moves to Free. You keep every job and review.',
+      'Your plan stays active while we retry. If it keeps failing, your plan ends. You keep every job, invoice and review.',
     ],
     button: { label: 'Update your card', url: `${APP_URL}/subscription` },
   }
@@ -602,45 +593,75 @@ export function seededOutreach(p: {
 
 // ── Admin plan grants ──────────────────────────────────────────
 
-export function grantStarted(p: { plan: string; endsOn: string; isPro: boolean }): EmailContent {
+export function grantStarted(p: { plan: string; endsOn: string }): EmailContent {
   return {
-    subject: `You've got WorkedWith ${p.plan} free until ${p.endsOn}`,
+    subject: `You've got WorkedWith free until ${p.endsOn}`,
     preheader: 'Nothing to pay and no card needed.',
-    heading: `${p.plan} is free for you until ${p.endsOn}`,
+    heading: `WorkedWith is free for you until ${p.endsOn}`,
     paragraphs: [
-      `Good news. We've given your WorkedWith account ${p.plan} free until ${p.endsOn}. There's nothing to pay and no card needed.`,
-      ...(p.isPro ? ['Choose your 3 Boosted Districts to start showing at the top of local searches.'] : []),
-      `If you'd like to keep it after ${p.endsOn}, you can upgrade any time from your account.`,
+      `Good news. We've given your account ${p.plan} free until ${p.endsOn}. There's nothing to pay and no card needed.`,
+      'Every feature is included: quotes, invoices, automatic chasing, your directory listing and client records.',
+      `If you'd like to keep it after ${p.endsOn}, add a card any time from your plan page. It's £19.99 a month.`,
     ],
-    button: p.isPro
-      ? { label: 'Choose my districts', url: `${APP_URL}/profile/areas` }
-      : { label: "See what's included", url: `${APP_URL}/subscription` },
+    button: { label: 'See your plan', url: `${APP_URL}/subscription` },
   }
 }
 
 export function grantEnding(p: { plan: string; endsOn: string; daysLeft: 14 | 3; benefits: string[] }): EmailContent {
   return {
     subject: p.daysLeft === 3
-      ? `3 days left of your free ${p.plan}`
-      : `Your free ${p.plan} ends on ${p.endsOn}`,
-    heading: p.daysLeft === 3 ? `3 days left of your free ${p.plan}` : `Your free ${p.plan} ends on ${p.endsOn}`,
+      ? '3 days left of your free WorkedWith access'
+      : `Your free WorkedWith access ends on ${p.endsOn}`,
+    heading: p.daysLeft === 3 ? '3 days left of your free access' : `Your free access ends on ${p.endsOn}`,
     paragraphs: [
-      `Your free ${p.plan} on WorkedWith ends on ${p.endsOn}. After that your account moves to Free and your reviews and job history stay exactly as they are.`,
-      `To keep ${p.benefits.join(', ')}, upgrade before then.`,
+      `Your free access to ${p.plan} ends on ${p.endsOn}. Your reviews, jobs and invoices stay exactly as they are.`,
+      `To keep ${p.benefits.join(', ')}, add a card before then. It's £19.99 a month.`,
     ],
-    button: { label: 'Upgrade', url: `${APP_URL}/subscription` },
+    button: { label: 'Add a card', url: `${APP_URL}/subscription` },
   }
 }
 
 export function grantEnded(p: { plan: string }): EmailContent {
   return {
-    subject: `Your free ${p.plan} has ended`,
-    heading: `Your free ${p.plan} has ended`,
+    subject: 'Your free WorkedWith access has ended',
+    heading: 'Your free access has ended',
     paragraphs: [
-      `Your free ${p.plan} on WorkedWith has now ended and your account is on Free. Your reviews and job history are all still there.`,
-      'You can upgrade any time.',
+      `Your free access to ${p.plan} has ended. Your reviews, jobs and invoices are all still there, and clients can still pay invoices you've already sent.`,
+      "To send new quotes and stay listed in the directory, add a card. It's £19.99 a month.",
     ],
-    button: { label: 'Upgrade', url: `${APP_URL}/subscription` },
+    button: { label: 'Add a card', url: `${APP_URL}/subscription` },
+  }
+}
+
+// ── Boosted Districts ──────────────────────────────────────────
+
+export function boostSlotFree(p: { district: string; tradeType: string }): EmailContent {
+  return {
+    subject: `A Boosted slot is free in ${p.district}`,
+    heading: `A Boosted slot is free in ${p.district}`,
+    paragraphs: [
+      `You asked us to tell you when a Boosted slot for ${p.tradeType} came up in ${p.district}. One just has.`,
+      'Slots go to whoever boosts first. It is £10 a month and you can stop at any time.',
+    ],
+    button: { label: 'Boost now', url: `${APP_URL}/profile/areas` },
+  }
+}
+
+// ── Trial reminders (PRD 3: day 23, 28 and 30) ─────────────────
+
+export function trialReminder(p: { day: 23 | 28 | 30; endsOn: string }): EmailContent {
+  const ended = p.day === 30
+  return {
+    subject: ended ? 'Your WorkedWith trial ends today' : `Your WorkedWith trial ends on ${p.endsOn}`,
+    heading: ended ? 'Your free trial ends today' : `Your free trial ends on ${p.endsOn}`,
+    paragraphs: [
+      ended
+        ? 'Add a card today to keep sending quotes, chasing payments and appearing in the directory.'
+        : `Your 30 day free trial ends on ${p.endsOn}. Add a card now and nothing changes.`,
+      "It's £19.99 a month with everything included and no transaction fees.",
+      "If you don't add a card, clients can still pay invoices you've already sent, and you can still mark payments and download your invoices.",
+    ],
+    button: { label: 'Add a card', url: `${APP_URL}/subscription` },
   }
 }
 

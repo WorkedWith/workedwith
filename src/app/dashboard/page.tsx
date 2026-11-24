@@ -1,4 +1,3 @@
-import { getEffectiveTier } from '@/lib/tier'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -19,11 +18,9 @@ import type { ProfileAnalytics } from '@/actions/get-profile-analytics'
 import type { User, Notification } from '@/types/database'
 import { TradeChip } from '@/components/trade-chip'
 import { Avatar } from '@/components/avatar'
-import { EvidencePrompts } from '@/components/evidence-prompts'
 import { InsurancePrompt } from '@/components/insurance-prompt'
 import { JobLinkSection } from '@/components/job-link-section'
-import { ShareProfileSection } from '@/components/share-profile-section'
-import { ClientRequestsSection } from '@/components/client-requests-section'
+import { InviteYourTradeLink } from '@/components/invite-your-trade'
 
 export const metadata = { title: 'Dashboard | WorkedWith', robots: { index: false } }
 
@@ -60,7 +57,7 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(5),
     isTrade
-      ? admin.from('trade_profiles').select('id, average_rating, total_reviews, total_jobs, public_slug, subscription_tier, trade_types, operating_areas').eq('user_id', user.id).maybeSingle()
+      ? admin.from('trade_profiles').select('id, average_rating, total_reviews, total_jobs, public_slug, trade_types, operating_areas').eq('user_id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
     isClient
       ? admin.from('client_profiles').select('id, average_rating, total_reviews, total_jobs, username').eq('user_id', user.id).maybeSingle()
@@ -74,7 +71,6 @@ export default async function DashboardPage() {
 
   const tpId = tradeProfile ? (tradeProfile as unknown as { id: string }).id : undefined
   const cpId = clientProfile ? (clientProfile as unknown as { id: string }).id : undefined
-  const isProTrade = isTrade && (await getEffectiveTier(user.id)) === 'pro'
 
   let hasLiveJob = false
   let hasBackdatedJobTrade = false
@@ -92,7 +88,7 @@ export default async function DashboardPage() {
         admin.from('jobs').select('id', { count: 'exact', head: true })
           .eq('trade_profile_id', tpId).eq('is_backdated', true),
       ]),
-      isProTrade && tpId ? getProfileAnalytics(tpId) : Promise.resolve(null),
+      tpId ? getProfileAnalytics(tpId) : Promise.resolve(null),
     ])
     hasLiveJob = (liveCount ?? 0) > 0
     hasBackdatedJobTrade = (backdatedCount ?? 0) > 0
@@ -105,12 +101,14 @@ export default async function DashboardPage() {
     hasBackdatedJobClient = (count ?? 0) > 0
   }
 
-  const hasBackdatedJob = hasBackdatedJobTrade || hasBackdatedJobClient
+  // Backdated jobs are removed in v4.2; the counts are kept only until this screen is rebuilt
+  void hasBackdatedJobTrade
+  void hasBackdatedJobClient
 
   const idVerified = id_verification_status === 'pending' || id_verification_status === 'approved'
   const showChecklist = isTrade
-    ? (!phone_verified || !tradeProfile || !hasLiveJob || !hasBackdatedJob || !idVerified)
-    : (!phone_verified || !hasBackdatedJob)
+    ? (!phone_verified || !tradeProfile || !idVerified)
+    : !phone_verified
 
   const tradeHasReviews = (tradeProfile?.total_reviews ?? 0) > 0
   const hasOperatingAreas = ((tradeProfile as unknown as { operating_areas?: string[] } | null)?.operating_areas?.length ?? 0) > 0
@@ -134,11 +132,8 @@ export default async function DashboardPage() {
 
       <div className="mx-auto max-w-2xl lg:max-w-5xl px-4 py-8 sm:px-6">
 
-        <EvidencePrompts userId={user.id} />
-        {isClient && <ClientRequestsSection userId={user.id} />}
         {isTrade && <InsurancePrompt userId={user.id} />}
         {isTrade && <JobLinkSection userId={user.id} />}
-        {isClient && <ShareProfileSection userId={user.id} />}
 
         {/* ══════════════════════════════════════════════
             TRADE LAYOUT  (trade + both users)
@@ -156,10 +151,10 @@ export default async function DashboardPage() {
                 <p className="text-sm font-semibold text-brand-navy">Why WorkedWith?</p>
                 <ul className="mt-3 space-y-2">
                   {[
-                    'Check a client\'s record before you take the job on',
-                    'Build a profile of real reviews that wins you work',
-                    'Fair reviews: neither side sees the other\'s until both are in',
-                    'Free to start, with unlimited jobs and reviews',
+                    'Quote, invoice and get paid in one place',
+                    'Bank transfers mark your invoices paid, with no transaction fees',
+                    'Check a client\'s record before you quote',
+                    'Every paid job builds your reputation',
                   ].map(item => (
                     <li key={item} className="flex items-start gap-2 text-sm text-gray-700">
                       <span className="mt-0.5 font-bold text-brand-amber" aria-hidden="true">✓</span>
@@ -178,30 +173,6 @@ export default async function DashboardPage() {
                   <p className="text-xs font-bold uppercase tracking-widest text-brand-amber">As a tradesperson</p>
                 )}
 
-                {/* Quick actions */}
-                <section>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Quick actions</p>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <a
-                      href="/jobs/log"
-                      className="flex min-h-[44px] flex-col items-center justify-center rounded-lg bg-brand-amber px-4 py-3 text-center text-brand-navy hover:bg-amber-400 transition-colors"
-                    >
-                      <span className="text-sm font-semibold">+ Log a job with a client</span>
-                      <span className="mt-0.5 text-xs font-medium text-brand-navy/70">Work coming up or under way</span>
-                    </a>
-                    <a
-                      href="/jobs/log/backdated"
-                      className="flex min-h-[44px] flex-col items-center justify-center rounded-lg border-2 border-brand-navy px-4 py-3 text-center text-brand-navy hover:bg-brand-navy hover:text-white transition-colors"
-                    >
-                      <span className="text-sm font-semibold">+ Add a past job</span>
-                      <span className="mt-0.5 text-xs font-medium opacity-70">Work you have already finished</span>
-                    </a>
-                  </div>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-500">
-                    You invite your client, they confirm the job on WorkedWith, and when the work is done you both leave a review.
-                  </p>
-                </section>
-
                 {/* Onboarding checklist */}
                 {showChecklist && (
                   <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -209,8 +180,6 @@ export default async function DashboardPage() {
                     <div className="divide-y divide-gray-50">
                       <OnboardingItem done={phone_verified} label="Verify your phone number" href="/verify/phone" />
                       <OnboardingItem done={!!tradeProfile} label="Complete your trade profile" href="/onboarding/trade" />
-                      <OnboardingItem done={hasLiveJob} label="Log your first job" href="/jobs/log" />
-                      <OnboardingItem done={hasBackdatedJob} label="Add a past job" href="/jobs/log/backdated" />
                       {phone_verified && (
                         <OnboardingItem
                           done={id_verification_status === 'pending' || id_verification_status === 'approved'}
@@ -342,7 +311,7 @@ export default async function DashboardPage() {
                 </section>
 
                 {/* Analytics — Pro stats or upgrade prompt */}
-                {isProTrade && analyticsData ? (
+                {analyticsData ? (
                   <section>
                     <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics: {analyticsData.periodLabel}</p>
                     <div className="grid grid-cols-2 gap-3">
@@ -354,22 +323,6 @@ export default async function DashboardPage() {
                         <p className="text-3xl font-bold text-brand-navy">{analyticsData.searchAppearances}</p>
                         <p className="mt-1 text-xs text-gray-500">Search appearances this month</p>
                       </div>
-                    </div>
-                  </section>
-                ) : !isProTrade ? (
-                  <section>
-                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Analytics</p>
-                    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-700">Profile analytics available on Pro</p>
-                        <p className="mt-0.5 text-xs text-gray-500">See how many people view your profile and find you in search.</p>
-                      </div>
-                      <a
-                        href="/subscription"
-                        className="shrink-0 rounded-lg bg-brand-amber px-4 py-2 text-xs font-bold text-brand-navy hover:bg-amber-400 transition-colors"
-                      >
-                        Upgrade
-                      </a>
                     </div>
                   </section>
                 ) : null}
@@ -495,20 +448,7 @@ export default async function DashboardPage() {
                   </a>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
-                <a
-                  href="/jobs/log/invite-trade"
-                  className="flex min-h-[44px] items-center justify-center rounded-lg bg-brand-amber px-3 text-center text-sm font-semibold text-brand-navy hover:bg-amber-400 transition-colors sm:px-4"
-                >
-                  + Add a job
-                </a>
-                <a
-                  href="/jobs/log/backdated"
-                  className="flex min-h-[44px] items-center justify-center rounded-lg border border-brand-navy px-3 text-center text-sm font-semibold text-brand-navy hover:bg-gray-50 transition-colors sm:px-4"
-                >
-                  + Add a past job
-                </a>
-              </div>
+              <InviteYourTradeLink className="flex min-h-[44px] items-center justify-center rounded-lg bg-brand-amber px-4 text-center text-sm font-semibold text-brand-navy hover:bg-amber-400" />
             </div>
 
             <div className="lg:grid lg:grid-cols-3 lg:items-start lg:gap-8 space-y-6 lg:space-y-0">
@@ -575,7 +515,6 @@ export default async function DashboardPage() {
                     <p className="text-sm font-semibold text-brand-navy mb-4">Get started with WorkedWith</p>
                     <div className="divide-y divide-brand-navy/10">
                       <OnboardingItem done={phone_verified} label="Verify your phone number" href="/verify/phone" />
-                      <OnboardingItem done={hasBackdatedJob} label="Add your first past job" href="/jobs/log/backdated" />
                       <ExploreItem />
                     </div>
                   </section>

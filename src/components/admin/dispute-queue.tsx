@@ -116,7 +116,7 @@ function DisputeRow({ dispute }: { dispute: DisputeEnriched }) {
           <div className="flex items-center gap-2 flex-wrap">
             {dispute.is_priority && (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
-                Pro — Priority
+                Priority
               </span>
             )}
             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">

@@ -1,54 +1,26 @@
-import { getActiveGrants, effectiveTierFrom } from '@/lib/tier'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getStripeClient } from '@/lib/stripe/client'
-import type { BillingPeriod, SubscriptionTier } from '@/types/database'
-import { ManageButton } from './subscription-buttons'
-import { SubscriptionTierCards } from './subscription-tier-cards'
-import { BoostSummaryCard } from './boost-summary'
+import { getPlanState, PLAN_PRICE_TEXT, BOOST_PRICE_TEXT } from '@/lib/plan'
+import { AddCardButton, ManageButton } from './subscription-buttons'
 import { BackLink } from '@/components/back-link'
 
-export const metadata = { title: 'Subscription | WorkedWith' }
+export const metadata = { title: 'Your plan | WorkedWith' }
 
-// ── Feature table ─────────────────────────────────────────────
-
-const FEATURES: { label: string; free: boolean; standard: boolean; pro: boolean }[] = [
-  { label: 'Unlimited jobs and reviews',          free: true,  standard: true,  pro: true  },
-  { label: 'Reviews from confirmed jobs',             free: true,  standard: true,  pro: true  },
-  { label: 'Public profile page',                 free: true,  standard: true,  pro: true  },
-  { label: 'Respond to reviews',                  free: true,  standard: true,  pro: true  },
-  { label: 'Basic client lookup',                 free: true,  standard: true,  pro: true  },
-  { label: 'Full client reputation lookup',       free: false, standard: true,  pro: true  },
-  { label: 'Member badge on profile',             free: false, standard: true,  pro: true  },
-  { label: 'Photo gallery (5 photos Standard, 10 Pro)', free: false, standard: true,  pro: true  },
-  { label: 'Boosted Districts: 3 included, additional districts £10/month each', free: false, standard: false, pro: true },
-  { label: 'Pro member badge on profile and in search',  free: false, standard: false, pro: true  },
-  { label: 'Photos on each confirmed job (5 per job)', free: false, standard: false, pro: true  },
-  { label: 'Profile analytics',                   free: false, standard: false, pro: true  },
-  { label: 'Priority dispute resolution',         free: false, standard: false, pro: true  },
+const INCLUDED = [
+  'Unlimited quotes, jobs, invoices and chasing',
+  'Bank transfer payments that mark themselves paid, with no transaction fees',
+  'Accounting sync with Xero, QuickBooks, FreeAgent or Sage',
+  'Up to 10 gallery photos and 3 featured jobs',
+  'Up to 20 operating districts',
+  'Full client records and client lookup',
+  'Review responses and profile activity',
 ]
 
-// ── Helpers ───────────────────────────────────────────────────
-
-function fmtGrantDate(iso: string): string {
+function fmtDate(iso: string | null): string {
+  if (!iso) return ''
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 }
-
-
-function fmtDate(unix: number): string {
-  return new Date(unix * 1000).toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  })
-}
-
-function tierLabel(tier: SubscriptionTier): string {
-  if (tier === 'pro')      return 'Pro'
-  if (tier === 'standard') return 'Standard'
-  return 'Free'
-}
-
-// ── Page ──────────────────────────────────────────────────────
 
 export default async function SubscriptionPage() {
   const supabase = await createClient()
@@ -56,155 +28,81 @@ export default async function SubscriptionPage() {
   if (!user) redirect('/')
 
   const admin = createAdminClient()
-  const { data: userData } = await admin.from('users').select('*').eq('id', user.id).single()
-
+  const { data: userData } = await admin.from('users').select('phone_verified, user_type').eq('id', user.id).single()
   if (!userData || !userData.phone_verified) redirect('/verify/phone')
   if (userData.user_type !== 'trade' && userData.user_type !== 'both') redirect('/dashboard')
 
-  const { data: tradeProfile } = await admin
+  const { data: profile } = await admin
     .from('trade_profiles')
-    .select('*')
+    .select('subscription_expires_at, stripe_subscription_id, boosted_districts')
     .eq('user_id', user.id)
     .maybeSingle()
 
-  const currentTier = (tradeProfile?.subscription_tier as SubscriptionTier | null | undefined) ?? 'free'
-  const currentBillingPeriod = (tradeProfile?.billing_period as BillingPeriod | null | undefined) ?? 'monthly'
-  const subscriptionId = tradeProfile?.stripe_subscription_id as string | null | undefined
-  const isPaid = currentTier === 'standard' || currentTier === 'pro'
-  const grants = await getActiveGrants(admin, [user.id])
-  const activeGrant = grants.get(user.id) ?? null
-  const effectiveTier = effectiveTierFrom(currentTier, activeGrant)
-  const isPro = effectiveTier === 'pro'
+  const plan = await getPlanState(user.id, admin)
+  const subscribed = plan.status === 'active' && !!profile?.stripe_subscription_id
+  const boosts = ((profile?.boosted_districts as string[] | null) ?? []).length
 
-  // ── Boost summary (Pro only) ──────────────────────────────────
-  const billedSlots = (tradeProfile?.boosted_district_addon_quantity as number | null | undefined) ?? 0
-  const paidSlots = Math.max((tradeProfile?.boosted_district_addon_paid_quantity as number | null | undefined) ?? 0, billedSlots)
-  const activeBoostedCount = ((tradeProfile?.boosted_districts as string[] | null | undefined) ?? []).length
-
-  let nextBillingDate: string | null = null
-  if (subscriptionId) {
-    try {
-      const stripe = getStripeClient()
-      const preview = await stripe.invoices.createPreview({ subscription: subscriptionId })
-      const ts = preview.next_payment_attempt ?? preview.period_end
-      if (ts) nextBillingDate = fmtDate(ts)
-    } catch {
-      // Non-fatal — billing date is informational only
-    }
+  let headline: string
+  let detail: string
+  if (subscribed) {
+    headline = 'Your plan is active'
+    detail = plan.trialDaysLeft && plan.trialDaysLeft > 0
+      ? `Your card is saved. The first payment is taken on ${fmtDate(plan.trialEndsAt)}.`
+      : `${PLAN_PRICE_TEXT}. ${profile?.subscription_expires_at ? `Renews on ${fmtDate(profile.subscription_expires_at as string)}.` : ''}`
+  } else if (plan.grant) {
+    headline = `Free until ${fmtDate(plan.grant.ends_at)}`
+    detail = plan.grant.reason === 'founding'
+      ? 'Founding member offer. Nothing to pay and no card needed.'
+      : 'Nothing to pay and no card needed.'
+  } else if (plan.status === 'trialing' && plan.hasPlan) {
+    headline = `Free trial: ${plan.trialDaysLeft} ${plan.trialDaysLeft === 1 ? 'day' : 'days'} left`
+    detail = `Your trial ends on ${fmtDate(plan.trialEndsAt)}. Add a card before then to keep everything running.`
+  } else {
+    headline = plan.status === 'cancelled' ? 'Your plan has ended' : 'Your free trial has ended'
+    detail = 'You can’t send new quotes, your listing is hidden and chasing has stopped. Clients can still pay invoices you have already sent.'
   }
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 space-y-10">
-        <BackLink href="/settings" label="Back to settings" />
+      <div className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
+        <BackLink href="/profile" label="Back to profile" />
 
-        {/* Current plan banner */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Current plan</p>
-              <p className="mt-1 text-2xl font-bold text-brand-navy">{tierLabel(currentTier)}</p>
-              {isPaid && (
-                <p className="mt-0.5 text-sm text-gray-500">
-                  {currentBillingPeriod === 'annual' ? 'Annual billing' : 'Monthly billing'}
-                  {nextBillingDate && ` · Next renewal ${nextBillingDate}`}
-                </p>
-              )}
-              {!isPaid && (
-                <p className="mt-1 text-sm text-gray-500">Free forever, upgrade any time.</p>
-              )}
-            </div>
-            {isPaid && (
-              <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800">
-                Active
-              </span>
-            )}
+        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Your plan</p>
+          <h1 className="mt-1 text-2xl font-bold text-brand-navy">{headline}</h1>
+          <p className="mt-2 text-sm text-gray-600">{detail}</p>
+          <div className="mt-5">
+            {subscribed ? <ManageButton /> : <AddCardButton label={plan.hasPlan ? 'Add a card' : 'Restart my plan'} />}
           </div>
-          {isPaid && (
-            <div className="mt-4">
-              <ManageButton currentTier={currentTier} />
-            </div>
-          )}
-        </div>
+        </section>
 
-        {/* Free plan from WorkedWith (admin grant) */}
-        {activeGrant && (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-            <p className="text-sm font-semibold text-brand-navy">
-              You have {activeGrant.tier === 'pro' ? 'Pro' : 'Standard'} free until {fmtGrantDate(activeGrant.ends_at)}.
-              {activeGrant.reason === 'founding' && ' Founding member offer.'}
-            </p>
-            <p className="mt-1 text-sm text-gray-600">
-              Nothing to pay and no card on file. When it ends your account moves to Free
-              unless you upgrade, and your reviews and job history stay as they are.
-            </p>
-            <a
-              href="#plans"
-              className="mt-3 inline-flex min-h-[44px] items-center rounded-xl bg-brand-navy px-5 text-sm font-semibold text-white hover:bg-brand-navy/90"
-            >
-              Upgrade now
-            </a>
-          </div>
-        )}
-
-        {/* Boosted District summary (Pro only) */}
-        {isPro && (
-          <BoostSummaryCard
-            boostedCount={activeBoostedCount}
-            billedSlots={billedSlots}
-            paidSlots={paidSlots}
-            renewsOn={(tradeProfile?.subscription_expires_at as string | null | undefined) ?? null}
-          />
-        )}
-
-        {/* Tier cards with period toggle */}
-        <div id="plans" className="scroll-mt-6" />
-        <SubscriptionTierCards
-          currentTier={currentTier}
-          currentBillingPeriod={currentBillingPeriod}
-        />
-
-        {/* Feature comparison table */}
-        <div>
-          <h2 className="mb-4 text-xl font-bold text-brand-navy">What&apos;s included</h2>
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="grid grid-cols-4 border-b border-gray-100 bg-gray-50">
-              <div className="px-5 py-3 text-sm font-medium text-gray-500">Feature</div>
-              {(['Free', 'Standard', 'Pro'] as const).map(t => (
-                <div key={t} className="px-3 py-3 text-center text-sm font-semibold text-brand-navy">{t}</div>
-              ))}
-            </div>
-            {FEATURES.map((f, i) => (
-              <div
-                key={f.label}
-                className={`grid grid-cols-4 ${i < FEATURES.length - 1 ? 'border-b border-gray-100' : ''}`}
-              >
-                <div className="px-5 py-3 text-sm text-gray-700">{f.label}</div>
-                <FeatureCell included={f.free} />
-                <FeatureCell included={f.standard} />
-                <FeatureCell included={f.pro} />
-              </div>
+        <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-brand-navy">One plan, {PLAN_PRICE_TEXT}</h2>
+          <p className="mt-1 text-sm text-gray-600">Every trade gets the same features. No transaction fees, ever.</p>
+          <ul className="mt-4 space-y-2">
+            {INCLUDED.map(item => (
+              <li key={item} className="flex items-start gap-2 text-sm text-gray-700">
+                <span className="mt-0.5 font-bold text-brand-amber" aria-hidden="true">✓</span>
+                <span>{item}</span>
+              </li>
             ))}
-          </div>
-          <p className="mt-3 text-xs text-gray-400 text-center">
-            Jobs and reviews are never capped. WorkedWith is a trust layer, not a paywall.
-          </p>
-        </div>
+          </ul>
+        </section>
 
+        <section className="rounded-2xl border border-brand-amber/40 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-brand-navy">Boosted Districts</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Optional. {BOOST_PRICE_TEXT} per district, once you are on the paid plan. Boosted trades show at the top
+            of Find for that district, always labelled Boosted. Reviews and scores are never affected.
+          </p>
+          <p className="mt-3 text-sm font-medium text-brand-navy">
+            {plan.onPaidPlan ? `You boost ${boosts} ${boosts === 1 ? 'district' : 'districts'}.` : 'Available once your trial has ended and your plan is active.'}
+          </p>
+          <a href="/profile/areas" className="mt-3 inline-flex min-h-[44px] items-center text-sm font-semibold text-brand-navy underline">
+            Manage districts
+          </a>
+        </section>
       </div>
     </main>
-  )
-}
-
-// ── Sub-components ────────────────────────────────────────────
-
-function FeatureCell({ included }: { included: boolean }) {
-  return (
-    <div className="flex items-center justify-center px-3 py-3">
-      {included
-        ? <span className="text-green-600 font-bold text-base" aria-label="Included">✓</span>
-        : <span className="text-gray-300 text-base" aria-label="Not included">—</span>
-      }
-    </div>
   )
 }

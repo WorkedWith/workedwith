@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { runDailyV42 } from '@/lib/cron/daily-v42'
 import { formatDateLong } from '@/lib/email/format'
 import { sendEmail } from '@/lib/email/send'
 import { bothReviewsLive, reviewReminder, theirReviewLive, yourReviewLive } from '@/lib/email/templates'
@@ -59,7 +60,10 @@ export async function GET(request: Request) {
 
   const reminders = await sendDayFourReminders(admin, now)
 
-  return NextResponse.json({ processed, reminders })
+  // v4.2 daily jobs (trials, chasing, reminders, review windows) share this cron
+  const v42 = await runDailyV42(admin)
+
+  return NextResponse.json({ processed, reminders, v42 })
 }
 
 // ── Day 4 reminder ────────────────────────────────────────────

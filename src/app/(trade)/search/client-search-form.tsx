@@ -188,7 +188,7 @@ function ResultCard({ result }: { result: ClientProfileResult }) {
       {result.status === 'free' && (
         <div className="px-6 py-5">
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
-            <p className="text-sm font-semibold text-amber-900">Upgrade to Pro to see more</p>
+            <p className="text-sm font-semibold text-amber-900">See more</p>
             <p className="mt-1 text-xs text-amber-700 leading-relaxed">
               Pro subscribers can view payment reliability, communication score, scope clarity,
               red flag history, and written reviews for any client.

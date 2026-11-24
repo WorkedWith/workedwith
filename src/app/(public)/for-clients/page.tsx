@@ -284,7 +284,7 @@ export default function ForClientsPage() {
           <p className="mt-2 text-sm leading-relaxed text-gray-600">
             Business accounts are free too. Verify your company, add your team, and build a record of the trades you use.
           </p>
-          <a href="/join/client/business" className="mt-5 inline-flex min-h-[48px] items-center rounded-xl bg-brand-navy px-6 text-sm font-semibold text-white hover:bg-brand-navy/90 transition-colors">
+          <a href="/join/client" className="mt-5 inline-flex min-h-[48px] items-center rounded-xl bg-brand-navy px-6 text-sm font-semibold text-white hover:bg-brand-navy/90 transition-colors">
             Set up a business account
           </a>
         </div>

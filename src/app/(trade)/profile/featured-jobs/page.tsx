@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getUserTier, isProTier } from '@/lib/stripe/get-tier'
 import { FEATURED_IMAGES_PER_JOB } from '@/lib/gallery-limits'
 import { FeaturedJobsClient } from './featured-jobs-client'
 import type { ModerationStatus } from '@/types/database'
@@ -36,9 +35,6 @@ export default async function FeaturedJobsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/sign-in')
-
-  const tier = await getUserTier(user.id)
-  if (!isProTier(tier)) redirect('/profile/gallery')
 
   const admin = createAdminClient()
 
@@ -118,7 +114,7 @@ export default async function FeaturedJobsPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-brand-navy">Photos from your confirmed jobs</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Pro members can add up to {imageLimit} photos to any job completed on WorkedWith. These show on your profile with a
+            You can feature up to 3 jobs, with up to {imageLimit} photos each, from jobs completed on WorkedWith. These show on your profile with a
             &ldquo;confirmed job&rdquo; tick, because the client confirmed the job happened. Want general photos of your work instead?{' '}
             <a href="/profile/gallery" className="font-semibold text-brand-navy underline">Go to your gallery</a>.
           </p>

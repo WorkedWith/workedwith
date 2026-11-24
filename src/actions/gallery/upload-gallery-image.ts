@@ -2,8 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getUserTier, isStandardOrAbove } from '@/lib/stripe/get-tier'
-import { galleryLimit } from '@/lib/gallery-limits'
+import { GALLERY_LIMIT } from '@/lib/gallery-limits'
 import { moderateImage } from '@/lib/moderation/rekognition'
 import type { ModerationStatus } from '@/types/database'
 
@@ -18,11 +17,6 @@ export async function uploadGalleryImage(formData: FormData): Promise<UploadGall
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'You must be signed in.' }
-
-  const tier = await getUserTier(user.id)
-  if (!isStandardOrAbove(tier)) {
-    return { success: false, error: 'Photos need a Standard or Pro plan.' }
-  }
 
   const file = formData.get('file')
   const caption = formData.get('caption')
@@ -45,7 +39,7 @@ export async function uploadGalleryImage(formData: FormData): Promise<UploadGall
     .eq('trade_profile_id', tradeProfileId)
     .neq('moderation_status', 'rejected')
 
-  const limit = galleryLimit(tier)
+  const limit = GALLERY_LIMIT
   if ((count ?? 0) >= limit) {
     return { success: false, error: `You have reached your limit of ${limit} gallery photos.` }
   }

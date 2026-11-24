@@ -9,13 +9,12 @@ import { BoostPanel } from './boost-panel'
 
 type Props = {
   initialAreas: DistrictEntry[]
-  isPro: boolean
+  canBoost: boolean
   initialBoost: BoostSummary
-  extraDistrictsAvailable: boolean
-  unavailableNote: string | null
+  enabledDistricts: string[]
 }
 
-export function AreasForm({ initialAreas, isPro, initialBoost, extraDistrictsAvailable, unavailableNote }: Props) {
+export function AreasForm({ initialAreas, canBoost, initialBoost, enabledDistricts }: Props) {
   const [areas, setAreas] = useState<DistrictEntry[]>(initialAreas)
   const [savedAreaCodes, setSavedAreaCodes] = useState<string[]>(initialAreas.map(a => a.code))
   const [boost, setBoost] = useState<BoostSummary>(initialBoost)
@@ -53,7 +52,7 @@ export function AreasForm({ initialAreas, isPro, initialBoost, extraDistrictsAva
 
         {areaError && <p className="mt-3 text-sm text-red-600">{areaError}</p>}
 
-        {isPro && boost.boosted.some(d => !areas.some(a => a.code === d)) && (
+        {canBoost && boost.boosted.some(d => !areas.some(a => a.code === d)) && (
           <p className="mt-3 text-sm text-amber-700">
             You have removed a boosted district. Saving will switch its boost off.
           </p>
@@ -69,14 +68,15 @@ export function AreasForm({ initialAreas, isPro, initialBoost, extraDistrictsAva
         </button>
       </div>
 
-      {isPro && (
-        <BoostPanel
-          areaCodes={savedAreaCodes}
-          summary={boost}
-          onSummary={setBoost}
-          extraDistrictsAvailable={extraDistrictsAvailable}
-          unavailableNote={unavailableNote}
-        />
+      {canBoost ? (
+        <BoostPanel areaCodes={savedAreaCodes} summary={boost} onSummary={setBoost} enabledDistricts={enabledDistricts} />
+      ) : (
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 text-sm text-gray-600 shadow-sm">
+          <h2 className="text-base font-semibold text-brand-navy">Boosted Districts</h2>
+          <p className="mt-1">
+            An optional extra at £10 a month per district, available once you are on the paid plan after your free trial.
+          </p>
+        </div>
       )}
     </div>
   )
