@@ -4,40 +4,60 @@ import { useState } from 'react'
 
 const FAQS: { q: string; a: string }[] = [
   {
+    q: 'What is WorkedWith?',
+    a: 'The UK directory of trades where every review comes from a real, paid job, and where clients have a reputation too. Trades run their jobs through WorkedWith: they quote, the client accepts, extras are approved before the work, and the client pays by bank transfer.',
+  },
+  {
+    q: 'How much does it cost?',
+    a: 'Trades pay £19.99 a month after a 30 day free trial, with no card needed to start. That is the only cost from WorkedWith. There are no transaction fees on bank payments. Clients never pay anything.',
+  },
+  {
+    q: 'Are there any other fees?',
+    a: "No transaction fees, ever. Connecting your bank is free because WorkedWith pays for it. The only other possible cost is Stripe's card fee if you choose to switch card payments on, charged by Stripe directly. Boosted Districts are an optional extra at £10 a month per district.",
+  },
+  {
+    q: 'Does WorkedWith hold my money?',
+    a: 'Never. Clients pay straight into your own bank account using the details and reference on the invoice. Optional card payments go to your own Stripe account.',
+  },
+  {
+    q: 'What does connecting my bank do?',
+    a: 'It lets WorkedWith see incoming bank transfers so your invoices mark themselves paid. It reads incoming payments only and can never move money. We only store payments that match one of your invoices. It is optional: you can always mark payments yourself.',
+  },
+  {
     q: 'How do reviews work?',
-    a: 'Both the tradesperson and the client submit their reviews privately. Neither can see what the other has written. Reviews go live after a 7 day window. If one party does not submit, the other\'s review still publishes.',
+    a: 'Reviews only open once a job is paid, a due payment is 30 days overdue, or a job is cancelled after work started. Both sides then have 14 days. Neither review shows until both are in or the 14 days end, then they publish together.',
   },
   {
-    q: 'Is WorkedWith free to join?',
-    a: 'Yes. The free plan has no time limit and no caps. You can log unlimited jobs, receive and respond to reviews, build your public profile and appear in search results at no cost. Paid plans add more tools: Standard is £9.99 per month and Pro is £39.99 per month.',
+    q: 'Can I add jobs I did before joining?',
+    a: 'No. Every review comes from a job that ran through WorkedWith, so reviews can always be trusted.',
   },
   {
-    q: 'Do clients pay anything?',
-    a: 'Never. Client accounts are permanently free on WorkedWith.',
+    q: 'How do clients approve things?',
+    a: 'Only from their own signed in account, using a text code. Quotes, extras, start dates and stages are never approved by default or by the trade, so there is always a clear record of the client agreeing.',
   },
   {
-    q: 'How do I find a tradesperson?',
-    a: 'Go to the Find a tradesperson page, select a trade type, and enter your postcode. We match you with tradespeople who cover your postcode district. Results show tradespeople with genuine mutual reviews from confirmed jobs.',
+    q: 'What if a client never responds?',
+    a: 'Stages waiting for approval get automatic reminders to the client at day 5, 10 and 14. After that you can request payment anyway. It is always labelled as not approved by the client.',
   },
   {
-    q: 'What makes a review genuine?',
-    a: 'A review is genuine when both the tradesperson and the client have confirmed the job took place and both have submitted their reviews independently.',
+    q: "Who can see a client's record?",
+    a: 'Only trades quoting that client, or looking them up by their exact email address or mobile number. Client records are never public and never searchable by name.',
   },
   {
-    q: 'Can I add jobs I completed before joining?',
-    a: 'Yes. Use the Add a past job feature to log historical work and invite the other party to confirm it. This lets you build your profile from day one.',
+    q: 'Does WorkedWith chase payments for me?',
+    a: "Yes. Reminders go out automatically in your business's name before and after the due date. WorkedWith never collects debts or files claims, but it prepares a letter before action and a claim pack you can use yourself.",
   },
   {
-    q: 'What do the paid plans include?',
-    a: 'Standard is £9.99 per month. It unlocks the full client profile on lookup, including payment reliability scores, red flag history and written review excerpts from other tradespeople, plus a Member badge and a gallery of up to 5 photos of your work. Pro is £39.99 per month. It adds Boosted Districts for top of search placement (3 included, extra districts £10 per month each), a Pro member badge, a gallery of up to 10 photos plus up to 5 photos on each confirmed job, profile analytics and priority dispute resolution.',
+    q: 'Which accounting software do you work with?',
+    a: 'Xero, QuickBooks, FreeAgent and Sage. The sync is optional and one way: we send invoices, payments and credit notes, and never read or change anything else. A CSV export is always available.',
   },
   {
-    q: 'What happens if someone leaves an unfair review?',
-    a: 'You can raise a dispute within 14 days of a review publishing. WorkedWith admin will review both sides and make a decision within 21 days. The review remains visible but is labelled as under dispute during that time.',
+    q: 'How do I find a trade?',
+    a: 'Go to Find a trade, pick the trade and enter your postcode. Results are ranked on reviews from paid jobs. Boosted trades pay to appear first and are always labelled. Tap Email now to ask for a quote.',
   },
   {
-    q: 'Is WorkedWith only for the UK?',
-    a: 'Yes. WorkedWith is built specifically for the UK trades market.',
+    q: 'Is there an app?',
+    a: 'No app to download. WorkedWith works in any browser on your phone, tablet or computer.',
   },
 ]
 

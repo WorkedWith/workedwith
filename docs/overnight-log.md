@@ -9,6 +9,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | Phase | Status | What was built |
 |---|---|---|
 | 0 Cleanup | Done | One plan with a 30 day trial, single "has active plan" check, boosts reworked to the £10 add on with a 3 per trade type cap, waiting list and admin switch, backdated and trade invite flows removed, old screens hidden, test data reset script |
+| 0.5 Landing page | Done | Home, for trades, for clients, pricing and FAQ rewritten for the quote to paid platform, with the plain cost table, accounting names, shared nav and footer, and a slot for the landing video |
 
 ## 2. Decisions I made
 
@@ -30,11 +31,17 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 0.14 | The notifications type check constraint is dropped so new notification kinds can be added without a migration each time. | 17 |
 | 0.15 | Lapsed trades keep their public profile page at /t/[slug] (clients follow links from invoices) but are hidden from Find. | 3, 15 |
 
+| 0.5.1 | No landing video exists in the repo. The pages show a video section only when `NEXT_PUBLIC_LANDING_VIDEO_URL` is set. | 19 item 11, 20 phase 0.5 |
+| 0.5.2 | Accounting platforms are shown as plain wordmarks, not their logos, until we have permission to use each brand. | 18 |
+| 0.5.3 | The Stripe card fee (1.5% + 20p) is quoted on the pricing page as the PRD says; check it before launch. | 3 |
+
 ## 3. Needs Adam
 
 1. Create one Stripe price at £19.99 a month (`STRIPE_PLAN_PRICE_ID`) and one at £10 a month for boosts (`STRIPE_BOOST_PRICE_ID`). Archive the old Standard and Pro prices.
 2. Set `MESSAGE_DELIVERY=live` in Vercel production (it is also live automatically when `VERCEL_ENV=production`).
 3. Check the counts printed by `supabase/scripts/reset-test-data.sql`, then change `rollback` to `commit` and run it once before the first real trade.
+5. Supply the landing video and set `NEXT_PUBLIC_LANDING_VIDEO_URL` (and optionally `NEXT_PUBLIC_LANDING_VIDEO_POSTER`).
+6. Logos for Xero, QuickBooks, FreeAgent and Sage, once each partner programme allows it.
 4. Switch boosts on for WA14 and WA15 in Admin, Boosted Districts, when you are ready to sell them.
 
 ## 4. To run
@@ -45,6 +52,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 **Env vars to add in Vercel**
 - `STRIPE_PLAN_PRICE_ID`, `STRIPE_BOOST_PRICE_ID`
 - `MESSAGE_DELIVERY` (`live` in production; leave unset or `log` in preview)
+- `NEXT_PUBLIC_LANDING_VIDEO_URL`, `NEXT_PUBLIC_LANDING_VIDEO_POSTER` (optional)
 
 **Commands**
 ```bash
@@ -64,3 +72,7 @@ supabase db push
 - Find: a boosted trade shows in the Boosted band with the label, and again lower down in its normal place.
 - Visit /jobs/log, /org/dashboard, /invite/claim/x: each sends you home.
 - Gallery allows 10 photos for every trade; featured jobs allow 3.
+
+**Phase 0.5**
+- Open /, /for-trades, /for-clients, /pricing and /faq at phone width and desktop width. No sideways scrolling; the menu button opens the links on a phone.
+- Pricing shows £19.99 a month, the plain cost table and what every trade gets. No Standard or Pro anywhere.

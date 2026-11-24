@@ -1,156 +1,116 @@
 import type { Metadata } from 'next'
-import { PhoneMockup } from '@/components/marketing/phone-mockup'
-import { HowItWorksStrip } from '@/components/marketing/how-it-works-strip'
+import { MarketingNav } from '@/components/marketing/site/marketing-nav'
+import { MarketingFooter } from '@/components/marketing/site/marketing-footer'
+import { LandingVideo } from '@/components/marketing/site/landing-video'
+import { Steps } from '@/components/marketing/site/feature-grid'
+import { AccountingLogos } from '@/components/marketing/site/accounting-logos'
 
 export const metadata: Metadata = {
   title: "WorkedWith | Know who you're working with",
-  description: 'The only platform where both tradespeople and clients have a reputation to protect.',
+  description:
+    'The UK directory of trades where every review comes from a real, paid job, and where clients have a reputation too.',
 }
+
+const HOW = [
+  { title: 'The trade quotes', body: 'Built in a minute on a phone or a desktop, and sent to the client by text and email.' },
+  { title: 'The client agrees', body: 'They accept from their own account, and approve any extras before the work is done.' },
+  { title: 'The client pays', body: 'By bank transfer straight to the trade. The invoice marks itself paid when the money lands.' },
+  { title: 'Both sides review', body: 'Only once the job is paid. Reviews publish together, so neither side can write back in revenge.' },
+]
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-brand-navy flex flex-col">
+    <div className="min-h-screen bg-gray-50">
+      <MarketingNav dark />
 
-      {/* ── Top bar ─────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 py-5">
-        <a href="/" className="text-xl font-bold tracking-tight text-white">
-          Worked<span className="text-brand-amber">With</span>
-        </a>
-        <a
-          href="/sign-in"
-          className="min-h-[44px] flex items-center rounded-lg border border-white/20 px-4 text-sm font-medium text-white/80 hover:bg-white/10 transition-colors"
-        >
-          Sign in
-        </a>
-      </div>
-
-      {/* ── Centre content ──────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 sm:px-6">
-        {/* Dot-grid background */}
-        <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full">
-          <defs>
-            <pattern id="dot-grid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-              <circle cx="1" cy="1" r="1" fill="white" fillOpacity="0.08" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#dot-grid)" />
-        </svg>
-
-        <div className="relative w-full max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-brand-amber mb-6">
-            WorkedWith
-          </p>
-          <h1 className="text-4xl font-bold text-white sm:text-5xl lg:text-6xl text-balance leading-[1.1]">
+      <header className="bg-brand-navy px-4 pb-20 pt-12 sm:px-6 sm:pt-20">
+        <div className="mx-auto max-w-4xl text-center">
+          <h1 className="text-balance text-4xl font-bold leading-[1.1] text-white sm:text-6xl">
             Know who you&apos;re working with.
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/60 text-balance sm:text-lg">
-            The only platform where both tradespeople and clients have a reputation to protect.
+          <p className="mx-auto mt-5 max-w-2xl text-balance text-lg leading-relaxed text-white/70">
+            The UK directory of trades where every review comes from a real, paid job, and where clients have a reputation too.
           </p>
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/50 text-balance">
-            Every job is confirmed by both sides before it starts, then both sides review it. Free for clients, always.
-          </p>
-
-          {/* Audience cards */}
-          <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2">
-
-            {/* Tradesperson card — primary */}
-            <a
-              href="/for-trades"
-              className="group flex flex-col items-start rounded-2xl bg-brand-navy p-8 text-left hover:bg-brand-navy/90 transition-colors"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
-                <HardHatIcon />
-              </div>
-              <h2 className="mt-5 text-xl font-bold text-white">I&apos;m a tradesperson</h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/70 flex-1">
-                Build a reputation from jobs your clients have confirmed, check clients before you commit, and add the work you have already done.
-              </p>
-              <span className="mt-6 w-full rounded-xl bg-brand-amber py-3 text-center text-sm font-bold text-brand-navy group-hover:bg-amber-400 transition-colors">
-                Get started
-              </span>
+          <div className="mx-auto mt-10 flex max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
+            <a href="/join/trade" className="flex min-h-[52px] items-center justify-center rounded-xl bg-brand-amber px-7 text-base font-bold text-brand-navy hover:bg-amber-400">
+              I&apos;m a trade: start free trial
             </a>
-
-            {/* Client card */}
-            <a
-              href="/for-clients"
-              className="group flex flex-col items-start rounded-2xl border-2 border-brand-amber bg-amber-50 p-8 text-left hover:bg-amber-100 transition-colors"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-navy/10">
-                <SearchIcon />
-              </div>
-              <h2 className="mt-5 text-xl font-bold text-brand-navy">I&apos;m looking for a tradesperson</h2>
-              <p className="mt-2 text-sm leading-relaxed text-brand-navy/70 flex-1">
-                Find tradespeople with reviews from real jobs, confirmed by both sides. You review them too, so everyone has something to protect.
-              </p>
-              <span className="mt-6 w-full rounded-xl bg-brand-navy py-3 text-center text-sm font-bold text-white group-hover:bg-brand-navy/90 transition-colors">
-                Find a tradesperson
-              </span>
+            <a href="/find" className="flex min-h-[52px] items-center justify-center rounded-xl border-2 border-white/30 px-7 text-base font-semibold text-white hover:bg-white/10">
+              Find a trade near you
             </a>
-
           </div>
-
-          {/* Sign-in nudge */}
-          <p className="mt-8 text-sm text-white/40">
-            Already have an account?{' '}
-            <a href="/sign-in" className="text-white/70 underline underline-offset-2 hover:text-white transition-colors">
-              Sign in
-            </a>
-          </p>
+          <p className="mt-4 text-sm text-white/50">Free for clients, always. £19.99 a month for trades after 30 days free.</p>
         </div>
-      </div>
+      </header>
 
-      {/* ── How it works ─────────────────────────────────────── */}
-      <section className="border-t border-white/10 px-4 py-16 sm:px-6">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="text-center text-2xl font-bold text-white sm:text-3xl text-balance">
-            Both sides have a reputation to protect
-          </h2>
-          <div className="mt-12">
-            <HowItWorksStrip />
-          </div>
-          <div className="mt-16 grid items-start gap-10 sm:grid-cols-2">
-            <div>
-              <PhoneMockup variant="trade" />
-              <p className="mt-6 text-center text-sm text-white/70">What clients see when they check a tradesperson</p>
-            </div>
-            <div>
-              <PhoneMockup variant="client" />
-              <p className="mt-6 text-center text-sm text-white/70">What tradespeople see when they check a client</p>
-            </div>
+      <section className="px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-center text-2xl font-bold text-brand-navy sm:text-3xl">Every review is tied to a paid job</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-gray-600">
+            Trades run their jobs through WorkedWith, so every job proves the work happened and money changed hands.
+            Only then can either side review the other.
+          </p>
+          <div className="mt-10">
+            <Steps items={HOW} />
           </div>
         </div>
       </section>
 
-      {/* ── Footer strip ─────────────────────────────────────── */}
-      <div className="flex items-center justify-between border-t border-white/10 px-6 py-4">
-        <p className="text-xs text-white/30">
-          &copy; {new Date().getFullYear()} WorkedWith
-        </p>
-        <div className="flex gap-5">
-          <a href="/terms" className="text-xs text-white/40 hover:text-white/70 transition-colors">Terms</a>
-          <a href="/privacy" className="text-xs text-white/40 hover:text-white/70 transition-colors">Privacy</a>
+      <LandingVideo />
+
+      <section className="px-4 py-16 sm:px-6">
+        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-2">
+          <article className="flex flex-col rounded-3xl bg-brand-navy p-8 text-white sm:p-10">
+            <p className="text-sm font-semibold uppercase tracking-widest text-brand-amber">For trades</p>
+            <h2 className="mt-3 text-3xl font-bold">Every job agreed. Every job paid.</h2>
+            <p className="mt-4 leading-relaxed text-white/70">
+              Quote, invoice and get paid in one place. Every job builds your reputation, and you&apos;ll know who pays before you quote.
+            </p>
+            <ul className="mt-6 space-y-2 text-sm text-white/80">
+              <li>✓ Quotes and extras approved by the client, on record</li>
+              <li>✓ Bank transfers that mark invoices paid, with no transaction fees</li>
+              <li>✓ Late payments chased automatically, in your name</li>
+              <li>✓ Client records from other trades before you quote</li>
+            </ul>
+            <div className="mt-6"><AccountingLogos dark /></div>
+            <a href="/for-trades" className="mt-8 inline-flex min-h-[48px] items-center justify-center self-start rounded-xl bg-brand-amber px-6 text-sm font-bold text-brand-navy hover:bg-amber-400">
+              See how it works for trades
+            </a>
+          </article>
+          <article className="flex flex-col rounded-3xl border-2 border-brand-amber bg-white p-8 sm:p-10">
+            <p className="text-sm font-semibold uppercase tracking-widest text-amber-700">For clients</p>
+            <h2 className="mt-3 text-3xl font-bold text-brand-navy">Reviews you can trust</h2>
+            <p className="mt-4 leading-relaxed text-gray-600">
+              Every review comes from a real, paid job. Find trades you can trust, and be a client they want to work for.
+            </p>
+            <ul className="mt-6 space-y-2 text-sm text-gray-700">
+              <li>✓ Quotes, extras and invoices in one place on your phone</li>
+              <li>✓ Nothing is agreed unless you approve it</li>
+              <li>✓ Pay the trade directly by bank transfer, with no fees</li>
+              <li>✓ Always free</li>
+            </ul>
+            <a href="/for-clients" className="mt-8 inline-flex min-h-[48px] items-center justify-center self-start rounded-xl bg-brand-navy px-6 text-sm font-bold text-white hover:bg-brand-navy/90">
+              See how it works for clients
+            </a>
+          </article>
         </div>
-      </div>
+      </section>
 
+      <section className="px-4 pb-16 sm:px-6">
+        <div className="mx-auto max-w-3xl rounded-3xl bg-white p-8 text-center shadow-sm sm:p-10">
+          <h2 className="text-2xl font-bold text-brand-navy">One price for trades. Nothing for clients.</h2>
+          <p className="mt-3 text-gray-600">
+            £19.99 a month after a 30 day free trial, with no card needed to start. No transaction fees on bank payments.
+            WorkedWith never holds your money.
+          </p>
+          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+            <a href="/pricing" className="flex min-h-[48px] items-center justify-center rounded-xl border-2 border-brand-navy px-6 text-sm font-semibold text-brand-navy">See pricing</a>
+            <a href="/join/trade" className="flex min-h-[48px] items-center justify-center rounded-xl bg-brand-amber px-6 text-sm font-bold text-brand-navy">Start free trial</a>
+          </div>
+        </div>
+      </section>
+
+      <MarketingFooter />
     </div>
-  )
-}
-
-function HardHatIcon() {
-  return (
-    <svg className="h-6 w-6 text-brand-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2z" />
-      <path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5" />
-      <path d="M4 15v-3a8 8 0 0 1 16 0v3" />
-    </svg>
-  )
-}
-
-function SearchIcon() {
-  return (
-    <svg className="h-6 w-6 text-brand-navy" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
   )
 }
