@@ -16,6 +16,8 @@ export async function sendEmail(
   content: EmailContent,
   opts?: { headers?: Record<string, string>; replyTo?: string; fromName?: string },
 ): Promise<SendEmailResult> {
+  // Closed accounts have a scrubbed .invalid address: never send to it
+  if (to.endsWith('.invalid')) return { ok: true }
   try {
     const { subject, html, text } = renderEmail(content)
     if (!deliveryIsLive()) {

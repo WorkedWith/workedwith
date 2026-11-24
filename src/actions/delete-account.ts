@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { createHash } from 'crypto'
 import { sendEmail } from '@/lib/email/send'
 import { accountDeleted } from '@/lib/email/templates'
+import { closeAccount, hasFinancialRecords } from '@/lib/retention/close-account'
 
 export async function deleteAccount(): Promise<{ error?: string }> {
   const supabase = await createClient()
@@ -14,6 +15,18 @@ export async function deleteAccount(): Promise<{ error?: string }> {
 
   const admin = createAdminClient()
   const emailBeforeDelete = user.email ?? null
+
+  // Accounts with WorkedWith jobs are closed, not deleted: financial records are kept 6 years (PRD 11)
+  if (await hasFinancialRecords(admin, user.id)) {
+    const r = await closeAccount(admin, user.id)
+    if (!r.ok) return { error: r.error }
+    await supabase.auth.signOut()
+    if (emailBeforeDelete) {
+      const sent = await sendEmail(emailBeforeDelete, accountDeleted())
+      if (!sent.ok) console.error('Account closed email failed (non-fatal):', sent.error)
+    }
+    redirect('/')
+  }
 
   // Record the phone number as deactivated BEFORE anything is deleted, so it can
   // never be used to open a new account. Fail closed: if this cannot be written,

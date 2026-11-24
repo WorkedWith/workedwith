@@ -23,6 +23,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 11 Accounting integrations | Done (mock); real adapters need keys | One internal interface (connect, refresh, contact, invoice, payment, credit note, refund, disconnect) with a working mock and adapters for Xero, QuickBooks, FreeAgent and Sage written to their public APIs. Connect from Getting paid, confirm sales account, bank account, VAT and whether to send existing invoices. Invoices, payments (paid elsewhere once the client confirms), credit notes and refunds queue automatically, retry for 24 hours, then show as failed with a retry button. Expired connections pause sync and catch up on reconnect; lapsed plans pause sync. Sync status shows on each invoice |
 | 12 Seeded changes | Done | Listings live 90 days (existing ones extended), reminder emails at day 30, 60 and 80 that include the month's profile views and Email now clicks, then removal onto the do not reseed list; outreach only to active limited companies checked at Companies House (number added on the admin form), email only, opt out in every email; seeded profiles show Companies House status and trading since; claiming starts the 30 day trial, carries the listed email over as the business email, and lands on the set up steps |
 | 13 Optional cards | Done (mock); live needs Stripe Connect | Trades connect their own Stripe account (Stripe handles pricing, no application fee), switch cards on or off and set a card limit per payment; clients pay a due stage by card, Apple Pay or Google Pay (in full, or in parts of £10 or more) above which they see bank only; payments arrive by Connect webhook with Stripe's fee recorded for exports and sync; card refunds through Stripe with a credit note; chargebacks open automatically with a text and email to the trade, evidence is built from the job record and submitted with one tap, a reminder goes 3 days before the deadline, and a lost chargeback makes the stage due again and counts on the client's record |
+| 14 Record retention | Done | Accounts with WorkedWith jobs are closed instead of deleted: identity hashes blocked, reviews anonymised but kept, login removed (scrubbed email, banned), personal details scrubbed; a closing trade has the bank and accounting connections revoked, bank details deleted (issued invoices keep a frozen encrypted copy), cards off, plan cancelled, open quotes withdrawn and listing hidden. Daily retention sets a 6 year date on paid or cancelled jobs and then anonymises them (names, contacts, addresses, notes, photos and letters go; amounts, numbers and dates stay). Unanswered bank match suggestions are forgotten after 90 days. Accounts with no WorkedWith jobs still use the existing full delete |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -129,6 +130,11 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 13.3 | `CARDS_MODE=mock` (default) simulates onboarding and a test checkout page that records a card payment with a pretend Stripe fee. | your instructions |
 | 13.4 | The chargeback evidence is sent to Stripe as text (the acceptance record and full job timeline). Attaching the job report PDF as a file is a TODO for Stripe test mode. | 9 |
 | 13.5 | Connect events arrive at the existing Stripe webhook; events with an `account` field are routed to the Connect handler. | 9 |
+| 14.1 | A hard delete would cascade into quotes and block on invoices, so accounts with v4.2 jobs are closed (scrubbed and locked) instead. The users row stays so the trade's records keep their links. | 11 |
+| 14.2 | Every invoice now stores an encrypted copy of the bank details it was issued with, so closing a trade account can delete the live bank details without changing what clients were told. | 11 |
+| 14.3 | Anonymisation after 6 years keeps invoice numbers, amounts, VAT and dates, so totals in exports still add up; everything personal goes. | 11 |
+| 14.4 | Emails to a closed account's scrubbed `.invalid` address are never sent. | 11 |
+| 14.5 | The client's own copy: when a trade closes, the client still opens their jobs, invoices and receipts. When a client closes, their login is gone, so they keep no access; the trade keeps the job record with the name and address as quoted. | 11 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -167,6 +173,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 12. `20261124001100_accounting.sql`
 13. `20261124001200_seeded_v42.sql`
 14. `20261124001300_cards.sql`
+15. `20261124001400_retention.sql`
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -290,5 +297,10 @@ supabase db push
 - As the client on a due stage over £500: the card button offers up to £500 and says to pay the rest by bank. Pay with the test card: the stage shows part paid, the payment shows a Stripe fee in the payments export.
 - As the trade, Refund by card on that payment: a credit note appears.
 - To test a chargeback in mock mode, call `openChargeback` with the mock payment intent id (or insert a `chargebacks` row): the job shows the disputed panel; submit evidence. Set `outcome` to lost through `closeChargeback`: the stage is due again and the client's record shows a lost chargeback.
+
+**Phase 14**
+- As a client with a job, Account, Close my account: you are signed out, can't sign in again by text code, and the trade still sees the job and invoices with the name and address as quoted.
+- As a trade with jobs, close the account: the bank and accounting connections are gone, the listing is hidden, and the client can still open their invoices with the bank details as issued.
+- Set a paid job's `retain_until` in the past and run the cron: the quote shows "Removed" for the client, photos are deleted, amounts and invoice numbers remain.
 
 <!-- tests -->

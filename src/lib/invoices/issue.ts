@@ -6,6 +6,7 @@ import { getPayeeDetails } from '@/lib/getting-paid/bank-account'
 import { invoiceIssuedEmail } from '@/lib/email/templates-v42'
 import { smsInvoiceIssued } from '@/lib/sms/copy-v42'
 import { onInvoiceIssued } from '@/lib/invoices/hooks'
+import { encryptSecret } from '@/lib/crypto/secret-box'
 import type { ApprovalBasis, Invoice, PaymentStage, Quote } from '@/types/v42'
 
 type AdminClient = ReturnType<typeof createAdminClient>
@@ -63,6 +64,7 @@ export async function issueInvoiceForStage(admin: AdminClient, stageId: string):
     status: st.amount_paid_pence >= amount ? 'paid' : st.amount_paid_pence > 0 ? 'part_paid' : 'issued',
     approval_basis: basisOf(st),
     description: st.is_deposit ? `${job.title ?? 'Job'}: deposit` : `${job.title ?? 'Job'}: ${st.name}`,
+    payee_snapshot_encrypted: await payeeSnapshot(admin, job.trade_user_id),
   }).select('*').single()
   if (insErr || !inv) {
     console.error('Invoice insert failed:', insErr)
@@ -84,4 +86,10 @@ export async function issueInvoiceForStage(admin: AdminClient, stageId: string):
   }
   await onInvoiceIssued(admin, invoice)
   return invoice
+}
+
+/** The bank details on the invoice are frozen at issue (encrypted), so they survive the trade closing their account. */
+async function payeeSnapshot(admin: AdminClient, tradeId: string): Promise<string | null> {
+  const p = await getPayeeDetails(admin, tradeId)
+  return p ? encryptSecret(JSON.stringify(p)) : null
 }

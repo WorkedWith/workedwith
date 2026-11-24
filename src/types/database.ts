@@ -33,6 +33,7 @@ export interface User {
   organisation_id: string | null
   is_admin: boolean
   profile_photo_url: string | null
+  closed_at?: string | null
 }
 
 export interface TradeProfile {
@@ -86,6 +87,7 @@ export interface TradeProfile {
   payment_terms_days: number
   part_payments_enabled: boolean
   next_credit_note_number: number
+  closed_at: string | null
   created_at: string
 }
 
@@ -240,6 +242,7 @@ export interface Job {
   early_start_requested_at: string | null
   chasing_paused: boolean
   chasing_stopped: boolean
+  anonymised_at: string | null
   created_at: string
   updated_at: string
 }

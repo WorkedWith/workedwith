@@ -172,12 +172,12 @@ export function SettingsContent({ email, userType }: { email: string; userType: 
 
       {/* Delete account */}
       <section className="rounded-2xl border border-red-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-2 text-base font-semibold text-red-700">Delete account</h2>
+        <h2 className="mb-2 text-base font-semibold text-red-700">Close account</h2>
         <p className="mb-4 text-sm text-gray-500">
-          Permanently delete your account. Your reviews will be anonymised but kept. This cannot be undone.
+          Close your account and remove your login. Your reviews are anonymised but kept. Quotes, invoices and payments from WorkedWith jobs are kept for 6 years for the trade's tax and legal records, then anonymised. A client keeps access to nothing once closed; a trade's clients keep their own invoices and receipts. This cannot be undone.
         </p>
         <p className="mb-4 text-sm font-medium text-gray-700">
-          Important: once this account is deleted, your phone number cannot be used to create a new WorkedWith account. If you think you may want to come back, do not delete. If you do need to return later, contact support and we can review it.
+          Important: once this account is closed, your phone number cannot be used to create a new WorkedWith account. If you think you may want to come back, do not close it. If you do need to return later, contact support and we can review it.
         </p>
 
         {deleteError && (
@@ -191,7 +191,7 @@ export function SettingsContent({ email, userType }: { email: string; userType: 
             onClick={() => setDeleteConfirm(true)}
             className="min-h-[44px] rounded-xl border-2 border-red-300 px-5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
           >
-            Delete my account
+            Close my account
           </button>
         ) : (
           <div className="space-y-3">
@@ -202,7 +202,7 @@ export function SettingsContent({ email, userType }: { email: string; userType: 
                 disabled={deletePending}
                 className="min-h-[44px] rounded-xl bg-red-600 px-5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
               >
-                {deletePending ? 'Deleting…' : 'Yes, delete permanently'}
+                {deletePending ? 'Closing…' : 'Yes, close my account'}
               </button>
               <button
                 onClick={() => setDeleteConfirm(false)}

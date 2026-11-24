@@ -264,6 +264,7 @@ export interface Invoice {
   description: string
   pdf_path: string | null
   paid_at: string | null
+  payee_snapshot_encrypted: string | null
   created_at: string
 }
 

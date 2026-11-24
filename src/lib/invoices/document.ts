@@ -2,6 +2,7 @@ import type { createAdminClient } from '@/lib/supabase/admin'
 import { getPayeeDetails, type PayeeDetails } from '@/lib/getting-paid/bank-account'
 import { METHOD_LABEL } from '@/lib/payments/labels'
 import { APP_URL } from '@/lib/app-url'
+import { decryptSecret } from '@/lib/crypto/secret-box'
 import { approvedVariationsForStage } from '@/lib/variations/for-stage'
 import type { CreditNote, Invoice, Payment } from '@/types/v42'
 
@@ -52,7 +53,7 @@ export async function loadInvoiceDoc(admin: AdminClient, invoiceId: string): Pro
     lines,
     payments: (pays ?? []) as Payment[],
     credits: (credits ?? []) as CreditNote[],
-    payee: await getPayeeDetails(admin, invoice.trade_id),
+    payee: invoice.payee_snapshot_encrypted ? (JSON.parse(decryptSecret(invoice.payee_snapshot_encrypted)) as PayeeDetails) : await getPayeeDetails(admin, invoice.trade_id),
     requestedByTrade: invoice.approval_basis === 'requested_by_trade',
     url: `${APP_URL}/my/invoices/${invoice.id}`,
   }
