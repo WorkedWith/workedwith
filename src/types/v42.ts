@@ -290,7 +290,27 @@ export interface Payment {
   created_at: string
 }
 
+// ── Phase 6: credit notes ────────────────────────────────────
+
+export interface CreditNote {
+  id: string
+  invoice_id: string
+  trade_id: string
+  job_id: string
+  payment_id: string | null
+  credit_note_number: string
+  sequence: number
+  amount_pence: number
+  net_pence: number
+  vat_pence: number
+  reason: string
+  kind: 'refund' | 'reduction'
+  issued_at: string
+  pdf_path: string | null
+}
+
 export type V42Tables = {
+  credit_notes: TableDef<CreditNote, 'invoice_id' | 'trade_id' | 'job_id' | 'credit_note_number' | 'sequence' | 'amount_pence' | 'net_pence' | 'reason'>
   stage_evidence: TableDef<StageEvidence, 'stage_id'>
   stage_issues: TableDef<StageIssue, 'stage_id' | 'reason'>
   issue_notes: TableDef<IssueNote, 'issue_id' | 'note'>

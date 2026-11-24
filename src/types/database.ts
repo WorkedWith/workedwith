@@ -85,6 +85,7 @@ export interface TradeProfile {
   default_non_refundable_from: 'materials_ordered' | 'work_started' | 'payment' | null
   payment_terms_days: number
   part_payments_enabled: boolean
+  next_credit_note_number: number
   created_at: string
 }
 
@@ -1029,6 +1030,7 @@ export interface Database {
       refresh_hired_again: { Args: { p_trade: string }; Returns: undefined }
       refresh_all_confirmation_stats: { Args: Record<string, never>; Returns: undefined }
       allocate_invoice_number: { Args: { p_trade: string }; Returns: { seq: number; prefix: string }[] }
+      allocate_credit_note_number: { Args: { p_trade: string }; Returns: { seq: number; prefix: string }[] }
     }
   }
 }

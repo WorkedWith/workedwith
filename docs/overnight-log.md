@@ -15,6 +15,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 3 Quotes | Done | Phone first quote builder (client, job, lines, saved items, copy a past quote, VAT, deposit with refund settings, on completion or stages by amount or percentage, planned start, photos, preview), drafts and versions, send by text and email, follow ups and expiry, unpaid deposit reminders at day 1, 3 and 6 with expiry at day 7 and extend, client quote page with accept (terms, cancellation notice, early start consent), ask for changes and decline, trade Jobs list with filters, trade job page, client My jobs and job page |
 | 4 Start dates and job events | Done | Propose, confirm, counter and change planned starts from either side, materials ordered with an optional receipt photo, mark started (blocked inside a person client's 14 days without consent, with a request button), early start consent from the client's account, and a job history timeline on both job pages |
 | 5 Stages and payments | Done (mock bank) | Mark done with photos, approve or raise an issue with photos, issue notes thread, resubmit, reminders at day 5, 10 and 14 plus a once a day manual reminder, request payment anyway after 14 days (always labelled not approved by the client), invoices with sequential numbers issued when a stage becomes due, bank details with copy buttons, "I've paid", automatic matching (exact, part payment, overpayment, probable match to confirm), daily bank sync, mark received, paid elsewhere with client confirmation, refunds with client confirmation, receipts, cancellation by either side with the deposit position, made to measure question, and a test mode "simulate a bank transfer" |
+| 6 Invoices and exports | Done | Invoice pages for both sides (client page with copy buttons), invoice and credit note PDFs (HMRC VAT fields when VAT registered, PAID stamp, "requested by the trade" label), credit notes with their own sequential numbers issued for refunds, invoices and credit notes list on both job pages, and exports for any date range: invoices, payments (with Stripe fees) and credit notes as CSV, plus all invoices as one PDF |
 <!-- progress -->
 
 ## 2. Decisions I made
@@ -80,6 +81,11 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 | 5.6 | Cancelling: stages not started are cancelled; anything due stays due. An unpaid deposit on a job that never started is cancelled. If the deposit position depends on made to measure materials, the trade is asked and the answer is recorded. Deposit disputes go through WorkedWith support for now (the existing dispute route is for reviews). | 9 |
 | 5.7 | Part payments of £10 or more are by the client's own bank transfer; the pay panel says so when the trade allows part payments. Card part payments come with phase 13. | 9 |
 | 5.8 | Paid elsewhere payments mark the stage paid straight away so chasing stops, but they only count on the client's record once the client confirms (phase 9 uses `client_confirmed_at`). | 9, 14 |
+| 6.1 | PDFs are made with `pdf-lib` (new dependency, plain JavaScript, no server binaries) in plain Helvetica. The trade's logo is not on the PDF yet. | 11 |
+| 6.2 | PDFs are generated on request rather than stored, so `pdf_path` stays empty. Invoices never change after issue, so the PDF is always the same; only the paid amounts and PAID stamp update. | 11 |
+| 6.3 | Credit notes are numbered `<prefix> CN 0001` with their own counter, allocated the same safe way as invoice numbers. An invoice fully covered by credit notes shows as credited. | 11 |
+| 6.4 | CSV money columns are pounds with two decimals; cells starting with = + minus or @ are escaped to stop spreadsheet formula injection. The default export range is the current UK tax year. | 11 |
+| 6.5 | Exports have no plan check, so they stay available after a trial lapses or the plan is cancelled. | 3, 11 |
 <!-- decisions -->
 
 ## 3. Needs Adam
@@ -93,6 +99,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 7. Choose the open banking provider (PRD 19 item 1). If it is TrueLayer, add `TRUELAYER_CLIENT_ID`, `TRUELAYER_CLIENT_SECRET`, `TRUELAYER_ENV`, register the redirect URL `https://workedwith.co.uk/api/open-banking/callback`, and test in their sandbox. If it is another provider, a new adapter beside `src/lib/open-banking/truelayer.ts` is needed.
 8. Generate `DATA_ENCRYPTION_KEY` (run `openssl rand -base64 32`) and add it to Vercel before any trade saves bank details. Keep a safe copy: losing it means losing the stored account numbers.
 9. Twilio Verify: confirm `TWILIO_VERIFY_SERVICE_SID` is set in production. Supabase Auth: allow the email magic link redirect `https://workedwith.co.uk/auth/callback`.
+10. Accountant check of the invoice layout and the export columns (PRD 19 item 9).
 <!-- needs -->
 
 ## 4. To run
@@ -104,6 +111,7 @@ phase was checked with `npx tsc --noEmit`, `npm run lint` and `npm run build` on
 4. `20261124000300_quotes.sql` (also creates the private `job-photos` storage bucket)
 5. `20261124000400_job_events.sql`
 6. `20261124000500_stages_payments.sql` (includes `allocate_invoice_number`)
+7. `20261124000600_credit_notes.sql`
 <!-- migrations -->
 
 **Env vars to add in Vercel**
@@ -169,5 +177,11 @@ supabase db push
 - Mark payment received as cash: the client is asked to confirm. Mark a refund: the client is asked to confirm receipt.
 - Cancel a job with a non refundable materials deposit after materials ordered (kept), and as a person client inside 14 days (trade asked about made to measure).
 - To check day 5, 10 and 14 reminders and request payment anyway, set `marked_done_at` back 15 days on a stage in the database and run the cron (`/api/cron/publish-reviews` with the cron secret).
+
+**Phase 6**
+- Open an invoice from a job (trade) and from the client's job page; Download PDF opens a PDF with the right number, totals and bank details. Pay it with a simulated transfer: the PDF shows PAID.
+- Mark a refund on a payment: a credit note appears on both job pages and as a PDF.
+- Profile, Exports: download each CSV and the PDF bundle for a range that includes your test invoices; open the CSVs in a spreadsheet.
+- Check the client invoice page at 390px: every bank detail has a Copy button.
 
 <!-- tests -->

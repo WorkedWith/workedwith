@@ -3,6 +3,7 @@ import type { JobBundle } from '@/lib/jobs/load'
 import { ClientStartPanel } from './client-start-panel'
 import { ClientStagesPanel } from './client-stages-panel'
 import { CancelPanel } from './cancel-panel'
+import { InvoicesPanel } from '@/components/invoices/invoices-panel'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -12,6 +13,7 @@ export async function ClientJobSections({ admin, bundle, userId }: { admin: Admi
     <>
       <ClientStagesPanel admin={admin} bundle={bundle} userId={userId} />
       <ClientStartPanel admin={admin} bundle={bundle} userId={userId} />
+      <InvoicesPanel admin={admin} jobId={bundle.job.id} role="client" />
       <CancelPanel bundle={bundle} role="client" />
     </>
   )
